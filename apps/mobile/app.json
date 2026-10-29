@@ -27,7 +27,11 @@
       "name": "Acervo IA — consulta a leis de trânsito com fontes",
       "lang": "pt-BR"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-asset"
+    ],
     "experiments": {
       "typedRoutes": true
     }

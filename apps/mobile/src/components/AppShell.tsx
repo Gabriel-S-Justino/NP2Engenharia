@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, usePathname, type Href } from 'expo-router';
+import { Link, usePathname, type Href } from 'expo-router';
 import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,35 +24,41 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/configuracoes', path: '/configuracoes', label: 'Configurações', icon: 'settings-outline', primary: false },
 ];
 
+const SHORT_LABELS: Record<string, string> = { '/': 'Início', '/chat': 'Chat', '/documentos': 'Acervo' };
+
 export function isActive(pathname: string, path: string) {
   return path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`);
 }
 
-function NavigationItem({ item, active, collapsed, onPress }: { item: NavItem; active: boolean; collapsed?: boolean; onPress: () => void }) {
+/** Item de navegação: na web vira <a href> real (Enter, clique do meio e leitores de tela funcionam). */
+function NavigationItem({ item, active, collapsed, onPress }: { item: NavItem; active: boolean; collapsed?: boolean; onPress?: () => void }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={item.label}
-      accessibilityState={{ selected: active }}
-      aria-current={active ? 'page' : undefined}
-      onPress={onPress}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={({ pressed }) => [
-        styles.navItem,
-        collapsed && styles.navItemCollapsed,
-        { backgroundColor: active ? colors.primarySoft : pressed ? colors.surfaceMuted : 'transparent' },
-        focused && ({ outlineColor: colors.focus, outlineWidth: 2, outlineStyle: 'solid' } as ViewStyle),
-      ]}>
-      <Ionicons name={active ? (item.icon.replace('-outline', '') as IconName) : item.icon} size={20} color={active ? colors.primaryStrong : colors.textSecondary} />
-      {!collapsed ? (
-        <AppText variant={active ? 'bodyStrong' : 'body'} style={{ color: active ? colors.primaryStrong : colors.textPrimary }}>
-          {item.label}
-        </AppText>
-      ) : null}
-    </Pressable>
+    <Link href={item.href} asChild onPress={onPress}>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: active }}
+        aria-current={active ? 'page' : undefined}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        // Link (asChild) repassa o estilo ao elemento <a>: precisa ser um objeto simples.
+        style={StyleSheet.flatten([
+          styles.navItem,
+          { backgroundColor: active ? colors.primarySoft : 'transparent' },
+          focused && ({ outlineColor: colors.focus, outlineWidth: 2, outlineStyle: 'solid' } as ViewStyle),
+        ])}>
+        <View style={[styles.navRow, collapsed && styles.navItemCollapsed]}>
+          <Ionicons name={active ? (item.icon.replace('-outline', '') as IconName) : item.icon} size={20} color={active ? colors.primaryStrong : colors.textSecondary} />
+          {!collapsed ? (
+            <AppText variant={active ? 'bodyStrong' : 'body'} style={{ color: active ? colors.primaryStrong : colors.textPrimary }}>
+              {item.label}
+            </AppText>
+          ) : null}
+        </View>
+      </Pressable>
+    </Link>
   );
 }
 
@@ -79,7 +85,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       </View>
       <View style={styles.navList}>
         {NAV_ITEMS.map((item) => (
-          <NavigationItem key={item.path} item={item} collapsed={collapsed} active={isActive(pathname, item.path)} onPress={() => router.navigate(item.href)} />
+          <NavigationItem key={item.path} item={item} collapsed={collapsed} active={isActive(pathname, item.path)} />
         ))}
       </View>
       <View style={styles.sidebarFooter}>
@@ -107,18 +113,20 @@ function BottomBar() {
         {primary.map((item) => {
           const active = isActive(pathname, item.path);
           return (
+            <Link key={item.path} href={item.href} asChild>
             <Pressable
-              key={item.path}
               accessibilityRole="link"
               accessibilityLabel={item.label}
               accessibilityState={{ selected: active }}
-              onPress={() => router.navigate(item.href)}
               style={styles.bottomItem}>
+              <View style={styles.bottomInner}>
               <Ionicons name={active ? (item.icon.replace('-outline', '') as IconName) : item.icon} size={22} color={active ? colors.primary : colors.textSecondary} />
               <AppText variant="caption" numberOfLines={1} style={{ color: active ? colors.primary : colors.textSecondary }}>
-                {item.label === 'Visão geral' ? 'Início' : item.label}
+                {SHORT_LABELS[item.path] ?? item.label}
               </AppText>
+              </View>
             </Pressable>
+            </Link>
           );
         })}
         <Pressable accessibilityRole="button" accessibilityLabel="Mais opções de navegação" accessibilityState={{ selected: moreActive }} onPress={() => setMoreOpen(true)} style={styles.bottomItem}>
@@ -135,10 +143,7 @@ function BottomBar() {
             key={item.path}
             item={item}
             active={isActive(pathname, item.path)}
-            onPress={() => {
-              setMoreOpen(false);
-              router.navigate(item.href);
-            }}
+            onPress={() => setMoreOpen(false)}
           />
         ))}
       </Dialog>
@@ -171,9 +176,11 @@ const styles = StyleSheet.create({
   brandCollapsed: { justifyContent: 'center', paddingHorizontal: 0 },
   logo: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   navList: { gap: spacing.xxs, flex: 1 },
-  navItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: radius.md },
-  navItemCollapsed: { justifyContent: 'center', paddingHorizontal: 0 },
+  navItem: { minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: radius.md, justifyContent: 'center' },
+  navRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  navItemCollapsed: { justifyContent: 'center' },
   sidebarFooter: { gap: spacing.xs, alignItems: 'flex-start' },
   bottomBar: { flexDirection: 'row', borderTopWidth: 1, paddingTop: spacing.xxs },
   bottomItem: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 52, gap: 2 },
+  bottomInner: { alignItems: 'center', gap: 2 },
 });
