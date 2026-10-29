@@ -1,0 +1,20 @@
+[project]
+name = "acervo-ia-backend"
+version = "1.0.0"
+description = "Backend FastAPI do Acervo IA (RAG para consulta documental)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["B008", "E501"]  # strings longas de mensagens e prompt em português

@@ -1,0 +1,44 @@
+# Ambientes e dependências
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.tsbuildinfo
+coverage/
+.pytest_cache/
+.ruff_cache/
+
+# Segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vercel
+
+# Dados derivados (banco, índices, uploads, modelos, relatórios locais)
+data/*
+!data/.gitkeep
+!data/README.md
+
+# Documentos da equipe: versionar apenas se forem públicos e com licença adequada.
+# Por padrão, nada dentro de Documentos/ é versionado, exceto as instruções.
+Documentos/*
+!Documentos/README.md
+!Documentos/.gitkeep
+!Documentos/manifest.json
+!Documentos/manifest.example.json
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.log
+*.tmp

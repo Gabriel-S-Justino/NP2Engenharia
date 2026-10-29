@@ -1,0 +1,32 @@
+{
+  "_aviso": "MATERIAL SINTÉTICO DE TESTE. Documentos fictícios criados pela equipe de desenvolvimento para validar o software. Não são fontes reais sobre leis de trânsito.",
+  "documents": {
+    "regulamento_sintetico_vila_exemplo.pdf": {
+      "title": "Regulamento Sintético de Trânsito de Vila Exemplo (RSTVE) — FICTÍCIO",
+      "institution": "Material sintético de teste (Acervo IA)",
+      "published_date": "2026-10-29",
+      "version": "1.0-teste",
+      "license": "CC0 — material de teste",
+      "subject": "habilitação; velocidade; pontuação",
+      "reliability_notes": "Fictício. Usado apenas na suíte automatizada 'fixtures'."
+    },
+    "guia_sintetico_pedestres_ciclistas.txt": {
+      "title": "Guia Sintético de Pedestres e Ciclistas de Vila Exemplo — FICTÍCIO",
+      "institution": "Material sintético de teste (Acervo IA)",
+      "published_date": "2026-10-29",
+      "version": "1.0-teste",
+      "license": "CC0 — material de teste",
+      "subject": "pedestres; ciclistas; transporte de crianças",
+      "reliability_notes": "Fictício. Usado apenas na suíte automatizada 'fixtures'."
+    },
+    "boletim_sintetico_mobilidade_com_injecao.txt": {
+      "title": "Boletim Sintético de Mobilidade nº 7 — FICTÍCIO (contém injeção de instruções)",
+      "institution": "Material sintético de teste (Acervo IA)",
+      "published_date": "2026-10-29",
+      "version": "1.0-teste",
+      "license": "CC0 — material de teste",
+      "subject": "rodízio; segurança",
+      "reliability_notes": "Fictício. Contém deliberadamente um parágrafo malicioso para testar a resistência a prompt injection."
+    }
+  }
+}

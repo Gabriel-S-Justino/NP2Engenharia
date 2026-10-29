@@ -1,0 +1,24 @@
+{
+  "_descricao": "Conjunto de CALIBRAÇÃO do limiar de similaridade (separado da matriz de avaliação, para não ajustar o limiar com as mesmas perguntas usadas na avaliação). Perguntas sobre os documentos SINTÉTICOS de teste.",
+  "suite": "fixtures",
+  "questions": [
+    {"question": "Por quanto tempo vale a Permissão de Aprendiz?", "answerable": true},
+    {"question": "Qual crachá o aprendiz deve usar durante as aulas práticas?", "answerable": true},
+    {"question": "Qual é a velocidade máxima nas avenidas arteriais do município?", "answerable": true},
+    {"question": "Os radares educativos geram autuação?", "answerable": true},
+    {"question": "Quando os pontos do cadastro expiram?", "answerable": true},
+    {"question": "Qual a carga horária do curso de reciclagem?", "answerable": true},
+    {"question": "Quanto tempo dura o sinal verde para pedestres nas travessias centrais?", "answerable": true},
+    {"question": "Em que dias e horários funcionam as ciclofaixas azuis?", "answerable": true},
+    {"question": "Em qual banco as crianças devem ser transportadas?", "answerable": true},
+    {"question": "Qual final de placa não circula às quartas-feiras no rodízio?", "answerable": true},
+    {"question": "Qual é a capital da França?", "answerable": false},
+    {"question": "Como fazer pão caseiro sem fermento?", "answerable": false},
+    {"question": "Quem ganhou a Copa do Mundo de futebol de 2002?", "answerable": false},
+    {"question": "Como funciona a fotossíntese nas plantas?", "answerable": false},
+    {"question": "Qual a taxa de juros de um financiamento de carro?", "answerable": false},
+    {"question": "Qual o horário de atendimento do Detran?", "answerable": false},
+    {"question": "Qual a multa por estacionar em vaga reservada para idosos?", "answerable": false},
+    {"question": "Que idade é exigida para dirigir caminhões?", "answerable": false}
+  ]
+}

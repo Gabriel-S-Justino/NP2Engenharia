@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest==9.2.0
+httpx==0.28.1
+ruff==0.17.3
+# Geração dos PDFs sintéticos de teste (scripts/generate_fixtures.py)
+fpdf2==2.8.9

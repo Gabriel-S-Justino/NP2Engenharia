@@ -1,0 +1,4 @@
+{
+  "_instrucoes": "Registre aqui os metadados de cada documento real do acervo. A chave é o caminho relativo dentro de Documentos/. Campos ausentes aparecem como 'não informado' na interface. Não invente metadados.",
+  "documents": {}
+}
