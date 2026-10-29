@@ -1,6 +1,6 @@
 // Teste ponta a ponta da versão web contra um backend real (Playwright + Chromium).
-// Pré-requisitos: backend em API_URL e build web servido em WEB_URL (ver docs/TESTES_PRODUCAO.md).
-// Uso: node tests/e2e/web_smoke.mjs   (variáveis opcionais: WEB_URL, API_URL, ADMIN_TOKEN, SHOTS_DIR)
+// Pré-requisitos: backend em execução e build web (apontando para ele) servido em WEB_URL (ver docs/TESTES_PRODUCAO.md).
+// Uso: node tests/e2e/web_smoke.mjs   (variáveis opcionais: WEB_URL, ADMIN_TOKEN, SHOTS_DIR)
 import { mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 

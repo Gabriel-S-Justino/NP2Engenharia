@@ -1,0 +1,15 @@
+{
+  "name": "acervo-ia",
+  "private": true,
+  "description": "Acervo IA — consulta a leis de trânsito com RAG, citações verificáveis e recusa segura",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "dev": "bash scripts/dev.sh",
+    "dev:demo": "bash scripts/dev.sh --demo",
+    "backend:test": "cd backend && .venv/bin/python -m pytest -q",
+    "frontend:test": "npm --prefix apps/mobile run test:ci",
+    "frontend:build": "npm --prefix apps/mobile run build:web",
+    "evaluate": "backend/.venv/bin/python scripts/run_evaluation.py",
+    "verify": "backend/.venv/bin/python scripts/verify_project.py"
+  }
+}

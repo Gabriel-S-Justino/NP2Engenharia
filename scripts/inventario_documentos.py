@@ -13,6 +13,7 @@ import argparse
 from pathlib import Path
 
 import _bootstrap  # noqa: F401
+
 from app.core.config import get_settings
 from app.services.document_loader import DocumentReadError, load_document
 from app.services.ingestion import METADATA_FIELDS, discover, load_manifest

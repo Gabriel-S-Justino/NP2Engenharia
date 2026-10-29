@@ -139,7 +139,8 @@ def stats(request: Request) -> Stats:
         citation_valid_rate=rnd(metrics.get("valid_rate"), 3),
         ingestion_success_rate=rnd(p.ingestion_runs.success_rate(), 3),
         last_evaluation=latest.summary if latest else None,
-        using_fixtures_only=bool(origins) and origins <= {"fixtures"},
+        using_fixtures_only=bool(origins)
+        and (origins <= {"fixtures"} or c.settings.documents_dir.resolve() == c.settings.fixtures_dir.resolve()),
     )
 
 

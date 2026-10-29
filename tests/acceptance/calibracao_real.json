@@ -1,0 +1,10 @@
+{
+  "_descricao": "Conjunto de CALIBRAÇÃO do limiar para o ACERVO REAL. A equipe deve substituir as perguntas por perguntas verificadas: 'answerable': true somente se a resposta foi conferida em um documento de Documentos/. Use perguntas DIFERENTES das da matriz de avaliação.",
+  "suite": "acervo_real",
+  "questions": [
+    {"question": "A PREENCHER: pergunta respondível pelo acervo (conferida na fonte)", "answerable": true},
+    {"question": "A PREENCHER: outra pergunta respondível", "answerable": true},
+    {"question": "Qual é a capital da França?", "answerable": false},
+    {"question": "Como fazer pão caseiro?", "answerable": false}
+  ]
+}

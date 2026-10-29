@@ -1,0 +1,34 @@
+# Blueprint do Render para o BACKEND (FastAPI) com disco persistente.
+# O frontend web é publicado na Vercel (apps/mobile/vercel.json). Ver docs/DEPLOY_BACKEND.md.
+# Segredos (LLM_API_KEY, ADMIN_TOKEN) são definidos no painel do Render (sync: false), nunca neste arquivo.
+services:
+  - type: web
+    name: acervo-ia-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # discos persistentes exigem plano pago no Render (verifique preços atuais)
+    autoDeploy: false        # produção só é publicada manualmente, com autorização
+    healthCheckPath: /api/health
+    disk:
+      name: acervo-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: CORS_ORIGINS
+        sync: false          # ex.: https://acervo-ia.vercel.app
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: LLM_PROVIDER
+        value: demo          # altere para anthropic após configurar LLM_API_KEY
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: claude-opus-5-5
+      - key: EMBEDDING_PROVIDER
+        value: fastembed
+      - key: AUTO_INGEST_ON_STARTUP
+        value: "true"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "20"

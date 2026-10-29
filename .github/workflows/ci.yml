@@ -1,0 +1,57 @@
+# Integração contínua: valida backend e frontend em cada push/PR. NÃO publica em produção.
+# Previews e produção da web são gerenciados pela integração Git da Vercel (ver docs/DEPLOY_VERCEL.md).
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check app tests ../scripts
+      - run: pytest -q
+      - name: Matriz de avaliação (fixtures sintéticas, embeddings lexicais, modo demo)
+        env:
+          EMBEDDING_PROVIDER: hashing
+          LLM_PROVIDER: demo
+          DATA_DIR: ${{ runner.temp }}/acervo-data
+        run: python ../scripts/run_evaluation.py --suite fixtures
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:ci
+      - name: Build web de produção
+        env:
+          EXPO_PUBLIC_API_URL: https://api.exemplo.invalid
+        run: npm run build:web
+      - name: Bundle sem segredos
+        run: "! grep -rEq 'sk-ant-[A-Za-z0-9_-]{8,}' dist"

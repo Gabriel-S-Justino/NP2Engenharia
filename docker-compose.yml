@@ -1,0 +1,17 @@
+# Execução local com Docker: backend com dados persistentes em ./data e documentos de ./Documentos (somente leitura).
+# Uso: docker compose up --build   (a API fica acessível apenas em 127.0.0.1:8000)
+services:
+  backend:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: development
+      CORS_ORIGINS: http://localhost:8081,http://127.0.0.1:8081,http://localhost:19006
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/var/data
+      - ./Documentos:/app/Documentos:ro
+    restart: unless-stopped
