@@ -1,4 +1,4 @@
-"""Endpoints REST da API (documentados automaticamente em /docs e /openapi.json)."""
+"""Endpoints REST da API (documentados automaticamente em /api/docs e /api/openapi.json)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app import __version__
-from app.core.container import Container
+from app.core.container import Container, get_container
 from app.core.errors import (
     AppError,
     ConflictError,
@@ -18,7 +18,7 @@ from app.core.errors import (
     PayloadTooLargeError,
     UnsupportedMediaError,
 )
-from app.core.security import rate_limit_chat, require_admin, safe_child, sanitize_filename
+from app.core.security import rate_limit_chat, require_admin, require_cron_secret, sanitize_filename
 from app.repositories.documents import row_to_chunk
 from app.schemas.models import (
     AdjustmentRequest,
@@ -49,7 +49,7 @@ from app.schemas.models import (
     UploadResult,
 )
 from app.services.document_loader import PDF_MAGIC, SUPPORTED_EXTENSIONS, DocumentReadError, decode_text
-from app.services.ingestion import DiscoveredFile
+from app.services.ingestion import make_document_id
 from app.services.vector_store import METRIC
 
 ERRORS = {
@@ -63,7 +63,18 @@ admin = [Depends(require_admin)]
 
 
 def container(request: Request) -> Container:
-    return request.app.state.container
+    return get_container(request.app)
+
+
+def require_persistent_storage(c: Container) -> None:
+    """Em serverless sem Postgres, tudo seria perdido ao fim da função: bloqueia alterações do acervo."""
+    s = c.settings
+    if not s.persistent_storage and not s.allow_ephemeral_storage:
+        raise AppError(
+            "Armazenamento persistente não configurado: na Vercel, conecte um banco Postgres (DATABASE_URL, ex.: Neon "
+            "pelo Marketplace) para indexar documentos. Sem ele, os dados seriam perdidos.",
+            code="armazenamento_efemero", status_code=503,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -80,32 +91,48 @@ def health(request: Request) -> Health:
     except Exception:  # noqa: BLE001
         db_ok, issues = False, issues + ["Banco de dados indisponível."]
     emb = p._embedder
+    lazy = s.serverless and emb is None and p.embedder_error is None
     embeddings = {
         "provider": s.embedding_provider,
-        "model": emb.model if emb else s.embedding_model,
-        "available": emb is not None,
-        "semantic": emb.semantic if emb else None,
+        "model": emb.model if emb else ("lexical-hashing-ngrams" if s.embedding_provider == "hashing" else s.embedding_model),
+        "available": emb is not None or lazy,
+        "loaded": emb is not None,
+        "semantic": emb.semantic if emb else (s.embedding_provider != "hashing" if lazy else None),
         "error": p.embedder_error,
     }
-    if emb is None:
+    if emb is None and not lazy:
         issues.append("Modelo de embeddings indisponível.")
+    elif lazy:
+        pass  # carregado na primeira pergunta/indexação (serverless)
     elif not emb.semantic:
         issues.append("Embeddings lexicais (hashing) em uso: a busca NÃO é semântica. Use apenas em testes/demonstração.")
+    if s.serverless and s.embedding_provider == "hashing":
+        issues.append("Embeddings lexicais (hashing) em uso: a busca NÃO é semântica. Use apenas em testes/demonstração.")
+    if not s.persistent_storage:
+        issues.append(
+            "Armazenamento efêmero: sem DATABASE_URL (Postgres), documentos e histórico não persistem na Vercel."
+        )
     idx = p.index_status()
     if not idx.compatible:
         issues.append(idx.message or "Índice incompatível com o modelo atual.")
     llm = {**p.generator.describe(), "configured": s.llm_provider == "demo" or s.llm_api_key is not None}
-    critical = not db_ok or emb is None or not idx.compatible
+    critical = not db_ok or (emb is None and not lazy) or not idx.compatible or not s.persistent_storage
     return Health(
         status="degraded" if critical else "ok",
         app_env=s.app_env,
         version=__version__,
         database=db_ok,
+        storage={
+            "backend": p.db.dialect,
+            "persistent": s.persistent_storage,
+            "serverless": bool(s.serverless),
+            "originals_in_database": bool(s.store_originals_in_db),
+        },
         embeddings=embeddings,
         vector_store={"backend": idx.backend, "vectors": idx.vectors, "compatible": idx.compatible, "metric": METRIC},
         llm=llm,
         documents_dir_exists=s.documents_dir.exists(),
-        issues=issues,
+        issues=list(dict.fromkeys(issues)),
     )
 
 
@@ -193,26 +220,27 @@ async def upload_document(request: Request, file: UploadFile = File(...)) -> Upl
     if existing is not None:
         raise ConflictError(f"Este conteúdo já está no acervo como '{existing['filename']}'.", code="duplicado")
 
-    target = safe_child(s.uploads_dir, filename)
-    stem, suffix = target.stem, target.suffix
+    require_persistent_storage(c)
+    # O original fica no banco (funciona sem disco persistente, ex.: Vercel) e permite reindexar depois.
+    name, stem, suffix = filename, filename.rsplit(".", 1)[0], ext
     counter = 1
-    while target.exists():
-        target = safe_child(s.uploads_dir, f"{stem}_{counter}{suffix}")
+    while p.documents.get_by_path("upload", name) is not None:
+        name = f"{stem}_{counter}{suffix}"
         counter += 1
-    target.write_bytes(bytes(data))
-    discovered = DiscoveredFile("upload", s.uploads_dir, target, target.name)
+    document_id = make_document_id("upload", name)
     p.documents.upsert(
-        document_id=discovered.document_id, origin="upload", relative_path=target.name, filename=target.name,
+        document_id=document_id, origin="upload", relative_path=name, filename=name,
         file_type=ext.lstrip("."), size_bytes=len(data), sha256=sha, status="pending",
-        metadata={"title": target.stem.replace("_", " "), "metadata_origin": "upload"},
+        metadata={"title": name.rsplit(".", 1)[0].replace("_", " "), "metadata_origin": "upload"},
         file_modified_at=datetime.now(UTC).isoformat(timespec="seconds"),
     )
-    message = "Arquivo recebido. A indexação foi iniciada."
+    p.documents.save_file(document_id, bytes(data), sha)
+    message = "Arquivo recebido e indexado." if s.serverless else "Arquivo recebido. A indexação foi iniciada."
     try:
-        p.ingestion.start("upload")
+        p.ingestion.start("upload", document_ids=[document_id])
     except ConflictError:
         message = "Arquivo recebido. Há uma indexação em andamento; ele será processado na próxima indexação."
-    return UploadResult(document=p.documents.get(discovered.document_id), message=message)
+    return UploadResult(document=p.documents.get(document_id), message=message)
 
 
 @router.get("/documents/{document_id}", response_model=DocumentSummary, tags=["documentos"])
@@ -248,11 +276,8 @@ def delete_document(request: Request, document_id: str) -> DeleteResult:
     removed_vectors, removed_chunks = p.remove_document_data(document_id)
     deleted_file = False
     if row["origin"] == "upload":
-        path = safe_child(c.settings.uploads_dir, row["relative_path"])
-        if path.exists():
-            path.unlink()
-            deleted_file = True
-        p.documents.delete(document_id)
+        deleted_file = p.documents.load_file(document_id) is not None
+        p.documents.delete(document_id)  # remove também o original guardado no banco (ON DELETE CASCADE)
         message = "Documento enviado removido do acervo, do índice e do armazenamento."
     else:
         p.documents.set_status(
@@ -282,25 +307,34 @@ def get_source(request: Request, source_id: str) -> SourceDetail:
 # Ingestão
 # ---------------------------------------------------------------------------
 @router.post("/ingestion/scan", response_model=IngestionRun, status_code=202, tags=["ingestão"], dependencies=admin,
-             summary="Varre Documentos/ e uploads e indexa arquivos novos ou alterados")
+             summary="Indexa documentos novos ou alterados (em serverless: síncrono, em lotes; ver stats.remaining)")
 def ingestion_scan(request: Request, wait: bool = Query(False)) -> IngestionRun:
-    p = container(request).pipeline
+    c = container(request)
+    require_persistent_storage(c)
+    p = c.pipeline
     _ensure_index_ready(p)
-    run = p.ingestion.start("scan", wait=wait)
-    return p.ingestion_runs.last() if wait else run
+    return p.ingestion.start("scan", wait=wait)
 
 
 @router.post("/ingestion/reindex", response_model=IngestionRun, status_code=202, tags=["ingestão"],
              dependencies=admin, summary="Reprocessa todo o acervo ou documentos específicos")
 def ingestion_reindex(request: Request, body: ReindexRequest | None = None, wait: bool = Query(False)) -> IngestionRun:
-    p = container(request).pipeline
+    c = container(request)
+    require_persistent_storage(c)
+    p = c.pipeline
     ids = body.document_ids if body and body.document_ids else None
-    if ids is None:
-        # Reindexação completa também resolve índices incompatíveis com o modelo atual.
-        p.ensure_embedder()
-        p.reset_index()
-    run = p.ingestion.start("reindex", force=True, document_ids=ids, wait=wait)
-    return p.ingestion_runs.last() if wait else run
+    # Reindexação completa marca todo o acervo como pendente; em serverless, chamadas seguintes de /scan
+    # continuam a fila até stats.remaining = 0. Também resolve índices incompatíveis com o modelo atual.
+    return p.ingestion.start("reindex", force=True, document_ids=ids, wait=wait)
+
+
+@router.get("/cron/ingestion", response_model=IngestionRun, tags=["ingestão"],
+            dependencies=[Depends(require_cron_secret)],
+            summary="Chamada agendada (Vercel Cron): processa a fila de documentos pendentes")
+def cron_ingestion(request: Request) -> IngestionRun:
+    c = container(request)
+    require_persistent_storage(c)
+    return c.pipeline.ingestion.start("scan", wait=True)
 
 
 def _ensure_index_ready(p) -> None:
@@ -411,7 +445,7 @@ def get_settings_view(request: Request) -> SettingsOut:
         llm_model=p.generator.model,
         llm_configured=s.llm_provider == "demo" or s.llm_api_key is not None,
         llm_is_real=p.generator.is_llm,
-        vector_store=s.vector_store,
+        vector_store=s.vector_store or "faiss",
         similarity_metric=METRIC,
         chunk_size=params["chunk_size"],
         chunk_overlap=params["chunk_overlap"],
@@ -425,6 +459,10 @@ def get_settings_view(request: Request) -> SettingsOut:
         max_question_chars=s.max_question_chars,
         supported_file_types=sorted(e.lstrip(".") for e in SUPPORTED_EXTENSIONS),
         admin_required=s.admin_required,
+        serverless=bool(s.serverless),
+        storage_backend=p.db.dialect,
+        persistent_storage=s.persistent_storage,
+        ingestion_time_budget_seconds=s.ingestion_time_budget_seconds if s.serverless else None,
         history_retention_days=s.history_retention_days,
         app_env=s.app_env,
         editable=EDITABLE,

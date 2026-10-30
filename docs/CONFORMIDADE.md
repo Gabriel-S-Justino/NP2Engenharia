@@ -8,7 +8,7 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 | Critério | Peso | Evidência | Teste/verificação | Estado |
 |---|---|---|---|---|
 | Problema, público-alvo e adequação do RAG | 0,75 | README; RELATORIO §2–5 (inclui quando busca convencional basta) | Revisão documental | **Atendido** (a equipe deve revisar o texto) |
-| Funcionamento técnico do pipeline RAG | 1,50 | `backend/app/services/*`; ARQUITETURA.md | 73 testes backend; E2E 11/11; matriz 10/10 | **Atendido** com documentos sintéticos e embeddings lexicais; **Parcial** quanto a embeddings semânticos e LLM real (bloqueados neste ambiente) |
+| Funcionamento técnico do pipeline RAG | 1,50 | `backend/app/services/*`; ARQUITETURA.md | 82 testes backend (incl. Postgres/pgvector); E2E 11/11 (local e Vercel simulada); matriz 10/10 | **Atendido** com documentos sintéticos e embeddings lexicais; **Parcial** quanto a embeddings semânticos e LLM real (bloqueados neste ambiente) |
 | Fontes, citações e segurança | 1,00 | `citations.py`, `safety.py`, SEGURANCA.md, FONTES.md | testes de citação inventada, injeção, segredos, uploads | **Parcial**: citações e segurança atendidas; **fontes reais pendentes da equipe** |
 | Testes, métricas e análise de falhas | 0,75 | MATRIZ_TESTES.md; `docs/resultados/` | 4 execuções reais (80% → 100%) com causa e ajuste | **Atendido** para a suíte sintética; suíte real pendente |
 | Validação com IA mentora | 0,75 | DIARIO_VALIDACAO_IA.md; tela/endpoint `/api/mentor-log` | `test_mentor_log_roundtrip` | **Parcial**: estrutura pronta; **nenhuma interação real registrada** |
@@ -47,9 +47,9 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 | Telas: Dashboard, Chat, Biblioteca, Fontes, Laboratório, Configurações (+ Diário) | Atendido | E2E 11/11 |
 | Design system, responsividade, acessibilidade básica, estados | Atendido | leitores de tela reais não testados |
 | Web / Android / iOS | Parcial | web testada; Android/iOS compatíveis via Expo, não testados em dispositivo |
-| Testes automatizados backend e frontend | Atendido | 73 + 55 |
+| Testes automatizados backend e frontend | Atendido | 82 (75 SQLite + 7 Postgres) + 59 |
 | Scripts Unix/PowerShell, Docker | Parcial | scripts `.sh` executados; `.ps1` não executados (sem Windows); imagem Docker não construída (Docker Hub 429) |
-| Deploy: frontend Vercel, backend persistente, CI, rollback, variáveis | Preparado | nenhum deploy remoto (sem contas/autorização) |
+| Deploy: aplicação completa na Vercel (web + função Python + Neon Postgres/pgvector), CI, rollback, variáveis | Preparado | `vercel build` oficial aprovado; função executada pelo handler do runtime da Vercel; nenhum deploy remoto (sem contas/autorização) |
 | Nenhuma credencial no repositório | Atendido | `.env` ignorado; CI verifica o bundle |
 
 ## Pendências que dependem da equipe
@@ -57,4 +57,6 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 2. Rodar com `fastembed` (internet na 1ª execução), recalibrar o limiar e preencher/executar a matriz real.
 3. Configurar `LLM_API_KEY` no servidor e reavaliar com leitura humana das respostas.
 4. Realizar e registrar as validações com a IA mentora.
-5. Preencher nomes/contribuições, testar no celular (Expo Go) e publicar preview/produção com autorização.
+5. Criar o projeto na Vercel com o banco Neon, definir `ADMIN_TOKEN`/`CRON_SECRET`, publicar o preview, validá-lo e
+   publicar a produção com autorização (DEPLOY_VERCEL.md).
+6. Preencher nomes/contribuições e testar no celular (Expo Go).

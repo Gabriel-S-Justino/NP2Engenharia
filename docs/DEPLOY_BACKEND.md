@@ -1,8 +1,15 @@
-# Deploy do backend (FastAPI + RAG)
+# Deploy alternativo do backend em contêiner (fora da Vercel)
 
-Requisito: serviço que rode **contêiner Docker** com **disco persistente** montado em `/var/data`
-(justificativa em [PRODUCAO.md](PRODUCAO.md)). Abaixo, o caminho com Render (blueprint `render.yaml`); a mesma
-imagem funciona em Railway (volume) e Fly.io (volume).
+> **O caminho principal é a aplicação completa na Vercel** ([DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)): web + função
+> Python + Neon Postgres. Este documento descreve a **alternativa** de hospedar a API como contêiner — útil se um
+> limite da plataforma mudar, para indexações muito longas no próprio servidor ou para uso com OCR.
+>
+> Nesse caso: defina `EXPO_PUBLIC_API_URL=https://<backend>` nas variáveis do projeto da Vercel (a web passa a
+> chamar o contêiner em vez de `/api` local) e inclua o domínio da Vercel em `CORS_ORIGINS` do contêiner.
+
+Requisito: serviço que rode **contêiner Docker** com **disco persistente** montado em `/var/data` — ou, sem disco,
+com `DATABASE_URL` apontando para um Postgres com pgvector (o mesmo código usa Postgres quando a variável existe).
+Abaixo, o caminho com Render (blueprint `render.yaml`); a mesma imagem funciona em Railway (volume) e Fly.io (volume).
 
 ## Imagem
 `Dockerfile` na raiz: Python 3.13-slim, dependências de `backend/requirements.txt`, usuário sem root, health check

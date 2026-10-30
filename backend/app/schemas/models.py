@@ -127,6 +127,7 @@ class IngestionStats(BaseModel):
     chunks_indexed: int = 0
     processed_so_far: int = 0
     to_process: int = 0
+    remaining: int = Field(default=0, description="Pendentes para a próxima execução (orçamento de tempo esgotado)")
 
 
 class IngestionRun(BaseModel):
@@ -320,6 +321,7 @@ class Health(BaseModel):
     app_env: str
     version: str
     database: bool
+    storage: dict
     embeddings: dict
     vector_store: dict
     llm: dict
@@ -350,6 +352,10 @@ class SettingsOut(BaseModel):
     max_question_chars: int
     supported_file_types: list[str]
     admin_required: bool
+    serverless: bool
+    storage_backend: str
+    persistent_storage: bool
+    ingestion_time_budget_seconds: float | None
     history_retention_days: int
     app_env: str
     editable: list[str]

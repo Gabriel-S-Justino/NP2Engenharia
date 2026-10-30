@@ -82,6 +82,8 @@ export type IngestionStats = {
   chunks_indexed: number;
   processed_so_far: number;
   to_process: number;
+  /** Documentos ainda pendentes (na Vercel, cada chamada tem orçamento de tempo; chame /scan novamente). */
+  remaining: number;
 };
 
 export type IngestionRun = {
@@ -239,7 +241,8 @@ export type Health = {
   app_env: string;
   version: string;
   database: boolean;
-  embeddings: { provider: string; model: string; available: boolean; semantic: boolean | null; error: string | null };
+  storage: { backend: 'sqlite' | 'postgres'; persistent: boolean; serverless: boolean; originals_in_database: boolean };
+  embeddings: { provider: string; model: string; available: boolean; loaded: boolean; semantic: boolean | null; error: string | null };
   vector_store: { backend: string; vectors: number; compatible: boolean; metric: string };
   llm: { provider: string; model: string; is_llm: boolean; mode: string; configured: boolean };
   documents_dir_exists: boolean;
@@ -269,6 +272,10 @@ export type SettingsOut = {
   max_question_chars: number;
   supported_file_types: string[];
   admin_required: boolean;
+  serverless: boolean;
+  storage_backend: 'sqlite' | 'postgres';
+  persistent_storage: boolean;
+  ingestion_time_budget_seconds: number | null;
   history_retention_days: number;
   app_env: string;
   editable: string[];

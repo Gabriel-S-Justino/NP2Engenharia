@@ -121,8 +121,20 @@ export default function EvaluationScreen() {
     if (running) return;
     setRunning(true);
     try {
-      await api.runEvaluation(suite);
-      await waitForCompletion();
+      const state = await api.runEvaluation(suite);
+      if (state.status === 'running') {
+        await waitForCompletion();
+        return;
+      }
+      // Execução síncrona (ex.: Vercel): o resultado já veio na resposta.
+      setRunning(false);
+      void overview.reload();
+      if (state.status === 'completed' && state.run_id) {
+        toast.show('Avaliação concluída.', 'success');
+        setRunId(state.run_id);
+      } else {
+        toast.show(state.error ?? 'A avaliação falhou.', 'danger');
+      }
     } catch (err) {
       setRunning(false);
       toast.show(errorMessage(err), 'danger');

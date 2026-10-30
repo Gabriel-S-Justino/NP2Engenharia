@@ -1,71 +1,85 @@
-# Arquitetura de produção
+# Arquitetura de produção (Vercel + Neon Postgres)
 
-## Auditoria de compatibilidade com a Vercel
-
-| Componente | Requisito operacional | Vercel (funções serverless) | Decisão |
-|---|---|---|---|
-| Frontend web (Expo + RN Web) | Arquivos estáticos + rewrite de SPA | Compatível | **Vercel** (`apps/mobile/vercel.json`) |
-| API FastAPI | Processo Python | Possível em funções Python | Viável, mas os itens abaixo impedem |
-| Índice FAISS e SQLite | Disco gravável **persistente** entre requisições e deploys | Sistema de arquivos das funções é efêmero/somente leitura fora de `/tmp` | Incompatível sem trocar a persistência |
-| Modelo de embeddings (ONNX, ~120 MB + runtime) | Download e cache persistentes, memória | Pacote de função tem limite de tamanho; cache perdido a cada instância fria | Incompatível na prática |
-| Ingestão/reindexação de PDFs | Execução longa em segundo plano | Funções têm duração máxima e não mantêm threads após a resposta | Incompatível |
-| Uploads de documentos | Armazenamento persistente | Exigiria armazenamento externo (blob) | Incompatível sem mudança |
-
-**Conclusão:** frontend estático na **Vercel**; backend como **contêiner Docker com disco persistente** num serviço
-compatível (blueprint para **Render** em `render.yaml`; Railway e Fly.io também servem). Essa arquitetura preserva
-o pipeline local (SQLite + FAISS em disco) sem reescrita. Mover o backend para a Vercel exigiria trocar SQLite por
-Postgres gerenciado, FAISS por banco vetorial gerenciado (ex.: pgvector), embeddings por API remota e ingestão por
-fila — mudanças documentadas como alternativa, não necessárias para os requisitos.
+## Visão geral
 
 ```mermaid
 flowchart LR
-  U[Navegador / Expo Go] -->|HTTPS| V[Vercel: build estático dist/]
-  U -->|HTTPS + CORS| B[Backend Docker\nuvicorn 1 worker]
-  B --> D[(Disco persistente /var/data\nSQLite, FAISS, uploads,\ncache do modelo, relatórios)]
-  B -->|opcional| A[(API Claude)]
+  U[Navegador / Expo Go] -->|HTTPS| V[Vercel]
+  subgraph V[Projeto Vercel único]
+    S[Site estático\napps/mobile/dist]
+    F[Função Python 3.12\napi/index.py → FastAPI\nmaxDuration 300 s]
+    C[Vercel Cron diário\n/api/cron/ingestion]
+  end
+  F --> N[(Neon Postgres\ndocumentos, trechos, originais,\nvetores pgvector, histórico,\navaliações, diário, travas)]
+  F -->|/tmp| M[Cache do modelo\nde embeddings]
+  F -->|opcional| A[(API Claude)]
+  C --> F
   G[GitHub] -->|push/PR| CI[GitHub Actions: testes]
-  G -->|Git integration| V
+  G -->|integração Git| V
+  L[Máquina da equipe\nscripts/ingest_documents.py] -->|DATABASE_URL| N
 ```
 
-## Persistência e operação
+## Auditoria de compatibilidade e decisões
 
-| Item | Implementação |
+| Requisito do backend | Restrição da Vercel | Solução adotada |
+|---|---|---|
+| Persistir documentos, metadados e histórico | Sistema de arquivos efêmero (apenas `/tmp`) | Postgres (Neon) via `DATABASE_URL`; SQLite continua para uso local |
+| Índice vetorial persistente | Idem | **pgvector** na mesma base (`chunk_vectors`, distância de cosseno `<=>`), com chave estrangeira para `chunks` (remover trecho remove o vetor) |
+| Reindexar sem acesso aos arquivos | O pacote da função não contém os PDFs da equipe | Originais guardados no banco (`document_files`) |
+| Ingestão longa | Duração máxima por chamada; sem trabalho em segundo plano após a resposta | Ingestão **síncrona em lotes** com orçamento (`INGESTION_TIME_BUDGET_SECONDS`, padrão 240 s), fila de pendentes no banco, ao menos 1 documento por chamada, continuação automática pela interface e cron diário |
+| Execuções concorrentes | Várias instâncias simultâneas | **Trava no banco** (lease com expiração) para ingestão; migrações com `pg_advisory_xact_lock` |
+| Modelo de embeddings (~120 MB) | Pacote limitado; cold starts | Modelo baixado sob demanda para `/tmp` (não entra no pacote); carga preguiçosa (health e listagens não carregam o modelo) |
+| Tamanho do pacote | Limite de pacote descompactado da função (500 MB na documentação atual; 250 MB em páginas antigas) | Dependências enxutas (sem FAISS/uvicorn); pacote medido pelo `vercel build`: **~221 MB** |
+| Upload | Corpo de requisição limitado a 4,5 MB | `MAX_UPLOAD_SIZE_MB=4` na Vercel; arquivos maiores pela CLI direto no banco |
+| Ciclo de vida da aplicação | Lifespan não é garantido em todos os modos | Contêiner criado sob demanda na primeira requisição |
+| Caminho reescrito | `/api/*` é reescrito para `/api/index?path=…` | Adaptador ASGI restaura o caminho original (`app/core/vercel.py`) |
+| CORS | — | Web e API na mesma origem; apps nativos não usam CORS |
+
+O modo local (SQLite + FAISS + execução em segundo plano) e a alternativa com contêiner Docker e disco persistente
+([DEPLOY_BACKEND.md](DEPLOY_BACKEND.md)) continuam disponíveis; o código seleciona o modo pelas variáveis.
+
+## Dados
+
+| Tabela | Conteúdo |
 |---|---|
-| Banco | SQLite em `/var/data/database/acervo.sqlite3` (WAL). Migrações versionadas por `PRAGMA user_version` aplicadas na inicialização. |
-| Arquivos | Uploads em `/var/data/uploads`; documentos públicos versionados entram na imagem em `/app/Documentos` (somente leitura). |
-| Índice vetorial | `/var/data/indexes/faiss.index` + `faiss.meta.json` (impressão digital do modelo). Reconstrução automática se inconsistente; reindexação obrigatória se o modelo mudar. |
-| Modelo de embeddings | Cache em `/var/data/models` (`EMBEDDING_CACHE_DIR`), baixado uma vez. |
-| Inicialização | `AUTO_INGEST_ON_STARTUP=true` indexa documentos novos/alterados da imagem a cada deploy (idempotente). |
-| Retenção | Histórico de chat expurgado após `HISTORY_RETENTION_DAYS`; remoção de documento limpa vetores, trechos e upload. |
-| Escala | **1 instância, 1 worker** (SQLite + índice em memória do processo). Escalar exige banco/índice compartilhados. |
+| `documents`, `chunks` | Metadados, estado de processamento, trechos com página/seção |
+| `chunk_vectors` | Vetor de cada trecho (pgvector) |
+| `document_files` | Arquivo original (bytea) |
+| `kv` | Metadados do índice (impressão digital do modelo), parâmetros ajustados, travas |
+| `ingestion_runs`, `chat_interactions`, `evaluation_runs`, `evaluation_results`, `mentor_log` | Execuções, histórico, avaliações e diário |
+| `schema_migrations` | Versão do esquema |
+
+Migrações versionadas e idempotentes rodam na primeira conexão de cada instância (serializadas por advisory lock).
+A avaliação sintética usa um banco **descartável em `/tmp`** (SQLite + vetores em arquivo) para nunca misturar
+fixtures ao acervo real; os **resultados** da avaliação são gravados no Postgres.
 
 ### Backup e recuperação
-1. Backup diário do disco (snapshot da plataforma, se disponível) ou cópia de `/var/data/database` e `/var/data/uploads`.
-   Use `sqlite3 acervo.sqlite3 ".backup backup.sqlite3"` para cópia consistente com o serviço ativo.
-2. O índice FAISS é **derivado**: pode ser reconstruído a partir do SQLite (automático ao iniciar) ou com
-   **Reindexar tudo**. Não é crítico no backup.
-3. Restauração: parar o serviço, repor `database/` e `uploads/`, iniciar; verificar `/api/ingestion/status`
-   (`consistent: true`).
+- O Neon mantém histórico e permite restaurar um *branch* para um ponto no tempo (confira a janela de retenção do
+  seu plano). Antes de mudanças grandes, crie um *branch* de backup no painel.
+- Exportação manual: `pg_dump "$DATABASE_URL" -Fc -f acervo.dump`; restauração: `pg_restore -d "$DATABASE_URL" acervo.dump`.
+- Os vetores são derivados: podem ser recalculados por **Reindexar tudo** a partir dos originais no banco.
 
 ## Segurança em produção
-- `APP_ENV=production` exige `ADMIN_TOKEN` para upload, indexação, exclusão, avaliação e configurações; sem token,
-  essas operações ficam bloqueadas.
-- `CORS_ORIGINS` = domínio(s) exatos da Vercel; `*` é rejeitado na inicialização.
-- Segredos (`LLM_API_KEY`, `ADMIN_TOKEN`) apenas no painel da hospedagem do backend. A Vercel recebe somente
-  `EXPO_PUBLIC_API_URL` (pública).
-- Contêiner sem root; somente `/var/data` gravável; HTTPS terminado pela plataforma; `--proxy-headers`.
-- Limite de perguntas por minuto (`RATE_LIMIT_PER_MINUTE`) para controlar abuso e custo do LLM.
-- Logs JSON sem texto das perguntas (hash + tamanho) e sem segredos.
+- `APP_ENV=production` automático na Vercel: upload, indexação, exclusão, avaliação e configurações exigem
+  `ADMIN_TOKEN`; sem ele, ficam bloqueadas.
+- Sem `DATABASE_URL`, a API recusa alterar o acervo (503 `armazenamento_efemero`) para não perder dados em silêncio.
+- `CRON_SECRET` protege a rota agendada. Segredos ficam só nas variáveis da Vercel; o bundle web não contém chaves
+  (verificado no CI).
+- Logs JSON sem texto das perguntas. Limite de perguntas por minuto **por instância** (memória).
 
 ## Observabilidade
-- Saúde: `GET /api/health` (usado pelo health check da plataforma e do Docker).
-- Ingestão: `GET /api/ingestion/status` (consistência índice ↔ banco, compatibilidade do modelo).
-- Métricas de uso: `GET /api/stats` (latências médias, taxa de citações válidas, recusas, sucesso da ingestão).
-- Logs estruturados no stdout (visíveis no painel da plataforma).
+`/api/health` (banco, armazenamento, modelo, índice, LLM), `/api/ingestion/status` (execução atual, última execução,
+consistência índice ↔ banco), `/api/stats` (latências e métricas de uso), logs da função no painel da Vercel.
+
+## Alternativas (se algum limite da plataforma mudar)
+- **Pacote acima do limite do plano:** usar provedor de embeddings remoto (exige implementar um novo
+  `EmbeddingProvider` e chave) ou hospedar a API como contêiner (DEPLOY_BACKEND.md) mantendo a web na Vercel.
+- **Indexações muito longas:** indexar pela CLI na máquina da equipe (opção B do DEPLOY_VERCEL.md).
 
 ## Estados da entrega
-- **Implementado:** código, configuração de deploy (`Dockerfile`, `render.yaml`, `vercel.json`, CI).
-- **Validado localmente:** build web de produção, testes, E2E contra backend real, modo produção do backend.
-- **Preparado para deploy:** sim (ver [TESTES_PRODUCAO.md](TESTES_PRODUCAO.md)).
-- **Preview publicado e validado:** **não** — requer contas Vercel/Render da equipe.
-- **Produção publicada:** **não** — requer autorização explícita do responsável.
+- **Implementado e validado localmente:** sim — `vercel build` oficial concluído; a função gerada foi executada pelo
+  handler do runtime Python da Vercel contra Postgres + pgvector; simulação local web + API na mesma origem com
+  E2E 11/11 (ver [TESTES_PRODUCAO.md](TESTES_PRODUCAO.md)).
+- **Preparado para deploy na Vercel:** sim.
+- **Preview publicado e validado:** não — requer a conta Vercel/Neon da equipe.
+- **Produção publicada:** não — requer autorização explícita do responsável.

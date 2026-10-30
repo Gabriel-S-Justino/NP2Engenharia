@@ -8,6 +8,8 @@ Interface `VectorStore` com duas implementações intercambiáveis:
   binário nativo do FAISS (sem pickle).
 * `NumpyVectorStore`: mesma métrica, persistida em `.npy` com `allow_pickle=False`.
   Útil quando o FAISS não está disponível na plataforma.
+* `PgVectorStore`: vetores numa tabela Postgres com a extensão **pgvector** (`<=>` = distância de cosseno),
+  usada em produção serverless (Vercel + Neon), onde não há disco persistente.
 
 Os IDs inteiros do índice são o `vector_id` da tabela `chunks` no SQLite; todos os
 metadados ficam no banco relacional. Um arquivo JSON ao lado do índice registra a
@@ -256,7 +258,99 @@ class NumpyVectorStore(VectorStore):
         return set(self._ids.tolist())
 
 
-def build_vector_store(name: str, directory: Path) -> VectorStore:
+class PgVectorStore(VectorStore):
+    """Vetores no Postgres (pgvector). Busca exata por distância de cosseno; similaridade = 1 − distância.
+
+    Os metadados do índice (impressão digital e dimensão) ficam na tabela `kv`. Remover um trecho do banco
+    remove seu vetor (chave estrangeira com ON DELETE CASCADE), o que mantém a consistência.
+    """
+
+    backend = "pgvector"
+    META_KEY = "vector_index_meta"
+
+    def __init__(self, db):
+        self.db = db
+        self._lock = threading.RLock()
+        self.fingerprint: str | None = None
+        self.dim: int | None = None
+        self.directory = None
+
+    @staticmethod
+    def _literal(vector: np.ndarray) -> str:
+        return "[" + ",".join(f"{float(v):.7g}" for v in vector) + "]"
+
+    def _write_meta(self) -> None:
+        self.db.set_kv(self.META_KEY, json.dumps({"fingerprint": self.fingerprint, "dim": self.dim, "metric": METRIC}))
+
+    def _reset_storage(self, dim: int) -> None:
+        self.db.execute("DELETE FROM chunk_vectors")
+
+    def reset(self, fingerprint: str, dim: int) -> None:
+        with self._lock:
+            self.fingerprint, self.dim = fingerprint, dim
+            self._reset_storage(dim)
+            self._write_meta()
+
+    def configure(self, fingerprint: str, dim: int) -> None:
+        with self._lock:
+            if self.fingerprint and self.fingerprint != fingerprint and self.count() > 0:
+                raise IndexIncompatibleError(
+                    f"O índice existente foi criado com '{self.fingerprint}', mas o modelo atual é "
+                    f"'{fingerprint}'. Reindexe o acervo para continuar."
+                )
+            if self.fingerprint != fingerprint or self.dim != dim:
+                self.reset(fingerprint, dim)
+
+    def load(self) -> bool:
+        raw = self.db.get_kv(self.META_KEY)
+        if not raw:
+            return False
+        meta = json.loads(raw)
+        self.fingerprint, self.dim = meta.get("fingerprint"), meta.get("dim")
+        return True
+
+    def save(self) -> None:
+        """Cada operação já é gravada no banco; mantém apenas os metadados atualizados."""
+        if self.fingerprint:
+            self._write_meta()
+
+    def add(self, ids: list[int], vectors: np.ndarray) -> None:
+        if not ids:
+            return
+        with self.db.transaction() as tx:
+            for vector_id, vector in zip(ids, vectors, strict=True):
+                tx.execute(
+                    """INSERT INTO chunk_vectors(vector_id, embedding) VALUES(?, ?::vector)
+                       ON CONFLICT(vector_id) DO UPDATE SET embedding = excluded.embedding""",
+                    (int(vector_id), self._literal(vector)),
+                )
+
+    def remove(self, ids: list[int]) -> int:
+        if not ids:
+            return 0
+        return int(self.db.execute("DELETE FROM chunk_vectors WHERE vector_id = ANY(?)", ([int(i) for i in ids],)).rowcount)
+
+    def search(self, vector: np.ndarray, k: int) -> list[tuple[int, float]]:
+        literal = self._literal(vector)
+        rows = self.db.query(
+            """SELECT vector_id, 1 - (embedding <=> ?::vector) AS score FROM chunk_vectors
+               ORDER BY embedding <=> ?::vector LIMIT ?""",
+            (literal, literal, int(k)),
+        )
+        return [(int(r["vector_id"]), float(r["score"])) for r in rows]
+
+    def count(self) -> int:
+        return int(self.db.scalar("SELECT COUNT(*) FROM chunk_vectors"))
+
+    def ids(self) -> set[int]:
+        return {int(r[0]) for r in self.db.query("SELECT vector_id FROM chunk_vectors")}
+
+
+def build_vector_store(name: str, directory: Path, db=None) -> VectorStore:
+    if name == "pgvector":
+        if db is None or getattr(db, "dialect", None) != "postgres":
+            raise ValueError("VECTOR_STORE=pgvector exige banco Postgres.")
+        return PgVectorStore(db)
     if name == "numpy":
         return NumpyVectorStore(directory)
     return FaissVectorStore(directory)

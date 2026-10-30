@@ -21,7 +21,8 @@ REQUIRED = [
     "README.md", "LICENSE", ".env.example", ".gitignore", "Dockerfile", "docker-compose.yml", "render.yaml",
     "Documentos/README.md", "Documentos/manifest.json",
     "backend/app/main.py", "backend/requirements.txt", "backend/pyproject.toml", "backend/.env.example",
-    "apps/mobile/package.json", "apps/mobile/app.json", "apps/mobile/vercel.json",
+    "apps/mobile/package.json", "apps/mobile/app.json", "vercel.json", "api/index.py", "requirements.txt",
+    ".python-version", "scripts/vercel_local.py",
     "tests/acceptance/matriz_fixtures.json", "tests/acceptance/matriz_acervo_real.json",
     "docs/RELATORIO.md", "docs/ARQUITETURA.md", "docs/FONTES.md", "docs/MATRIZ_TESTES.md",
     "docs/DIARIO_VALIDACAO_IA.md", "docs/DIVISAO_TAREFAS.md", "docs/ROTEIRO_APRESENTACAO.md", "docs/LIMITACOES.md",
@@ -53,8 +54,12 @@ def main() -> int:
     secrets_found = [p for p in ROOT.glob(".env") if p.exists()]
     results.append(("Nenhum .env versionado", not subprocess.run(["git", "ls-files", ".env"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),
                     f".env local presente: {bool(secrets_found)} (ignorado pelo git)"))
-    results.append(run("Backend: ruff", [str(PY), "-m", "ruff", "check", "app", "tests", "../scripts"], ROOT / "backend"))
-    results.append(run("Backend: pytest", [str(PY), "-m", "pytest", "-q"], ROOT / "backend"))
+    results.append(run("Backend: ruff", [str(PY), "-m", "ruff", "check", "app", "tests", "../scripts", "../api"], ROOT / "backend"))
+    pg = " + Postgres/pgvector" if os.environ.get("TEST_DATABASE_URL") else " (Postgres ignorado: defina TEST_DATABASE_URL)"
+    results.append(run(f"Backend: pytest{pg}", [str(PY), "-m", "pytest", "-q"], ROOT / "backend"))
+    results.append(run("Função Vercel: api/index.py importa em modo serverless",
+                       [str(PY), "-c", "import runpy; runpy.run_path('api/index.py')"], ROOT,
+                       {"VERCEL": "1", "EMBEDDING_PROVIDER": "hashing", "ALLOW_EPHEMERAL_STORAGE": "true"}))
     with tempfile.TemporaryDirectory() as tmp:
         results.append(run("Matriz de avaliação (fixtures, hashing, demo)", [str(PY), "scripts/run_evaluation.py"], ROOT,
                            {"EMBEDDING_PROVIDER": "hashing", "LLM_PROVIDER": "demo", "DATA_DIR": tmp}))
@@ -65,7 +70,8 @@ def main() -> int:
         results.append(run("Frontend: lint", [npm, "run", "lint"], mobile, {"EXPO_OFFLINE": "1"}))
         results.append(run("Frontend: testes", [npm, "run", "test:ci"], mobile))
         if not args.skip_build:
-            results.append(run("Frontend: build web", [npm, "run", "build:web"], mobile, {"EXPO_OFFLINE": "1"}))
+            results.append(run("Frontend: build web (mesma origem)", [npm, "run", "build:web"], mobile,
+                               {"EXPO_OFFLINE": "1", "EXPO_PUBLIC_API_URL": ""}))
 
     ok = all(r[1] for r in results)
     lines = [f"# Verificação do projeto — {datetime.now(UTC).isoformat(timespec='seconds')}", "",

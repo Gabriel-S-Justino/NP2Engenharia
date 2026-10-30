@@ -4,7 +4,9 @@ Trabalho da disciplina **Engenharia de Inteligência Artificial**. Aplicação *
 Generation) web e mobile que responde perguntas **somente** com base em documentos selecionados pela equipe,
 mostra os trechos que sustentam cada resposta e **recusa** quando não há evidência suficiente.
 
-> **Estado atual:** software implementado e validado localmente com documentos **sintéticos de teste**.
+> **Estado atual:** software implementado, validado localmente com documentos **sintéticos de teste** e
+> **pronto para deploy da aplicação completa na Vercel** (web + API + Postgres/pgvector) — ver
+> [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md).
 > O acervo **real** (mín. 10 documentos ou 25 páginas úteis) ainda precisa ser reunido e validado pela equipe
 > em [`Documentos/`](Documentos/README.md). Veja a [matriz de conformidade](docs/CONFORMIDADE.md).
 
@@ -24,7 +26,7 @@ mostra os trechos que sustentam cada resposta e **recusa** quando não há evid�
 | Área | O que faz |
 |---|---|
 | Ingestão | PDF/TXT/MD de `Documentos/` e uploads; SHA-256 para detectar alterações e duplicatas; páginas e seções preservadas; falhas por documento sem interromper o lote; arquivos originais nunca alterados |
-| Indexação | Chunks configuráveis (800/120 caracteres), embeddings semânticos locais (`fastembed`), índice **FAISS** persistido em disco com verificação de compatibilidade e reconstrução automática |
+| Indexação | Chunks configuráveis (800/120 caracteres), embeddings semânticos locais (`fastembed`), índice **FAISS** em disco (local) ou **pgvector** no Postgres (Vercel), com verificação de compatibilidade e reparo automático |
 | Recuperação | Similaridade de cosseno, top-k, limiar calibrável, filtros por documento/tipo/assunto, cobertura de termos ponderada por IDF |
 | Geração | Claude (`LLM_PROVIDER=anthropic`) com contexto delimitado, ou **modo demonstração** extrativo e determinístico (não é LLM) |
 | Citações | Montadas pelo backend a partir dos metadados reais; rótulos inventados pelo modelo são removidos e sinalizados |
@@ -34,13 +36,17 @@ mostra os trechos que sustentam cada resposta e **recusa** quando não há evid�
 
 ## Tecnologias
 
-Backend: Python 3.11+ (testado em 3.13), FastAPI, Pydantic, SQLite, FAISS, fastembed (ONNX), pypdf, SDK `anthropic`, Pytest.
+Backend: Python 3.11+ (testado em 3.13; função da Vercel em 3.12), FastAPI, Pydantic, SQLite/FAISS (local) ou
+Postgres + pgvector (produção), psycopg, fastembed (ONNX), pypdf, SDK `anthropic`, Pytest.
 Frontend: React Native 0.88, Expo SDK 58, Expo Router, React Native Web, TypeScript 6, Jest + Testing Library.
-Deploy: frontend estático na **Vercel**; backend em contêiner com **disco persistente** (Render/Railway/Fly.io).
+Deploy: **tudo na Vercel** — site estático + função Python em `/api` + banco Neon (Marketplace). Alternativa:
+API em contêiner (Dockerfile/Render).
 
 ## Estrutura
 
 ```
+├── api/index.py          # entrypoint da função Python na Vercel (expõe o FastAPI em /api)
+├── vercel.json           # build da web, função, reescritas, cron · requirements.txt/.python-version da função
 ├── apps/mobile/          # Expo (web/Android/iOS): src/app (rotas), src/components, src/services, src/theme…
 ├── backend/              # FastAPI: app/api, app/core, app/services (pipeline RAG), app/repositories, tests/
 ├── Documentos/           # documentos REAIS da equipe (README, manifest.json)
@@ -82,7 +88,7 @@ cd backend && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 80
 cd apps/mobile && EXPO_PUBLIC_API_URL=http://127.0.0.1:8000 npx expo start --web
 ```
 
-Documentação da API (OpenAPI): http://127.0.0.1:8000/docs
+Documentação da API (OpenAPI): http://127.0.0.1:8000/api/docs
 
 ### Android e iOS (Expo)
 
@@ -129,6 +135,13 @@ Ele **não é um LLM**, não parafraseia nem infere — a interface o identifica
 cd backend && .venv/bin/python -m pytest -q
 ```
 
+Para incluir os testes da configuração de produção (Postgres + pgvector), aponte para um banco **de teste**
+descartável:
+
+```bash
+cd backend && TEST_DATABASE_URL=postgresql://usuario:senha@127.0.0.1:5432/acervo_test .venv/bin/python -m pytest -q
+```
+
 ```bash
 cd apps/mobile && npm run typecheck && npm run lint && npm run test:ci && npm run build:web
 ```
@@ -143,14 +156,26 @@ backend/.venv/bin/python scripts/verify_project.py
 
 Resultados reais registrados: [docs/MATRIZ_TESTES.md](docs/MATRIZ_TESTES.md) e [docs/TESTES_PRODUCAO.md](docs/TESTES_PRODUCAO.md).
 
-## Deploy
+## Deploy na Vercel (aplicação completa)
 
-- Frontend web na Vercel: [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)
-- Backend com disco persistente: [docs/DEPLOY_BACKEND.md](docs/DEPLOY_BACKEND.md)
-- Arquitetura de produção, segurança e operação: [docs/PRODUCAO.md](docs/PRODUCAO.md) · [variáveis](docs/VARIAVEIS_AMBIENTE.md) · [rollback](docs/ROLLBACK.md)
+1. Importe o repositório na Vercel (Root Directory = raiz, preset *Other*; o `vercel.json` define o resto).
+2. Conecte um banco **Neon** pelo Marketplace (define `DATABASE_URL`).
+3. Defina `ADMIN_TOKEN` e `CRON_SECRET` (e, opcionalmente, `LLM_PROVIDER=anthropic` + `LLM_API_KEY`).
+4. Faça o deploy, abra `/api/health` e envie documentos pela interface (≤ 4 MB) ou, para o acervo inicial, indexe
+   da sua máquina direto no banco:
 
-**Estado do deploy: preparado para deploy** (configuração e build verificados localmente). Nenhum deploy remoto
-foi realizado: exige contas e credenciais da equipe.
+```bash
+DATABASE_URL='<connection string do Neon>' backend/.venv/bin/python scripts/ingest_documents.py
+```
+
+Guia completo, limites da plataforma e solução de problemas: [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) ·
+arquitetura de produção: [docs/PRODUCAO.md](docs/PRODUCAO.md) · [variáveis](docs/VARIAVEIS_AMBIENTE.md) ·
+[testes de produção](docs/TESTES_PRODUCAO.md) · [rollback](docs/ROLLBACK.md) · alternativa em contêiner:
+[docs/DEPLOY_BACKEND.md](docs/DEPLOY_BACKEND.md).
+
+**Estado do deploy: preparado para deploy na Vercel.** Validado com o `vercel build` oficial, com a função gerada
+executada pelo handler do runtime Python da Vercel contra Postgres + pgvector e com uma simulação local (E2E 11/11).
+Nenhum deploy remoto foi realizado: exige as contas da equipe e autorização.
 
 ## Documentação acadêmica
 
@@ -167,7 +192,10 @@ UI/UX: [UI_UX](docs/UI_UX.md) · [Design system](docs/DESIGN_SYSTEM.md) · [Flux
 - Busca semântica (`fastembed`) não pôde ser executada neste ambiente de desenvolvimento (Hugging Face bloqueado);
   os testes usaram o provedor **lexical** `hashing`. O limiar 0,35 do `fastembed` precisa ser **calibrado**.
 - Geração com LLM real não foi executada (sem credencial); o adaptador foi testado com cliente simulado.
-- PDFs digitalizados exigem OCR opcional. Sem autenticação de usuários finais: o chat é público na implantação.
+- PDFs digitalizados exigem OCR opcional (indisponível na função da Vercel). Sem autenticação de usuários finais: o
+  chat é público na implantação.
+- Na Vercel: upload ≤ 4 MB pela interface, primeira resposta lenta após ociosidade (download do modelo), indexação
+  em lotes de ~240 s.
 
 Detalhes em [docs/LIMITACOES.md](docs/LIMITACOES.md).
 
@@ -175,7 +203,8 @@ Detalhes em [docs/LIMITACOES.md](docs/LIMITACOES.md).
 
 | Sintoma | Causa provável e solução |
 |---|---|
-| "Backend indisponível" na interface | Backend parado ou `EXPO_PUBLIC_API_URL` incorreta. Teste `curl http://127.0.0.1:8000/api/health`. |
+| "Backend indisponível" na interface | Local: backend parado ou `EXPO_PUBLIC_API_URL` incorreta (teste `curl http://127.0.0.1:8000/api/health`). Vercel: veja os logs da função e `/api/health`. |
+| "Armazenamento efêmero" / 503 ao indexar na Vercel | Falta `DATABASE_URL`: conecte o Neon e faça redeploy. |
 | Celular não conecta | `localhost` aponta para o celular; use o IP do computador e `API_HOST=0.0.0.0`. |
 | "Modelo de embeddings indisponível" | Sem acesso ao Hugging Face na 1ª execução. Libere a rede ou use `EMBEDDING_PROVIDER=hashing` (somente testes). |
 | "Índice incompatível" | O modelo de embeddings mudou. Use **Reindexar tudo** ou `scripts/ingest_documents.py --reindex`. |

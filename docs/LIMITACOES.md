@@ -35,9 +35,24 @@
 - Hospedagem do backend com disco persistente costuma exigir plano pago (verificar preços atuais).
 - O download do modelo de embeddings (~120 MB) exige internet na primeira execução.
 
+## Implantação na Vercel
+- Upload pela interface limitado a 4 MB (limite de 4,5 MB do corpo da requisição); arquivos maiores pela CLI.
+- A primeira pergunta/indexação após ociosidade baixa e carrega o modelo de embeddings (~120 MB) em `/tmp`: pode
+  levar dezenas de segundos ("cold start"). Não medido neste ambiente.
+- Cada chamada de indexação tem orçamento de ~240 s; acervos grandes são processados em vários lotes (automático na
+  interface e pelo cron diário). Um único PDF que demore mais que o limite da função (300 s) não pode ser indexado
+  pela Vercel — use a CLI.
+- OCR não está disponível na função (sem Tesseract): PDFs digitalizados devem ser tratados localmente.
+- Limite de requisições e estado da avaliação "em andamento" são por instância (memória).
+- Plano gratuito do Neon informa 0,5 GB de armazenamento (originais + trechos + vetores); confira limites atuais.
+- Limites de duração/pacote da Vercel variam por plano e mudam com o tempo: o pacote medido (~221 MB) cabe no limite
+  atual informado pela documentação (500 MB) e também no antigo (250 MB).
+- Nenhum deploy real foi feito: comportamento validado com `vercel build`, o handler oficial do runtime Python e
+  uma simulação local, mas não na infraestrutura da Vercel.
+
 ## Operação
-- Uma única instância do backend (SQLite + FAISS local + limite de requisições em memória). Escalar
-  horizontalmente exigiria banco e índice compartilhados.
+- Modo local/contêiner: uma única instância (SQLite + FAISS em disco). Na Vercel, várias instâncias compartilham o
+  Postgres/pgvector (com trava para indexação).
 - Sem autenticação de usuários finais; operações administrativas usam um token compartilhado.
 - Android/iOS: compatibilidade pela arquitetura Expo; **não testado em dispositivos físicos nem emuladores**
   neste ambiente. A web foi testada em Chromium (Playwright) em larguras de celular, tablet e desktop.

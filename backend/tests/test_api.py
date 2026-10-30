@@ -14,7 +14,7 @@ def test_health_and_openapi(client):
     assert health["embeddings"]["semantic"] is False  # hashing nos testes
     assert any("NÃO é semântica" in issue for issue in health["issues"])
     assert health["llm"]["is_llm"] is False
-    schema = client.get("/openapi.json").json()
+    schema = client.get("/api/openapi.json").json()
     for path in ("/api/chat", "/api/documents/upload", "/api/evaluations/run", "/api/mentor-log", "/api/sources/{source_id}"):
         assert path in schema["paths"]
 
@@ -73,8 +73,9 @@ def test_upload_txt_then_delete_removes_file(indexed_client, settings):
     assert response.status_code == 201, response.text
     doc = response.json()["document"]
     assert doc["filename"] == "nova regra.txt"  # nome saneado, sem diretórios
-    stored = settings.uploads_dir / "nova regra.txt"
-    assert stored.exists() and stored.parent == settings.uploads_dir
+    pipeline = indexed_client.app.state.container.pipeline
+    # O original fica guardado no banco (sem gravar em disco, como na Vercel).
+    assert pipeline.documents.load_file(doc["id"]).startswith(b"Regra sint")
     # aguarda a indexação disparada em segundo plano
     indexed_client.app.state.container.pipeline.ingestion.join(timeout=10)
     assert indexed_client.get(f"/api/documents/{doc['id']}").json()["status"] == "processed"
@@ -82,7 +83,7 @@ def test_upload_txt_then_delete_removes_file(indexed_client, settings):
     assert duplicate.status_code == 409
     deleted = indexed_client.delete(f"/api/documents/{doc['id']}").json()
     assert deleted["original_file_deleted"] is True and deleted["removed_vectors"] > 0
-    assert not stored.exists()
+    assert pipeline.documents.load_file(doc["id"]) is None
     assert indexed_client.get(f"/api/documents/{doc['id']}").status_code == 404
 
 

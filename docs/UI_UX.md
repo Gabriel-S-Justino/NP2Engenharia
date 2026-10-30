@@ -53,10 +53,10 @@ selos (modo de geração, nível de evidência, latência) → aviso → respost
 | Tela | Estados |
 |---|---|
 | Chat | conversa vazia; carregando histórico; envio em andamento (botão bloqueado, prevenção de duplicidade); resposta; evidência fraca; fontes divergentes; sem evidência; fora do escopo; instrução maliciosa ignorada; nenhum documento indexado (envio desabilitado); erro de conexão/timeout com "Tentar novamente"; provedor de IA indisponível (mostra trechos); citações inválidas; índice indisponível |
-| Documentos | carregando (skeleton); vazio; erro; aguardando; processando com progresso real (n de m); processado; falha com motivo; fora do índice; upload em andamento/concluído; arquivo não suportado; acima do limite; duplicado; confirmação de remoção e de reindexação |
+| Documentos | carregando (skeleton); vazio; erro; aguardando; processando com progresso real (n de m); lotes pendentes na Vercel ("Lote N concluído, X pendente(s)", continuação automática); processado; falha com motivo; fora do índice; upload em andamento/concluído; arquivo não suportado; acima do limite; duplicado; confirmação de remoção e de reindexação |
 | Fontes | lista; filtro por tipo; detalhe; falha ao recuperar fonte; metadados "Não informado" |
 | Avaliação | "Ainda não avaliado"; executando; resultados; abaixo/acima da meta; somente falhas; suíte não pronta; registro de ajuste |
-| Configurações | leitura; edição validada; confirmação de reindexação; token; backend offline |
+| Configurações | leitura; edição validada; confirmação de reindexação; token; backend offline; endereço "mesma origem"; banco/armazenamento persistente e modo serverless |
 
 ## Acessibilidade (WCAG 2.2 AA como referência)
 - Contraste de todos os pares texto/fundo ≥ 4,5:1 nos dois temas — **verificado por teste automatizado**

@@ -1,0 +1,11 @@
+# Dependências da FUNÇÃO PYTHON na Vercel (api/index.py). O ambiente local usa backend/requirements*.txt.
+# Sem uvicorn (a Vercel executa o ASGI) e sem faiss-cpu (na Vercel o índice vetorial é o pgvector no Postgres).
+fastapi==0.162.0
+pydantic==2.14.2
+pydantic-settings==2.16.2
+python-multipart==0.0.32
+pypdf==6.21.4
+numpy==2.5.4
+fastembed==0.9.1
+anthropic==2.3.0
+psycopg[binary]==3.3.6

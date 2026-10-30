@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import json
-import sqlite3
-from datetime import UTC, datetime
+from typing import Any
 
-from app.repositories.database import Database
+from app.repositories.database import Database, now_iso
 from app.schemas.models import ChunkOut, DocumentSummary, SourceMetadata
 from app.services.chunking import Chunk
 
-
-def now_iso() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
+__all__ = ["DocumentRepository", "now_iso", "row_to_chunk", "row_to_document"]
 
 
-def row_to_document(row: sqlite3.Row) -> DocumentSummary:
+def row_to_document(row: Any) -> DocumentSummary:
     metadata = json.loads(row["metadata_json"] or "{}")
     return DocumentSummary(
         id=row["id"],
@@ -36,7 +33,7 @@ def row_to_document(row: sqlite3.Row) -> DocumentSummary:
     )
 
 
-def row_to_chunk(row: sqlite3.Row) -> ChunkOut:
+def row_to_chunk(row: Any) -> ChunkOut:
     return ChunkOut(
         id=row["id"],
         document_id=row["document_id"],
@@ -55,25 +52,25 @@ class DocumentRepository:
         self.db = db
 
     # Documentos -------------------------------------------------------------
-    def get_row(self, document_id: str) -> sqlite3.Row | None:
+    def get_row(self, document_id: str) -> Any | None:
         return self.db.query_one("SELECT * FROM documents WHERE id = ?", (document_id,))
 
     def get(self, document_id: str) -> DocumentSummary | None:
         row = self.get_row(document_id)
         return row_to_document(row) if row else None
 
-    def get_by_path(self, origin: str, relative_path: str) -> sqlite3.Row | None:
+    def get_by_path(self, origin: str, relative_path: str) -> Any | None:
         return self.db.query_one(
             "SELECT * FROM documents WHERE origin = ? AND relative_path = ?", (origin, relative_path)
         )
 
-    def find_by_sha(self, sha256: str, *, exclude_id: str | None = None) -> sqlite3.Row | None:
+    def find_by_sha(self, sha256: str, *, exclude_id: str | None = None) -> Any | None:
         return self.db.query_one(
             "SELECT * FROM documents WHERE sha256 = ? AND status != 'excluded' AND id != ? ORDER BY created_at LIMIT 1",
             (sha256, exclude_id or ""),
         )
 
-    def all_rows(self, origin: str | None = None) -> list[sqlite3.Row]:
+    def all_rows(self, origin: str | None = None) -> list[Any]:
         if origin:
             return self.db.query("SELECT * FROM documents WHERE origin = ? ORDER BY relative_path", (origin,))
         return self.db.query("SELECT * FROM documents ORDER BY relative_path")
@@ -96,16 +93,16 @@ class DocumentRepository:
             where.append("file_type = ?")
             params.append(file_type)
         if search:
-            where.append("(filename LIKE ? OR metadata_json LIKE ?)")
-            like = f"%{search}%"
+            where.append("(LOWER(filename) LIKE ? OR LOWER(metadata_json) LIKE ?)")
+            like = f"%{search.lower()}%"
             params += [like, like]
         clause = f"WHERE {' AND '.join(where)}" if where else ""
         order = {
-            "name": "filename COLLATE NOCASE ASC",
-            "updated": "updated_at DESC",
-            "status": "status ASC, filename COLLATE NOCASE ASC",
-            "size": "size_bytes DESC",
-        }.get(sort, "filename COLLATE NOCASE ASC")
+            "name": "LOWER(filename) ASC, id ASC",
+            "updated": "updated_at DESC, id ASC",
+            "status": "status ASC, LOWER(filename) ASC",
+            "size": "size_bytes DESC, id ASC",
+        }.get(sort, "LOWER(filename) ASC, id ASC")
         total = int(self.db.scalar(f"SELECT COUNT(*) FROM documents {clause}", params))
         rows = self.db.query(
             f"SELECT * FROM documents {clause} ORDER BY {order} LIMIT ? OFFSET ?",
@@ -188,13 +185,14 @@ class DocumentRepository:
         with self.db.transaction() as conn:
             conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,))
             for chunk, flag in zip(chunks, suspicious, strict=True):
-                cursor = conn.execute(
+                row = conn.execute(
                     """INSERT INTO chunks(id, document_id, ordinal, page, section, text, char_start, char_end,
-                                          content_sha, suspicious) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                          content_sha, suspicious) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       RETURNING vector_id""",
                     (chunk.id, document_id, chunk.ordinal, chunk.page, chunk.section, chunk.text,
                      chunk.char_start, chunk.char_end, chunk.content_sha, int(flag)),
-                )
-                vector_ids.append(int(cursor.lastrowid))
+                ).fetchone()
+                vector_ids.append(int(row[0]))
         return vector_ids
 
     def chunk_vector_ids(self, document_id: str) -> list[int]:
@@ -203,7 +201,7 @@ class DocumentRepository:
     def delete_chunks(self, document_id: str) -> int:
         return self.db.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
 
-    def chunks_by_vector_ids(self, vector_ids: list[int]) -> dict[int, sqlite3.Row]:
+    def chunks_by_vector_ids(self, vector_ids: list[int]) -> dict[int, Any]:
         if not vector_ids:
             return {}
         placeholders = ",".join("?" * len(vector_ids))
@@ -215,7 +213,7 @@ class DocumentRepository:
         )
         return {int(r["vector_id"]): r for r in rows}
 
-    def get_chunk(self, chunk_id: str) -> sqlite3.Row | None:
+    def get_chunk(self, chunk_id: str) -> Any | None:
         return self.db.query_one("SELECT * FROM chunks WHERE id = ?", (chunk_id,))
 
     def list_chunks(self, document_id: str, *, page: int, page_size: int) -> tuple[list[ChunkOut], int]:
@@ -226,10 +224,33 @@ class DocumentRepository:
         )
         return [row_to_chunk(r) for r in rows], total
 
-    def indexed_chunk_rows(self) -> list[sqlite3.Row]:
+    def indexed_chunk_rows(self) -> list[Any]:
         return self.db.query(
             """SELECT c.vector_id, c.text FROM chunks c JOIN documents d ON d.id = c.document_id
                WHERE d.status = 'processed' ORDER BY c.vector_id"""
+        )
+
+    # Arquivos originais guardados no banco ------------------------------------------------
+    def save_file(self, document_id: str, content: bytes, sha256: str) -> None:
+        self.db.execute(
+            """INSERT INTO document_files(document_id, content, sha256, size_bytes, created_at) VALUES(?, ?, ?, ?, ?)
+               ON CONFLICT(document_id) DO UPDATE SET content = excluded.content, sha256 = excluded.sha256,
+               size_bytes = excluded.size_bytes, created_at = excluded.created_at""",
+            (document_id, content, sha256, len(content), now_iso()),
+        )
+
+    def load_file(self, document_id: str) -> bytes | None:
+        value = self.db.scalar("SELECT content FROM document_files WHERE document_id = ?", (document_id,))
+        return None if value is None else bytes(value)
+
+    def stored_file_sha(self, document_id: str) -> str | None:
+        return self.db.scalar("SELECT sha256 FROM document_files WHERE document_id = ?", (document_id,))
+
+    def stored_documents(self) -> list[Any]:
+        """Documentos cujo original está guardado no banco (uploads e, com Postgres, todo o acervo)."""
+        return self.db.query(
+            """SELECT d.*, f.sha256 AS file_sha, f.size_bytes AS file_size FROM documents d
+               JOIN document_files f ON f.document_id = d.id ORDER BY d.relative_path"""
         )
 
     def total_chunks(self) -> int:

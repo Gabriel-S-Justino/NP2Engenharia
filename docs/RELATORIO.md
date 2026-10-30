@@ -72,8 +72,10 @@ resultados abaixo referem-se aos documentos sintéticos (3 arquivos fictícios, 
 ## 8. Arquitetura e implementação
 
 Ver [ARQUITETURA.md](ARQUITETURA.md). Resumo: frontend Expo (web/Android/iOS) → API FastAPI → pipeline RAG
-(ingestão, embeddings, FAISS, recuperação, avaliação de evidência, geração, citações) → SQLite + índice FAISS em
-disco. Parâmetros:
+(ingestão, embeddings, busca vetorial, recuperação, avaliação de evidência, geração, citações) → banco relacional +
+índice vetorial. Localmente: SQLite + FAISS em disco. Em produção, **toda a aplicação roda na Vercel** (site
+estático + função Python) com **Postgres Neon + pgvector**, originais guardados no banco e indexação em lotes
+([PRODUCAO.md](PRODUCAO.md)). Parâmetros:
 
 | Parâmetro | Valor | Justificativa / calibração |
 |---|---|---|
@@ -110,12 +112,13 @@ disco. Parâmetros:
 
 | Conjunto | Quantidade | Resultado | Evidência |
 |---|---|---|---|
-| Backend (Pytest) | 73 testes | 73 aprovados | `cd backend && pytest -q` |
-| Frontend (Jest + Testing Library) | 55 testes | 55 aprovados | `npm run test:ci` |
+| Backend (Pytest) | 82 testes (75 SQLite + 7 Postgres/pgvector) | 82 aprovados | `cd backend && TEST_DATABASE_URL=… pytest -q` |
+| Frontend (Jest + Testing Library) | 59 testes | 59 aprovados | `npm run test:ci` |
 | Matriz RAG sintética (execução final) | 10 casos (6/2/2) | 10/10 = 100% | `docs/resultados/ultima_execucao_fixtures.md` |
 | Histórico da matriz | 4 execuções | 80% → 100% → 100% → 100% | [MATRIZ_TESTES.md](MATRIZ_TESTES.md) |
 | Calibração ponta a ponta | 18 perguntas | 17/18 = 94% | `docs/resultados/calibracao_hashing_fixtures.md` |
-| E2E web (Playwright, build de produção) | 11 etapas | 11 aprovadas | `tests/e2e/web_smoke.mjs`, capturas em `docs/capturas/` |
+| E2E web (Playwright, build de produção) | 11 etapas × 2 modos | 11/11 local e 11/11 Vercel simulada | `tests/e2e/web_smoke.mjs`, capturas em `docs/capturas/` |
+| Deploy Vercel (sem conta) | `vercel build` + handler oficial | aprovado | [TESTES_PRODUCAO.md](TESTES_PRODUCAO.md) |
 
 Métricas da execução final: Recall@5 = 1,0; MRR = 1,0; recusa quando esperado = 100%; citações válidas = 100%.
 Métricas operacionais (latência de recuperação/geração/total, fontes por resposta, taxa de citações válidas, taxa

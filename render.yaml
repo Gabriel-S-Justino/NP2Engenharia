@@ -1,5 +1,6 @@
 # Blueprint do Render para o BACKEND (FastAPI) com disco persistente.
-# O frontend web é publicado na Vercel (apps/mobile/vercel.json). Ver docs/DEPLOY_BACKEND.md.
+# ALTERNATIVA ao deploy completo na Vercel: API em contêiner. A web continua na Vercel (vercel.json da raiz,
+# com EXPO_PUBLIC_API_URL apontando para este serviço). Ver docs/DEPLOY_BACKEND.md.
 # Segredos (LLM_API_KEY, ADMIN_TOKEN) são definidos no painel do Render (sync: false), nunca neste arquivo.
 services:
   - type: web

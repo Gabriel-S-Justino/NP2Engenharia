@@ -9,8 +9,8 @@ utilizada ou um teste realizado** (ver última coluna).
 | 1 | Curadoria documental e metadados | _[a preencher]_ | Selecionar e validar ≥10 documentos/25 páginas; `manifest.json`; `docs/FONTES.md`; lacunas e fontes frágeis; matriz do acervo real (respostas esperadas tiradas das fontes) | Por que cada fonte é confiável; uma lacuna encontrada |
 | 2 | Ingestão, chunking e embeddings | _[a preencher]_ | Ingestão do acervo real; revisão de falhas de extração; experimento de tamanho de chunk; calibração do limiar com `fastembed` | Por que 800/120 por página; o que é a impressão digital do índice |
 | 3 | Recuperação, geração e citações | _[a preencher]_ | Configuração do LLM no servidor; leitura crítica das respostas; validação de citações e recusas; prompt de sistema | Como o backend impede citações inventadas; o que acontece sem evidência |
-| 4 | Frontend React Native/Expo | _[a preencher]_ | Revisão de UX com usuários do público-alvo; teste em Android/iOS (Expo Go); deploy da web na Vercel | Como a interface separa resposta e evidência; acessibilidade |
-| 5 | Testes, métricas, documentação e integração | _[a preencher]_ | Execuções da matriz e registro de falhas/ajustes; diário da IA mentora; relatório; roteiro; deploy do backend | Como a taxa de 80% é calculada; uma falha e o ajuste feito |
+| 4 | Frontend React Native/Expo | _[a preencher]_ | Revisão de UX com usuários do público-alvo; teste em Android/iOS (Expo Go); deploy na Vercel (projeto, Neon, variáveis) | Como a interface separa resposta e evidência; acessibilidade |
+| 5 | Testes, métricas, documentação e integração | _[a preencher]_ | Execuções da matriz e registro de falhas/ajustes; diário da IA mentora; relatório; roteiro; validação do preview e testes pós-deploy | Como a taxa de 80% é calculada; uma falha e o ajuste feito |
 
 ## Responsabilidades compartilhadas
 

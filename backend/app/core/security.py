@@ -24,7 +24,7 @@ def require_admin(request: Request) -> None:
     * Sem ADMIN_TOKEN em desenvolvimento: liberado (uso local controlado).
     * Sem ADMIN_TOKEN em produção: operações administrativas bloqueadas.
     """
-    settings: Settings = request.app.state.container.settings
+    settings: Settings = request.app.state.settings
     if not settings.admin_required:
         return
     if settings.admin_token is None:
@@ -59,7 +59,7 @@ class RateLimiter:
 
 
 def client_key(request: Request) -> str:
-    settings: Settings = request.app.state.container.settings
+    settings: Settings = request.app.state.settings
     if settings.app_env == "production":
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
@@ -68,7 +68,18 @@ def client_key(request: Request) -> str:
 
 
 def rate_limit_chat(request: Request) -> None:
-    request.app.state.container.rate_limiter.check(client_key(request))
+    from app.core.container import get_container  # import tardio: evita ciclo de importação
+
+    get_container(request.app).rate_limiter.check(client_key(request))
+
+
+def require_cron_secret(request: Request) -> None:
+    """Chamadas agendadas da Vercel enviam `Authorization: Bearer <CRON_SECRET>`."""
+    settings: Settings = request.app.state.settings
+    expected = settings.cron_secret.get_secret_value() if settings.cron_secret else None
+    provided = request.headers.get("authorization", "")
+    if not expected or not hmac.compare_digest(provided.encode(), f"Bearer {expected}".encode()):
+        raise ForbiddenError("Chamada agendada não autorizada.", code="cron_nao_autorizado")
 
 
 _UNSAFE_CHARS = re.compile(r"[^A-Za-z0-9._ \-()]+")

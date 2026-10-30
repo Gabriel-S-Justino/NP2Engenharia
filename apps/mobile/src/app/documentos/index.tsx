@@ -26,7 +26,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useIngestion } from '@/hooks/useIngestion';
 import { ApiError, api, errorMessage } from '@/services/api';
 import { spacing } from '@/theme/tokens';
-import type { DocumentStatus, DocumentSummary } from '@/types/api';
+import type { DocumentStatus, DocumentSummary, IngestionRun } from '@/types/api';
 import { DOCUMENT_STATUS, formatDateTime } from '@/utils/format';
 
 const STATUS_FILTERS: (DocumentStatus | 'all')[] = ['all', 'processed', 'failed', 'pending', 'processing', 'excluded'];
@@ -47,6 +47,7 @@ export default function DocumentsScreen() {
   const [deleting, setDeleting] = useState(false);
   const [confirmReindex, setConfirmReindex] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [batchInfo, setBatchInfo] = useState<string | null>(null);
 
   const docs = useAsync(
     () => api.documents({ search: search || undefined, status: statusFilter === 'all' ? undefined : statusFilter, sort, pageSize: 200 }),
@@ -63,16 +64,39 @@ export default function DocumentsScreen() {
   const last = ingestion.status?.last;
   const maxMb = settings.data?.max_upload_size_mb ?? 20;
 
+  /**
+   * Na Vercel cada chamada processa um lote limitado pelo tempo da função; os documentos restantes ficam
+   * pendentes no banco. Continua chamando /scan até não restar nenhum (progresso real, sem percentual inventado).
+   */
+  const drainQueue = async (first: IngestionRun) => {
+    let run = first;
+    let rounds = 0;
+    while (run.status === 'completed' && run.stats.remaining > 0 && rounds < 100) {
+      rounds += 1;
+      setBatchInfo(`Lote ${rounds} concluído. ${run.stats.remaining} documento(s) pendente(s); continuando…`);
+      ingestion.track();
+      run = await api.scan();
+    }
+    setBatchInfo(null);
+    ingestion.track();
+    if (run.status === 'failed') toast.show(run.error_message ?? 'A indexação falhou.', 'danger');
+  };
+
   const startScan = async () => {
     setBusy(true);
     try {
-      await api.scan();
-      toast.show('Os documentos estão sendo preparados para consulta.', 'info');
-      ingestion.track();
+      const run = await api.scan();
+      if (run.status === 'running') {
+        toast.show('Os documentos estão sendo preparados para consulta.', 'info');
+        ingestion.track();
+      } else {
+        await drainQueue(run);
+      }
     } catch (err) {
       toast.show(errorMessage(err), 'danger');
     } finally {
       setBusy(false);
+      setBatchInfo(null);
     }
   };
 
@@ -80,13 +104,18 @@ export default function DocumentsScreen() {
     setConfirmReindex(false);
     setBusy(true);
     try {
-      await api.reindex();
-      toast.show('Reindexação completa iniciada.', 'info');
-      ingestion.track();
+      const run = await api.reindex();
+      if (run.status === 'running') {
+        toast.show('Reindexação completa iniciada.', 'info');
+        ingestion.track();
+      } else {
+        await drainQueue(run);
+      }
     } catch (err) {
       toast.show(errorMessage(err), 'danger');
     } finally {
       setBusy(false);
+      setBatchInfo(null);
     }
   };
 
@@ -162,8 +191,8 @@ export default function DocumentsScreen() {
         description="Acervo usado nas respostas. Os arquivos da pasta Documentos/ nunca são alterados pelo sistema."
         right={
           <>
-            <Button label="Enviar arquivo" icon="cloud-upload-outline" onPress={() => void pickAndUpload()} loading={uploading} disabled={running} />
-            <Button label="Indexar pasta" icon="sync-outline" variant="secondary" onPress={() => void startScan()} loading={busy} disabled={running} />
+            <Button label="Enviar arquivo" icon="cloud-upload-outline" onPress={() => void pickAndUpload()} loading={uploading} disabled={running || busy} />
+            <Button label="Indexar pasta" icon="sync-outline" variant="secondary" onPress={() => void startScan()} loading={busy} disabled={running || uploading} />
             <Button label="Reindexar tudo" icon="refresh" variant="ghost" onPress={() => setConfirmReindex(true)} disabled={running || busy} />
           </>
         }
@@ -173,6 +202,15 @@ export default function DocumentsScreen() {
         Formatos aceitos: {settings.data?.supported_file_types.join(', ').toUpperCase() ?? 'PDF, TXT, MD'} · limite de {maxMb} MB por arquivo.
         PDFs digitalizados (imagem) precisam de OCR.
       </AppText>
+
+      {batchInfo ? (
+        <Card>
+          <AppText variant="bodyStrong">Os documentos estão sendo preparados para consulta.</AppText>
+          <AppText variant="helper" color="textSecondary">
+            {batchInfo}
+          </AppText>
+        </Card>
+      ) : null}
 
       {running && current ? (
         <Card>
@@ -192,7 +230,7 @@ export default function DocumentsScreen() {
           <AppText variant="helper">
             {last.status === 'failed'
               ? last.error_message ?? 'A indexação falhou.'
-              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} ignorado(s).`}
+              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} ignorado(s)${last.stats.remaining ? `, ${last.stats.remaining} pendente(s) — use “Indexar pasta” para continuar` : ''}.`}
           </AppText>
         </Notice>
       ) : null}

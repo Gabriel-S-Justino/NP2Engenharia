@@ -15,18 +15,28 @@ flowchart TD
 ## 2. Adição e indexação de documentos
 ```mermaid
 flowchart TD
-  A[Enviar arquivo] --> B{Tipo e tamanho válidos no cliente?}
+  A[Enviar arquivo] --> B{Tipo e tamanho válidos no cliente?\nlimite vem de /api/settings: 4 MB na Vercel}
   B -- não --> X[Toast: não suportado / acima do limite]
   B -- sim --> C[POST /api/documents/upload]
-  C --> D{Backend valida conteúdo real, duplicata, token}
-  D -- erro --> Y[Toast com mensagem pública: 415/409/413/403]
-  D -- ok --> E[Documento 'Aguardando' + indexação iniciada]
-  E --> F[Polling /api/ingestion/status: progresso n de m]
-  F --> G{Resultado}
-  G -- processado --> H[Selo 'Processado' + n trechos]
-  G -- falha --> I[Selo 'Falha' + motivo]
+  C --> D{Backend valida conteúdo real, duplicata, token, banco persistente}
+  D -- erro --> Y[Toast com mensagem pública: 415/409/413/403/503]
+  D -- ok --> E{Modo}
+  E -- local --> F[Indexação em segundo plano\npolling /api/ingestion/status: n de m]
+  E -- Vercel --> G[Indexado na própria requisição]
+  F --> H{Resultado}
+  G --> H
+  H -- processado --> I[Selo 'Processado' + n trechos]
+  H -- falha --> J[Selo 'Falha' + motivo]
 ```
-Indexar a pasta segue o mesmo caminho a partir de `POST /api/ingestion/scan`.
+
+"Indexar pasta" / "Reindexar tudo" na Vercel (lotes com orçamento de tempo):
+```mermaid
+flowchart TD
+  A[POST /api/ingestion/scan] --> B["Lote processado até ~240 s (pelo menos 1 documento)"]
+  B --> C{stats.remaining > 0?}
+  C -- sim --> D["Aviso: 'Lote N concluído. X pendente(s); continuando…'"] --> A
+  C -- não --> E[Toast: indexação concluída + resumo da última execução]
+```
 
 ## 3. Envio de uma pergunta
 ```mermaid

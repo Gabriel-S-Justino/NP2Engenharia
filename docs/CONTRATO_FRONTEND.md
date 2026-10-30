@@ -1,6 +1,7 @@
 # Contrato frontend ↔ backend
 
-Fonte da verdade: schemas Pydantic em `backend/app/schemas/models.py` (OpenAPI em `/openapi.json` e `/docs`).
+Fonte da verdade: schemas Pydantic em `backend/app/schemas/models.py` (OpenAPI em `/api/openapi.json` e
+documentação interativa em `/api/docs`).
 Espelho TypeScript: `apps/mobile/src/types/api.ts`. Cliente: `apps/mobile/src/services/api.ts`.
 O contrato foi **validado com o backend real** pelo teste E2E (`tests/e2e/web_smoke.mjs`); não há dados mockados
 na aplicação (mocks existem apenas nos testes automatizados).
@@ -9,7 +10,15 @@ na aplicação (mocks existem apenas nos testes automatizados).
 - JSON UTF-8; datas ISO 8601 (UTC); `null` = não informado (nunca string vazia).
 - Erros: `{"error": {"code": "...", "message": "...", "details"?: ...}}` — `message` é pública e em português.
 - Operações administrativas enviam `X-Admin-Token` quando o servidor exige (`settings.admin_required`).
-- Timeouts do cliente: 20 s (padrão), 90 s (chat), 120 s (upload). `ApiError.kind`: `network | timeout | http | aborted`.
+- Endereço: na web publicada (Vercel) o cliente usa a **mesma origem** (`/api/...`); `EXPO_PUBLIC_API_URL`
+  sobrepõe (apps nativos, backend em outro domínio). Regras em `services/config.ts` (`resolveApiBaseUrl`).
+- Timeouts do cliente: 20 s (padrão), 120 s (chat — inclui cold start na Vercel), 310 s (upload, indexação,
+  reindexação, avaliação e ajustes de chunking, que na Vercel são síncronos). `ApiError.kind`:
+  `network | timeout | http | aborted`.
+- **Modo síncrono (serverless):** `POST /api/ingestion/scan|reindex` e `POST /api/evaluations/run` retornam já
+  concluídos (`status: completed|failed`). Na indexação, `stats.remaining > 0` significa que o orçamento de tempo
+  acabou: o cliente chama `/api/ingestion/scan` de novo até `remaining = 0`. Em modo local, retornam `running` e o
+  cliente acompanha por polling.
 
 ## Endpoints
 
@@ -18,14 +27,15 @@ na aplicação (mocks existem apenas nos testes automatizados).
 | GET `/api/health` | — | `Health` | não |
 | GET `/api/stats` | — | `Stats` | não |
 | GET `/api/documents` | `page, page_size, status, search, file_type, sort` | `Paginated<DocumentSummary>` | não |
-| POST `/api/documents/upload` | multipart `file` | `UploadResult` (201) | sim |
+| POST `/api/documents/upload` | multipart `file` (≤ `max_upload_size_mb`; 4 MB na Vercel) | `UploadResult` (201; em serverless já indexado) | sim |
 | GET `/api/documents/{id}` | — | `DocumentSummary` | não |
 | GET `/api/documents/{id}/chunks` | `page, page_size` | `Paginated<ChunkOut>` | não |
 | DELETE `/api/documents/{id}` | — | `DeleteResult` | sim |
 | GET `/api/sources/{source_id}` | — | `SourceDetail` | não |
-| POST `/api/ingestion/scan` | `?wait=bool` | `IngestionRun` (202) | sim |
+| POST `/api/ingestion/scan` | `?wait=bool` | `IngestionRun` (202; em serverless já concluído, ver `stats.remaining`) | sim |
 | POST `/api/ingestion/reindex` | `{document_ids?: string[]}` | `IngestionRun` (202) | sim |
 | GET `/api/ingestion/status` | — | `IngestionStatus` | não |
+| GET `/api/cron/ingestion` | `Authorization: Bearer <CRON_SECRET>` | `IngestionRun` | segredo do cron |
 | POST `/api/chat` | `ChatRequest` | `ChatResponse` | não (limite/minuto) |
 | GET/DELETE `/api/chat/history/{conversation_id}` | — | `ChatHistory` / `{removed}` | não |
 | GET `/api/evaluations` | — | `{suites, runs, current}` | não |
@@ -67,6 +77,10 @@ type ChatResponse = {
 };
 ```
 Campos completos de `DocumentSummary`, `Stats`, `Health`, `SettingsOut`, `EvaluationResults` etc. em `types/api.ts`.
+Campos ligados à implantação: `Health.storage` (`backend`, `persistent`, `serverless`, `originals_in_database`),
+`Health.embeddings.loaded` (modelo carregado sob demanda), `IngestionStats.remaining`, `SettingsOut.serverless`,
+`storage_backend`, `persistent_storage`, `ingestion_time_budget_seconds`. Erro `503 armazenamento_efemero`: a API
+recusa alterar o acervo sem banco persistente em serverless.
 
 ## Estados de carregamento e erro no cliente
 - `useAsync`: `{data, error, loading, reload}`; ignora respostas fora de ordem.

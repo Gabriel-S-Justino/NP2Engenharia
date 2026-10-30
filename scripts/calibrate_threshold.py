@@ -36,13 +36,30 @@ def main() -> int:
     data = json.loads(Path(args.set).read_text(encoding="utf-8"))
     settings = Settings()
     if args.real:
-        pipeline = RagPipeline(settings, data_dir=settings.data_dir,
-                               sources=[("documentos", settings.documents_dir), ("upload", settings.uploads_dir)])
+        pipeline = RagPipeline(settings, data_dir=settings.data_dir, sources=[("documentos", settings.documents_dir)])
     else:
         tmp = Path(tempfile.mkdtemp(prefix="calibracao_"))
-        pipeline = RagPipeline(settings, data_dir=tmp, sources=[("fixtures", settings.fixtures_dir)], name="calibracao")
+        store = "numpy" if settings.vector_store == "pgvector" else settings.vector_store
+        pipeline = RagPipeline(settings, data_dir=tmp, sources=[("fixtures", settings.fixtures_dir)], name="calibracao",
+                               use_postgres=False, vector_store=store, accept_uploads=False)
     pipeline.startup()
+    pipeline.ensure_ready()
     pipeline.ingestion.start("scan", wait=True)
+    # Os limiares de teste são temporários: os parâmetros originais são restaurados ao final, mesmo com
+    # DATABASE_URL de produção (a calibração nunca altera o limiar em uso; a equipe decide e configura).
+    original_overrides = pipeline.db.get_kv("settings_overrides")
+    try:
+        _calibrate(pipeline, data, args)
+    finally:
+        if original_overrides is None:
+            pipeline.db.delete_kv("settings_overrides")
+        else:
+            pipeline.db.set_kv("settings_overrides", original_overrides)
+        pipeline.close()
+    return 0
+
+
+def _calibrate(pipeline, data: dict, args) -> None:
     pipeline.set_overrides({"similarity_threshold": -1.0})
 
     rows = []
@@ -106,8 +123,6 @@ def main() -> int:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
     print(f"\nRelatório salvo em {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")
-    pipeline.close()
-    return 0
 
 
 if __name__ == "__main__":

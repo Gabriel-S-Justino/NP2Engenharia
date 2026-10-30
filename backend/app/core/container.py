@@ -1,4 +1,8 @@
-"""Contêiner de dependências da aplicação (criado no startup do FastAPI)."""
+"""Contêiner de dependências da aplicação.
+
+Criado no startup do FastAPI (servidor local) ou sob demanda na primeira requisição (funções serverless,
+onde eventos de ciclo de vida podem não ser executados).
+"""
 
 from __future__ import annotations
 
@@ -23,7 +27,7 @@ class Container:
         self.pipeline = RagPipeline(
             settings,
             data_dir=settings.data_dir,
-            sources=[("documentos", settings.documents_dir), ("upload", settings.uploads_dir)],
+            sources=[("documentos", settings.documents_dir)],
             name="principal",
         )
         self.evaluations = EvaluationService(
@@ -50,6 +54,9 @@ class Container:
         """Pipeline isolado para os documentos sintéticos de teste (banco e índice próprios)."""
         if self._fixtures_pipeline is None:
             embedder = self.pipeline.ensure_embedder()
+            # Sempre local e descartável (SQLite + vetores em arquivo): é reconstruído a cada avaliação e nunca
+            # se mistura ao acervo real. Os RESULTADOS da avaliação ficam no banco principal (persistente).
+            store = "numpy" if self.settings.vector_store == "pgvector" else self.settings.vector_store
             self._fixtures_pipeline = RagPipeline(
                 self.settings,
                 data_dir=self.settings.data_dir / "eval_fixtures",
@@ -57,6 +64,9 @@ class Container:
                 embedder=embedder,
                 generator=self.pipeline.generator,
                 name="fixtures",
+                use_postgres=False,
+                vector_store=store,
+                accept_uploads=False,
             )
             self._fixtures_pipeline.startup()
         # Mesmos parâmetros de recuperação do acervo principal, para comparar resultados.
@@ -64,6 +74,8 @@ class Container:
         return self._fixtures_pipeline
 
     def run_evaluation(self, suite_id: str, *, wait: bool) -> dict:
+        if self.settings.serverless:
+            wait = True  # funções serverless não mantêm tarefas em segundo plano após a resposta
         suites = self.evaluations.suites()
         suite = suites.get(suite_id)
         if suite is None:
@@ -105,3 +117,19 @@ class Container:
         self.pipeline.close()
         if self._fixtures_pipeline:
             self._fixtures_pipeline.close()
+
+
+_container_lock = threading.Lock()
+
+
+def get_container(app) -> Container:
+    """Retorna o contêiner da aplicação, criando-o na primeira requisição se o startup não tiver ocorrido."""
+    container = getattr(app.state, "container", None)
+    if container is None:
+        with _container_lock:
+            container = getattr(app.state, "container", None)
+            if container is None:
+                container = Container(app.state.settings)
+                container.startup()
+                app.state.container = container
+    return container

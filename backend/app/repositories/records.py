@@ -6,8 +6,7 @@ import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from app.repositories.database import Database
-from app.repositories.documents import now_iso
+from app.repositories.database import Database, now_iso
 from app.schemas.models import (
     ChatResponse,
     EvaluationCaseResult,
@@ -41,7 +40,7 @@ class IngestionRunRepository:
         )
 
     def last(self) -> IngestionRun | None:
-        row = self.db.query_one("SELECT * FROM ingestion_runs WHERE status != 'running' ORDER BY started_at DESC, rowid DESC LIMIT 1")
+        row = self.db.query_one("SELECT * FROM ingestion_runs WHERE status != 'running' ORDER BY started_at DESC, id DESC LIMIT 1")
         if not row:
             return None
         return IngestionRun(
@@ -50,11 +49,16 @@ class IngestionRunRepository:
             error_message=row["error_message"],
         )
 
-    def mark_stale_running_as_failed(self) -> None:
-        """Execuções interrompidas por reinício do servidor ficam registradas como falha."""
+    def mark_stale_running_as_failed(self, older_than_seconds: float = 0) -> None:
+        """Execuções interrompidas (reinício do servidor, função encerrada) ficam registradas como falha.
+
+        Em ambiente com várias instâncias, só marca execuções mais antigas que o tempo máximo de uma execução.
+        """
+        cutoff = (datetime.now(UTC) - timedelta(seconds=older_than_seconds)).isoformat(timespec="milliseconds")
         self.db.execute(
-            "UPDATE ingestion_runs SET status = 'failed', finished_at = ?, error_message = ? WHERE status = 'running'",
-            (now_iso(), "Execução interrompida (servidor reiniciado)."),
+            """UPDATE ingestion_runs SET status = 'failed', finished_at = ?, error_message = ?
+               WHERE status = 'running' AND started_at <= ?""",
+            (now_iso(), "Execução interrompida antes de terminar.", cutoff),
         )
 
     def success_rate(self) -> float | None:
@@ -86,7 +90,7 @@ class ChatRepository:
 
     def history(self, conversation_id: str, limit: int = 100) -> list[ChatResponse]:
         rows = self.db.query(
-            "SELECT payload_json FROM chat_interactions WHERE conversation_id = ? ORDER BY created_at ASC, rowid ASC LIMIT ?",
+            "SELECT payload_json FROM chat_interactions WHERE conversation_id = ? ORDER BY created_at ASC, id ASC LIMIT ?",
             (conversation_id, limit),
         )
         return [ChatResponse.model_validate_json(r["payload_json"]) for r in rows]
@@ -133,8 +137,9 @@ class EvaluationRepository:
 
     def save_result(self, run_id: str, result: EvaluationCaseResult) -> None:
         self.db.execute(
-            """INSERT OR REPLACE INTO evaluation_results(run_id, case_id, category, passed, result_json)
-               VALUES(?, ?, ?, ?, ?)""",
+            """INSERT INTO evaluation_results(run_id, case_id, category, passed, result_json) VALUES(?, ?, ?, ?, ?)
+               ON CONFLICT(run_id, case_id) DO UPDATE SET category = excluded.category, passed = excluded.passed,
+               result_json = excluded.result_json""",
             (run_id, result.case_id, result.category, int(result.passed), result.model_dump_json()),
         )
 
@@ -151,15 +156,15 @@ class EvaluationRepository:
     def latest_run(self, suite: str | None = None):
         if suite:
             return self.db.query_one(
-                "SELECT * FROM evaluation_runs WHERE suite = ? AND status = 'completed' ORDER BY started_at DESC, rowid DESC LIMIT 1",
+                "SELECT * FROM evaluation_runs WHERE suite = ? AND status = 'completed' ORDER BY started_at DESC, id DESC LIMIT 1",
                 (suite,),
             )
         return self.db.query_one(
-            "SELECT * FROM evaluation_runs WHERE status = 'completed' ORDER BY started_at DESC, rowid DESC LIMIT 1"
+            "SELECT * FROM evaluation_runs WHERE status = 'completed' ORDER BY started_at DESC, id DESC LIMIT 1"
         )
 
     def list_runs(self, limit: int = 20):
-        return self.db.query("SELECT * FROM evaluation_runs ORDER BY started_at DESC, rowid DESC LIMIT ?", (limit,))
+        return self.db.query("SELECT * FROM evaluation_runs ORDER BY started_at DESC, id DESC LIMIT ?", (limit,))
 
     def results(self, run_id: str) -> list[EvaluationCaseResult]:
         rows = self.db.query(

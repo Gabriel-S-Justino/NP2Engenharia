@@ -1,5 +1,5 @@
-# Integração contínua: valida backend e frontend em cada push/PR. NÃO publica em produção.
-# Previews e produção da web são gerenciados pela integração Git da Vercel (ver docs/DEPLOY_VERCEL.md).
+# Integração contínua: valida backend (SQLite e Postgres+pgvector) e frontend em cada push/PR. NÃO publica nada.
+# Previews e produção são gerenciados pela integração Git da Vercel (ver docs/DEPLOY_VERCEL.md).
 name: CI
 
 on:
@@ -16,6 +16,16 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: acervo
+          POSTGRES_PASSWORD: acervo
+          POSTGRES_DB: acervo_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U acervo" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,8 +34,13 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements-dev.txt
-      - run: ruff check app tests ../scripts
-      - run: pytest -q
+      - run: ruff check app tests ../scripts ../api
+      - name: Testes (SQLite + Postgres/pgvector da configuração da Vercel)
+        env:
+          TEST_DATABASE_URL: postgresql://acervo:acervo@localhost:5432/acervo_test
+        run: pytest -q
+      - name: Dependências da função Vercel instalam (requirements.txt da raiz)
+        run: pip install --dry-run -r ../requirements.txt
       - name: Matriz de avaliação (fixtures sintéticas, embeddings lexicais, modo demo)
         env:
           EMBEDDING_PROVIDER: hashing
@@ -49,9 +64,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test:ci
-      - name: Build web de produção
-        env:
-          EXPO_PUBLIC_API_URL: https://api.exemplo.invalid
+      - name: Build web de produção (mesma origem, como na Vercel)
         run: npm run build:web
       - name: Bundle sem segredos
         run: "! grep -rEq 'sk-ant-[A-Za-z0-9_-]{8,}' dist"

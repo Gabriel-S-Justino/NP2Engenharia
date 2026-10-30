@@ -1,0 +1,9 @@
+# Arquivos que não devem ser enviados à Vercel em deploys pela CLI (o deploy via Git já ignora o .gitignore).
+**/.venv
+**/node_modules
+**/__pycache__
+apps/mobile/dist
+data
+.env
+.env.*
+!.env.example

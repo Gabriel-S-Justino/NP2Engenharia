@@ -19,6 +19,9 @@
 | Abuso/custos | Limite de perguntas por minuto por cliente; tamanho máximo de pergunta e de corpo | `security.RateLimiter`, middleware | `test_rate_limit`, `test_errors_do_not_leak_internals` |
 | Origem não autorizada | CORS por lista; `*` proibido em produção | `main.py`, `config.py` | `test_cors_restricted`, `test_config_rejects_wildcard_cors_in_production` |
 | Vazamento de detalhes internos | Erros padronizados, sem stack trace/caminhos; cabeçalhos `nosniff`, `DENY`, `no-referrer` | `errors.py`, `main.py` | `test_errors_do_not_leak_internals` |
+| Perda silenciosa de dados em serverless | Sem `DATABASE_URL` na Vercel, alterações do acervo são recusadas (503) e o health aponta armazenamento efêmero | `routes.require_persistent_storage` | `test_serverless_api_upload_evaluation_and_ephemeral_guard` |
+| Chamada agendada forjada | `/api/cron/ingestion` exige `Authorization: Bearer <CRON_SECRET>` (comparação em tempo constante) | `security.require_cron_secret` | `test_cron_endpoint_requires_secret` |
+| Concorrência entre instâncias | Trava com expiração no banco para indexação; migrações serializadas por advisory lock | `database.try_acquire_lease` | `test_lease_blocks_concurrent_ingestion_between_instances` |
 | Desserialização insegura | FAISS `write_index/read_index` e NumPy `allow_pickle=False`; nenhum pickle | `vector_store.py` | `test_vector_store_persist_load_remove` |
 | Documentos originais alterados | Sistema só lê `Documentos/`; exclusão retira do índice e preserva o arquivo | `ingestion.py`, `routes.py` | `test_scan_indexes_and_is_idempotent`, `test_delete_document_from_documentos_preserves_original` |
 
@@ -30,6 +33,10 @@
   documentos confidenciais ou com dados pessoais sem autorização.** No modo demonstração nada sai do servidor.
 - Embeddings são calculados localmente (fastembed): o conteúdo dos documentos não é enviado para gerar vetores.
 - A API não é exposta à rede por padrão (`API_HOST=127.0.0.1`; Docker publica só em `127.0.0.1`).
+- **Na Vercel**, a API é pública por natureza (mesmo domínio da web): leitura e perguntas são abertas; alterações
+  exigem `ADMIN_TOKEN`. Os **arquivos originais ficam no banco** (Neon): só indexe documentos que possam ser
+  armazenados num provedor de nuvem. A conexão com o banco usa TLS (padrão do Neon) e a `DATABASE_URL` fica apenas
+  nas variáveis do projeto.
 
 ## Ética e limites
 
@@ -44,6 +51,6 @@
 - Detecção de injeção é heurística (padrões); variações criativas podem passar. Mitigam: separação estrutural,
   validação de citações e ausência de segredos no contexto.
 - Não há autenticação de usuários finais; o chat é público na implantação (mitigado por limite de requisições).
-- Limite de requisições é em memória (uma instância); atrás de proxy usa `X-Forwarded-For`, que pode ser forjado
+- Limite de requisições é em memória **por instância** (na Vercel, várias instâncias somam limites); atrás de proxy usa `X-Forwarded-For`, que pode ser forjado
   se o backend for exposto sem o proxy da plataforma.
 - O token administrativo fica salvo no dispositivo do administrador (AsyncStorage/localStorage).

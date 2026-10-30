@@ -9,5 +9,7 @@ numpy==2.5.4
 faiss-cpu==1.15.1
 # Embeddings semânticos locais via ONNX (sem PyTorch). Baixa o modelo do Hugging Face na 1ª execução.
 fastembed==0.9.1
+# Postgres + pgvector (produção na Vercel/Neon ou qualquer DATABASE_URL)
+psycopg[binary]==3.3.6
 # Provedor de LLM opcional (LLM_PROVIDER=anthropic)
 anthropic==2.3.0

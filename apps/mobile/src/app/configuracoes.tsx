@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, Badge, Button, Card, ConfirmDialog, ErrorState, FilterChip, LoadingState, Notice, PageContainer, PageHeader, Row, SectionHeader, TextField, useToast } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
 import { api, errorMessage, getBaseUrl } from '@/services/api';
+import { describeBaseUrl } from '@/services/config';
 import { useAppState } from '@/state/AppState';
 import { useTheme, type ThemePreference } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -82,7 +83,7 @@ export default function SettingsScreen() {
 
       <Card>
         <SectionHeader title="Conexão" right={<Button label="Verificar agora" size="sm" variant="secondary" onPress={() => void refreshHealth()} />} />
-        <Item label="Endereço da API" value={getBaseUrl()} />
+        <Item label="Endereço da API" value={describeBaseUrl(getBaseUrl())} />
         <Item
           label="Estado do backend"
           value={{ checking: 'Verificando', online: 'Conectado', degraded: 'Conectado com alertas', offline: 'Indisponível' }[connection]}
@@ -91,7 +92,7 @@ export default function SettingsScreen() {
         <Item label="Última verificação" value={formatDateTime(lastHealthCheck)} />
         {health ? <Item label="Ambiente / versão" value={`${health.app_env} · ${health.version}`} /> : null}
         <AppText variant="caption" color="textSecondary">
-          O endereço é definido por EXPO_PUBLIC_API_URL no build. Em celular físico, use o IP do computador na rede local (não “localhost”).
+          Na web publicada, o app usa a mesma origem (/api). Em outros casos, o endereço vem de EXPO_PUBLIC_API_URL no build; em celular físico, use o IP do computador ou a URL da Vercel (não “localhost”).
         </AppText>
       </Card>
 
@@ -113,6 +114,15 @@ export default function SettingsScreen() {
               tone={s.embedding_semantic ? 'success' : 'warning'}
             />
             <Item label="Índice vetorial" value={`${s.vector_store} · ${s.similarity_metric}`} />
+            <Item label="Banco de dados" value={s.storage_backend === 'postgres' ? 'Postgres (persistente)' : 'SQLite local'} />
+            <Item
+              label="Armazenamento persistente"
+              value={s.persistent_storage ? 'Sim' : 'Não — dados perdidos ao reiniciar (configure DATABASE_URL)'}
+              tone={s.persistent_storage ? 'success' : 'danger'}
+            />
+            {s.serverless ? (
+              <Item label="Execução" value={`Serverless (Vercel) · lotes de até ${Math.round(s.ingestion_time_budget_seconds ?? 0)} s na indexação`} />
+            ) : null}
             {!s.llm_is_real ? (
               <Notice tone="info">Para usar um LLM real, configure LLM_PROVIDER=anthropic e LLM_API_KEY no servidor (nunca no aplicativo). Veja docs/VARIAVEIS_AMBIENTE.md.</Notice>
             ) : null}

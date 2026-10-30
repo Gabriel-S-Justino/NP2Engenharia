@@ -1,6 +1,6 @@
 # Calibração do limiar — hashing:lexical-hashing-ngrams:2048:v1
 
-- Data: 2026-10-29T22:56:22+00:00
+- Data: 2026-10-30T00:41:11+00:00
 - Conjunto: `calibracao_fixtures.json` (18 perguntas; acervo sintético de teste)
 - Embeddings semânticos: NÃO (hashing lexical)
 - Classes separáveis: sim

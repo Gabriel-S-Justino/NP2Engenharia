@@ -1,7 +1,7 @@
 """Aplicação FastAPI do Acervo IA.
 
 Execução local:  uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 (a partir de backend/)
-Documentação:    http://127.0.0.1:8000/docs
+Documentação:    http://127.0.0.1:8000/api/docs
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from app import __version__
 from app.api.routes import router
 from app.core.config import Settings, get_settings
-from app.core.container import Container
+from app.core.container import get_container
 from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging
 
@@ -29,13 +29,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        container = Container(settings)
-        app.state.container = container
-        container.startup()
+        # Servidor local: inicializa tudo já no startup. Serverless: inicialização sob demanda (get_container).
+        if not settings.serverless:
+            get_container(app)
         logger.info("api_iniciada", extra={"env": settings.app_env, "llm": settings.llm_provider,
-                                           "embeddings": settings.embedding_provider})
+                                           "embeddings": settings.embedding_provider, "serverless": settings.serverless,
+                                           "banco": "postgres" if settings.uses_postgres else "sqlite"})
         yield
-        container.shutdown()
+        container = getattr(app.state, "container", None)
+        if container is not None:
+            container.shutdown()
 
     app = FastAPI(
         title="Acervo IA — API",
@@ -46,9 +49,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "recusa segura quando não há evidência suficiente."
         ),
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
+        # Na Vercel, apenas /api/* chega ao backend: a documentação fica em /api/docs.
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
     )
+    app.state.settings = settings
     install_error_handlers(app)
     app.add_middleware(
         CORSMiddleware,
@@ -77,7 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:
-        return {"name": "Acervo IA API", "version": __version__, "docs": "/docs", "health": "/api/health"}
+        return {"name": "Acervo IA API", "version": __version__, "docs": "/api/docs", "health": "/api/health"}
 
     return app
 

@@ -1,30 +1,45 @@
 # Procedimento de rollback
 
-## Frontend (Vercel)
+A aplicação inteira (web + função Python) é um único deploy da Vercel; os dados ficam no Neon Postgres.
+Reverter o código **não** reverte os dados, e vice-versa.
+
+## Código (Vercel)
 1. Vercel → projeto → **Deployments** → escolha o último deploy de produção saudável → **Promote to Production**
-   (ou "Instant Rollback"). Não requer novo build.
-2. Pela CLI (em `apps/mobile`, autenticado):
+   (ou *Instant Rollback*). Não requer novo build; web e API voltam juntas.
+2. Pela CLI (autenticado, na raiz do repositório):
 
 ```bash
 npx vercel rollback
 ```
 
-3. Verifique o site, a rota `/chat` recarregada e a conexão com o backend.
+3. Verifique: `/api/health` (`status: ok`, `storage.persistent: true`), recarregar `/chat`, uma pergunta conhecida
+   respondida com citação e uma pergunta fora do acervo recusada.
 
-## Backend (Render; análogo em Railway/Fly.io)
-1. Render → serviço → **Events/Deploys** → selecione o deploy anterior → **Rollback** (ou redeploy do commit anterior).
-2. O disco `/var/data` **não** é revertido pelo rollback de código. Se a versão nova alterou dados:
-   - O esquema SQLite só avança (migrações aditivas). Uma versão antiga pode não reconhecer colunas novas: nesse
-     caso restaure o backup do banco feito antes do deploy (ver PRODUCAO.md → Backup).
-   - Se o modelo de embeddings mudou, a versão antiga detectará o índice incompatível: execute **Reindexar tudo**.
-3. Verifique: `/api/health` ok; `/api/ingestion/status` → `consistent: true` e `compatible: true`; uma pergunta
-   conhecida respondida com citação; uma pergunta fora do acervo recusada.
+## Dados (Neon Postgres)
+- **Antes de todo deploy que mude o esquema ou o modelo de embeddings:** crie um *branch* de backup no Neon
+  (painel → Branches → Create branch a partir de `main`) ou exporte:
 
-## Antes de todo deploy de produção
-- Backup do banco (`sqlite3 /var/data/database/acervo.sqlite3 ".backup /var/data/backup-AAAAMMDD.sqlite3"`).
-- Anotar o ID do deploy atual (frontend e backend) para rollback rápido.
-- Preview validado com `tests/e2e/web_smoke.mjs` (ver TESTES_PRODUCAO.md).
+```bash
+pg_dump "$DATABASE_URL" -Fc -f acervo-AAAAMMDD.dump
+```
 
-## Rollback de dados do acervo
-- Documento removido por engano de `Documentos/`: o arquivo original é preservado; use reindexação do documento.
-- Upload removido por engano: o arquivo é apagado do servidor; reenvie-o.
+- **Restaurar:** use a restauração por ponto no tempo do Neon (dentro da janela de retenção do plano) ou:
+
+```bash
+pg_restore --clean --if-exists -d "$DATABASE_URL" acervo-AAAAMMDD.dump
+```
+
+- As migrações só **adicionam** estruturas. Se uma versão antiga não reconhecer dados novos, restaure o backup
+  feito antes do deploy.
+- Se o modelo de embeddings mudou entre versões, a versão em uso detecta o índice incompatível e pede
+  **Reindexar tudo** (continua em lotes a partir dos originais guardados no banco).
+
+## Dados do acervo
+- Documento removido por engano: uploads são apagados do banco (reenvie o arquivo); documentos de `Documentos/`
+  ficam "Fora do índice" com o original preservado e voltam com a reindexação do documento.
+
+## Checklist antes de promover para produção
+- [ ] Preview validado com `tests/e2e/web_smoke.mjs` (ver TESTES_PRODUCAO.md).
+- [ ] Backup/branch do banco criado.
+- [ ] ID do deploy de produção atual anotado.
+- [ ] Autorização do responsável registrada.

@@ -17,7 +17,7 @@ from pathlib import Path
 
 from app.core.config import Settings
 from app.core.logging import fingerprint_text
-from app.repositories.database import Database
+from app.repositories.database import open_database
 from app.repositories.documents import DocumentRepository, now_iso
 from app.repositories.records import ChatRepository, IngestionRunRepository
 from app.schemas.models import (
@@ -68,16 +68,24 @@ class RagPipeline:
         embedder: EmbeddingProvider | None = None,
         generator: Generator | None = None,
         name: str = "principal",
+        use_postgres: bool = True,
+        vector_store: str | None = None,
+        accept_uploads: bool = True,
     ):
         self.settings = settings
         self.name = name
         self.data_dir = data_dir
         self.sources = sources
-        self.db = Database(data_dir / "database" / "acervo.sqlite3")
+        # Origens aceitas: pastas configuradas + uploads guardados no banco.
+        self.origins = {origin for origin, _ in sources} | ({"upload"} if accept_uploads else set())
+        database_url = settings.database_url.get_secret_value() if (use_postgres and settings.database_url) else None
+        self.db = open_database(sqlite_path=data_dir / "database" / "acervo.sqlite3", database_url=database_url)
         self.documents = DocumentRepository(self.db)
         self.ingestion_runs = IngestionRunRepository(self.db)
         self.chat = ChatRepository(self.db)
-        self.vector_store = build_vector_store(settings.vector_store, data_dir / "indexes")
+        self.vector_store = build_vector_store(vector_store or settings.vector_store, data_dir / "indexes", self.db)
+        self._ready = False
+        self._ready_lock = threading.Lock()
         self._embedder = embedder
         self.embedder_error: str | None = None
         self.generator = generator or build_generator(settings)
@@ -139,12 +147,30 @@ class RagPipeline:
 
     # Índice ----------------------------------------------------------------------
     def startup(self) -> None:
-        self.ingestion_runs.mark_stale_running_as_failed()
-        try:
-            self.ensure_embedder()
-        except EmbeddingUnavailableError:
-            logger.error("embeddings_indisponiveis", extra={"pipeline": self.name})
-        self.load_index()
+        """Inicialização. Em serverless é leve: modelo e índice são carregados sob demanda (`ensure_ready`)."""
+        budget = self.settings.ingestion_time_budget_seconds
+        self.ingestion_runs.mark_stale_running_as_failed(older_than_seconds=budget + 120 if self.settings.serverless else 0)
+        if self.settings.serverless:
+            self.vector_store.load()  # apenas metadados (impressão digital) para o status
+            return
+        self.ensure_ready()
+
+    def ensure_ready(self, *, for_ingestion: bool = False) -> bool:
+        """Carrega o modelo de embeddings e verifica o índice uma única vez por processo."""
+        if self._ready:
+            return True
+        with self._ready_lock:
+            if self._ready:
+                return True
+            try:
+                self.ensure_embedder()
+            except EmbeddingUnavailableError:
+                logger.error("embeddings_indisponiveis", extra={"pipeline": self.name})
+                if for_ingestion:
+                    raise
+            self.load_index()
+            self._ready = self._embedder is not None
+            return self._ready
 
     def load_index(self) -> None:
         try:
@@ -170,16 +196,32 @@ class RagPipeline:
         self.verify_consistency(repair=True)
 
     def verify_consistency(self, *, repair: bool) -> bool:
+        """Compara os IDs do índice com os trechos processados no banco e corrige diferenças.
+
+        Vetores órfãos são removidos; vetores ausentes são recalculados a partir do texto salvo no banco
+        (recuperação após falhas). Em serverless, reparos grandes ficam para a reindexação explícita.
+        """
         rows = self.documents.indexed_chunk_rows()
         expected = {int(r["vector_id"]) for r in rows}
         actual = self.vector_store.ids()
         if expected == actual:
             return True
-        logger.warning("indice_inconsistente", extra={"esperado": len(expected), "atual": len(actual)})
-        if repair:
-            self.rebuild_vectors(rows)
-            return True
-        return False
+        missing = [r for r in rows if int(r["vector_id"]) not in actual]
+        extra = sorted(actual - expected)
+        logger.warning("indice_inconsistente", extra={"faltando": len(missing), "sobrando": len(extra)})
+        if not repair:
+            return False
+        if self.settings.serverless and len(missing) > 500:
+            self.index_message = "Índice incompleto: execute 'Reindexar tudo' para reconstruí-lo."
+            return False
+        if extra:
+            self.vector_store.remove(extra)
+        for i in range(0, len(missing), 256):
+            part = missing[i:i + 256]
+            self.vector_store.add([int(r["vector_id"]) for r in part], self.embedder.embed_documents([r["text"] for r in part]))
+        self.vector_store.save()
+        self.bump()
+        return True
 
     def rebuild_vectors(self, rows=None) -> None:
         """Reconstrói o índice vetorial a partir dos trechos salvos no SQLite (recuperação após falhas)."""
@@ -214,6 +256,14 @@ class RagPipeline:
         vectors = self.vector_store.count()
         current = None
         semantic = None
+        if not self._ready and self.settings.serverless:
+            message = self.index_message or "Modelo de embeddings carregado sob demanda (na primeira pergunta ou indexação)."
+            return IndexStatus(
+                backend=self.vector_store.backend, metric=METRIC, vectors=vectors, chunks_in_database=chunks,
+                consistent=vectors == chunks, compatible=self.index_compatible,
+                embedding_fingerprint=self.vector_store.fingerprint, current_embedding_fingerprint=None,
+                embedding_semantic=None, message=message,
+            )
         if self._embedder is not None:
             current, semantic = self._embedder.fingerprint, self._embedder.semantic
         return IndexStatus(
@@ -297,6 +347,7 @@ class RagPipeline:
         # 2. Acervo vazio ou índice indisponível.
         if self.documents.counts().get("processed", 0) == 0:
             return finish("no_documents", "none", notice=MESSAGES["no_documents"], gen_info=no_gen)
+        self.ensure_ready()
         if not self.index_compatible or self._embedder is None:
             return finish("index_unavailable", "none", notice=self.index_message or MESSAGES["index_unavailable"],
                           gen_info=no_gen)

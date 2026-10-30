@@ -1,10 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm ci",
-  "buildCommand": "npx expo export --platform web",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "installCommand": "npm ci --prefix apps/mobile",
+  "buildCommand": "npm run build:web --prefix apps/mobile",
+  "outputDirectory": "apps/mobile/dist",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 300,
+      "excludeFiles": "{apps/**,docs/**,data/**,backend/tests/**,backend/.venv/**,tests/e2e/**,**/node_modules/**,**/__pycache__/**,.github/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "crons": [{ "path": "/api/cron/ingestion", "schedule": "0 6 * * *" }],
   "headers": [
     {
       "source": "/(.*)",

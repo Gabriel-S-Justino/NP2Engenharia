@@ -35,6 +35,9 @@ def make_settings(tmp_path: Path, **overrides) -> Settings:
         cors_origins="http://localhost:8081",
         admin_token=None,
     )
+    if overrides.get("database_url"):
+        values.pop("vector_store")  # com Postgres o padrão é pgvector
+        overrides = {**overrides, "DATABASE_URL": overrides.pop("database_url")}
     values.update(overrides)
     return Settings(_env_file=None, **values)
 

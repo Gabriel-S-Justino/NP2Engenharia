@@ -30,7 +30,7 @@ import type {
   UploadResult,
 } from '@/types/api';
 
-import { API_BASE_URL, CHAT_TIMEOUT_MS, REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from './config';
+import { API_BASE_URL, CHAT_TIMEOUT_MS, LONG_OPERATION_TIMEOUT_MS, REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from './config';
 
 export type ApiErrorKind = 'network' | 'timeout' | 'http' | 'aborted';
 
@@ -178,9 +178,13 @@ export const api = {
   },
   source: (id: string) => request<SourceDetail>(`/api/sources/${encodeURIComponent(id)}`),
 
-  scan: () => request<IngestionRun>('/api/ingestion/scan', { method: 'POST' }),
+  scan: () => request<IngestionRun>('/api/ingestion/scan', { method: 'POST', timeoutMs: LONG_OPERATION_TIMEOUT_MS }),
   reindex: (documentIds?: string[]) =>
-    request<IngestionRun>('/api/ingestion/reindex', { method: 'POST', body: documentIds ? { document_ids: documentIds } : {} }),
+    request<IngestionRun>('/api/ingestion/reindex', {
+      method: 'POST',
+      body: documentIds ? { document_ids: documentIds } : {},
+      timeoutMs: LONG_OPERATION_TIMEOUT_MS,
+    }),
   ingestionStatus: () => request<IngestionStatus>('/api/ingestion/status'),
 
   chat: (body: ChatRequest, signal?: AbortSignal) =>
@@ -190,7 +194,8 @@ export const api = {
     request<{ removed: number }>(`/api/chat/history/${encodeURIComponent(conversationId)}`, { method: 'DELETE' }),
 
   evaluations: () => request<EvaluationsOverview>('/api/evaluations'),
-  runEvaluation: (suite: string) => request<EvaluationCurrent>('/api/evaluations/run', { method: 'POST', body: { suite } }),
+  runEvaluation: (suite: string) =>
+    request<EvaluationCurrent>('/api/evaluations/run', { method: 'POST', body: { suite }, timeoutMs: LONG_OPERATION_TIMEOUT_MS }),
   evaluationRun: (runId: string) =>
     request<{ id: string; status: string; error_message: string | null }>(`/api/evaluations/runs/${encodeURIComponent(runId)}`),
   evaluationResults: (runId?: string, suite?: string) => {
@@ -206,7 +211,8 @@ export const api = {
     ),
 
   settings: () => request<SettingsOut>('/api/settings'),
-  updateSettings: (body: SettingsUpdate) => request<SettingsOut>('/api/settings', { method: 'PATCH', body }),
+  updateSettings: (body: SettingsUpdate) =>
+    request<SettingsOut>('/api/settings', { method: 'PATCH', body, timeoutMs: LONG_OPERATION_TIMEOUT_MS }),
 
   mentorLog: () => request<MentorLog>('/api/mentor-log'),
   addMentorEntry: (entry: MentorEntryIn) => request<MentorEntry>('/api/mentor-log', { method: 'POST', body: entry }),
