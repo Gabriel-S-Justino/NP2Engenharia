@@ -55,3 +55,10 @@ Texto sobre fundos principais com contraste mínimo de 4,5:1, foco visível, ró
 ## Microcopy
 
 Preparar documentos corresponde à ação anterior Indexar pasta; Preparar novamente à reindexação. Biblioteca, fontes e consultas usam termos cotidianos. Parâmetros editáveis continuam em Ajustes do acervo, destinados à equipe; nomes de variáveis, scripts e infraestrutura ficam na documentação técnica.
+
+
+## Ícone do navegador
+
+O favicon do Lumme usa o fundo verde de lousa (#163F34), livro em tom de papel, detalhe amarelo e três luzes decorativas da marca. A silhueta simplificada permanece legível em abas pequenas, nos temas claro e escuro do navegador.
+
+Fonte vetorial: apps/mobile/assets/favicon-lumme.svg. Imagem de entrada para o Expo: apps/mobile/assets/favicon-lumme.png, 64 × 64 px, com cantos transparentes. O campo web.favicon em app.json aponta para esse PNG; o build web gera favicon.ico automaticamente. A alteração não afeta o ícone nativo, as rotas ou as operações da aplicação.

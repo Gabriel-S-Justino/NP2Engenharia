@@ -23,7 +23,7 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/favicon-lumme.png",
       "name": "Lumme - Escola de trânsito",
       "lang": "pt-BR"
     },
