@@ -198,6 +198,9 @@ class DocumentRepository:
     def chunk_vector_ids(self, document_id: str) -> list[int]:
         return [int(r[0]) for r in self.db.query("SELECT vector_id FROM chunks WHERE document_id = ?", (document_id,))]
 
+    def embedding_rows(self, document_id: str) -> list[Any]:
+        return self.db.query("SELECT vector_id, text FROM chunks WHERE document_id = ? ORDER BY ordinal", (document_id,))
+
     def delete_chunks(self, document_id: str) -> int:
         return self.db.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
 

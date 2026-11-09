@@ -121,8 +121,9 @@ export default function DocumentsScreen() {
 
   const reindexOne = async (doc: DocumentSummary) => {
     try {
-      await api.reindex([doc.id]);
-      toast.show(`Reprocessando “${doc.filename}”.`, 'info');
+      const run = await api.reindex([doc.id]);
+      if (run.status !== 'running') await drainQueue(run);
+      toast.show(`Reindexação de “${doc.filename}” solicitada.`, 'info');
       ingestion.track();
     } catch (err) {
       toast.show(errorMessage(err), 'danger');
@@ -156,6 +157,9 @@ export default function DocumentsScreen() {
         file: Platform.OS === 'web' ? ((asset as unknown as { file?: Blob }).file ?? null) : null,
       });
       toast.show(uploaded.message, 'success');
+      if (uploaded.ingestion?.status === 'completed' && uploaded.ingestion.stats.remaining > 0) {
+        await drainQueue(uploaded.ingestion);
+      }
       ingestion.track();
       void docs.reload();
     } catch (err) {

@@ -62,7 +62,7 @@ export type ChunkOut = {
 };
 
 export type SourceDetail = { chunk: ChunkOut; document: DocumentSummary };
-export type UploadResult = { document: DocumentSummary; message: string };
+export type UploadResult = { document: DocumentSummary; message: string; ingestion?: IngestionRun | null };
 export type DeleteResult = {
   document_id: string;
   removed_vectors: number;

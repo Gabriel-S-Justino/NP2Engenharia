@@ -235,12 +235,21 @@ async def upload_document(request: Request, file: UploadFile = File(...)) -> Upl
         file_modified_at=datetime.now(UTC).isoformat(timespec="seconds"),
     )
     p.documents.save_file(document_id, bytes(data), sha)
-    message = "Arquivo recebido e indexado." if s.serverless else "Arquivo recebido. A indexação foi iniciada."
+    message = "Arquivo recebido. A indexação foi iniciada."
+    run = None
     try:
-        p.ingestion.start("upload", document_ids=[document_id])
+        run = p.ingestion.start("upload", document_ids=[document_id])
+        if s.serverless:
+            document = p.documents.get(document_id)
+            if document.status == "processed":
+                message = "Arquivo recebido e indexado."
+            elif document.status == "failed" or run.status == "failed":
+                message = "Arquivo recebido, mas a indexação falhou. Consulte o erro na biblioteca."
+            else:
+                message = "Arquivo recebido. Um lote foi salvo; a indexação continuará nos próximos lotes."
     except ConflictError:
         message = "Arquivo recebido. Há uma indexação em andamento; ele será processado na próxima indexação."
-    return UploadResult(document=p.documents.get(document_id), message=message)
+    return UploadResult(document=p.documents.get(document_id), message=message, ingestion=run)
 
 
 @router.get("/documents/{document_id}", response_model=DocumentSummary, tags=["documentos"])
@@ -346,7 +355,9 @@ def _ensure_index_ready(p) -> None:
 @router.get("/ingestion/status", response_model=IngestionStatus, tags=["ingestão"])
 def ingestion_status(request: Request) -> IngestionStatus:
     p = container(request).pipeline
-    return IngestionStatus(running=p.ingestion.running, current=p.ingestion.current, last=p.ingestion_runs.last(),
+    running = p.ingestion.running
+    current = (p.ingestion.current or p.ingestion_runs.active()) if running else None
+    return IngestionStatus(running=running, current=current, last=p.ingestion_runs.last(),
                            index=p.index_status())
 
 

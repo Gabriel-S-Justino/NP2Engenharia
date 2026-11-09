@@ -49,6 +49,16 @@ class IngestionRunRepository:
             error_message=row["error_message"],
         )
 
+    def active(self) -> IngestionRun | None:
+        row = self.db.query_one("SELECT * FROM ingestion_runs WHERE status = 'running' ORDER BY started_at DESC LIMIT 1")
+        if row is None:
+            return None
+        return IngestionRun(
+            id=row["id"], kind=row["kind"], status=row["status"], started_at=row["started_at"],
+            finished_at=row["finished_at"], stats=IngestionStats.model_validate_json(row["stats_json"]),
+            error_message=row["error_message"],
+        )
+
     def mark_stale_running_as_failed(self, older_than_seconds: float = 0) -> None:
         """Execuções interrompidas (reinício do servidor, função encerrada) ficam registradas como falha.
 

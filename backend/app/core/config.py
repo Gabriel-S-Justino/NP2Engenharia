@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     embedding_provider: EmbeddingProviderName = "fastembed"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embedding_cache_dir: Path | None = None
+    embedding_batch_size: int = Field(default=8, ge=1, le=64)
+    embedding_threads: int = Field(default=1, ge=1, le=8)
     hashing_dim: int = Field(default=2048, ge=128, le=16384)
 
     llm_provider: LLMProviderName = "gemini"

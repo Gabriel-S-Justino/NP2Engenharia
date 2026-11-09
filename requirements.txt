@@ -10,3 +10,6 @@ fastembed==0.9.1
 anthropic==2.3.0
 httpx==0.28.1
 psycopg[binary]==3.3.6
+
+# Leitura de fontes CFF/Type1 em PDFs comprimidos.
+fonttools==4.68.0

@@ -20,7 +20,7 @@ import tempfile
 import threading
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -162,7 +162,25 @@ class IngestionService:
     @property
     def running(self) -> bool:
         """Há execução nesta instância ou em outra (trava no banco)?"""
-        return self.current is not None or self.pipeline.db.lease_active(LEASE_NAME)
+        if self.current is not None or self.pipeline.db.lease_active(LEASE_NAME):
+            return True
+        self.recover_interrupted()
+        return False
+
+    def recover_interrupted(self) -> None:
+        """Recupera estados deixados por OOM/encerramento, apenas após a expiração da trava."""
+        if self.current is not None or self.pipeline.db.lease_active(LEASE_NAME):
+            return
+        budget = self.pipeline.settings.ingestion_time_budget_seconds + 120
+        self.pipeline.ingestion_runs.mark_stale_running_as_failed(older_than_seconds=budget)
+        cutoff = (datetime.now(UTC) - timedelta(seconds=budget)).isoformat(timespec="milliseconds")
+        self.pipeline.db.execute(
+            """UPDATE documents SET status = 'pending', error_message = ?, updated_at = ?
+               WHERE status = 'processing' AND updated_at <= ?
+               AND NOT EXISTS (SELECT 1 FROM kv WHERE key = ? AND value > ?)""",
+            ("Processamento interrompido. Use Indexar pasta para continuar do último lote salvo.",
+             now_iso(), cutoff, f"lease:{LEASE_NAME}", now_iso()),
+        )
 
     # API pública --------------------------------------------------------------
     def start(self, kind: str = "scan", *, force: bool = False, document_ids: list[str] | None = None,
@@ -180,7 +198,12 @@ class IngestionService:
         if not self.pipeline.db.try_acquire_lease(LEASE_NAME, lease_ttl):
             self._lock.release()
             raise ConflictError("Já existe uma indexação em andamento. Aguarde a conclusão.", code="ingestao_em_andamento")
-        run = self.pipeline.ingestion_runs.start(kind)
+        try:
+            run = self.pipeline.ingestion_runs.start(kind)
+        except Exception:
+            self.pipeline.db.release_lease(LEASE_NAME)
+            self._lock.release()
+            raise
         self.current = run
 
         def target() -> None:
@@ -292,7 +315,9 @@ class IngestionService:
                 over_budget = time_budget is not None and time.monotonic() - started > time_budget
                 if over_budget and stats.processed_so_far > 0:
                     break  # orçamento esgotado: o restante continua pendente (ao menos 1 documento por execução)
-                self._process_file(file, sha, previous_status, manifests.get(file.origin, {}), run)
+                deadline = started + time_budget if time_budget is not None else None
+                if self._process_file(file, sha, previous_status, manifests.get(file.origin, {}), run, deadline=deadline) is False:
+                    break
                 stats.processed_so_far += 1
                 pipeline.ingestion_runs.update(run)
             stats.remaining = stats.to_process - stats.processed_so_far
@@ -318,7 +343,7 @@ class IngestionService:
         return file.path.read_bytes()
 
     def _process_file(self, file: DiscoveredFile, sha: str, previous_status: str | None, manifest: dict,
-                      run: IngestionRun) -> None:
+                      run: IngestionRun, *, deadline: float | None = None) -> bool | None:
         pipeline = self.pipeline
         stats = run.stats
         file_type = file.suffix.lstrip(".")
@@ -350,7 +375,15 @@ class IngestionService:
             )
             stats.skipped += 1
             return
+        checkpoint_key = f"ingestion_checkpoint:{file.document_id}"
+        signature = f"{sha}:{pipeline.embedder_fingerprint}:{pipeline.chunk_params_signature()}"
         try:
+            raw_checkpoint = pipeline.db.get_kv(checkpoint_key)
+            checkpoint = json.loads(raw_checkpoint) if raw_checkpoint else None
+            if checkpoint and checkpoint.get("signature") == signature:
+                rows = pipeline.documents.embedding_rows(file.document_id)
+                if len(rows) == checkpoint["chunks"]:
+                    return self._embed_checkpoint(file, checkpoint, previous_status, run, deadline)
             content = self._read_content(file)
             if not file.stored and pipeline.settings.store_originals_in_db \
                     and pipeline.documents.stored_file_sha(file.document_id) != sha:
@@ -378,26 +411,62 @@ class IngestionService:
                     f"{sum(suspicious)} trecho(s) contêm texto com formato de instrução ao assistente; "
                     "serão tratados apenas como dados e ignorados como comandos."
                 )
-            vectors = pipeline.embedder.embed_documents([c.text for c in chunks])
             pipeline.remove_document_data(file.document_id)
-            vector_ids = pipeline.documents.replace_chunks(file.document_id, chunks, suspicious)
-            pipeline.vector_store.add(vector_ids, vectors)
-            pipeline.documents.mark_processed(
-                file.document_id, page_count=loaded.page_count, chunk_count=len(chunks), warnings=warnings,
-                fingerprint=pipeline.embedder_fingerprint,
-            )
-            pipeline.db.set_kv(f"chunk_params:{file.document_id}", pipeline.chunk_params_signature())
-            stats.chunks_indexed += len(chunks)
-            if previous_status is None:
-                stats.new += 1
-            else:
-                stats.updated += 1
+            pipeline.documents.replace_chunks(file.document_id, chunks, suspicious)
+            checkpoint = {
+                "signature": signature, "chunks": len(chunks), "pages": loaded.page_count,
+                "warnings": warnings, "fingerprint": pipeline.embedder_fingerprint,
+                "params": pipeline.chunk_params_signature(),
+            }
+            pipeline.db.set_kv(checkpoint_key, json.dumps(checkpoint, ensure_ascii=False))
+            return self._embed_checkpoint(file, checkpoint, previous_status, run, deadline)
         except DocumentReadError as exc:
             pipeline.remove_document_data(file.document_id)
+            pipeline.db.delete_kv(checkpoint_key)
             pipeline.documents.mark_failed(file.document_id, str(exc))
             stats.failed += 1
         except Exception:  # noqa: BLE001
             logger.exception("falha_documento", extra={"document_id": file.document_id})
             pipeline.remove_document_data(file.document_id)
+            pipeline.db.delete_kv(checkpoint_key)
             pipeline.documents.mark_failed(file.document_id, "Erro inesperado ao processar o documento.")
             stats.failed += 1
+
+
+    def _embed_checkpoint(self, file: DiscoveredFile, checkpoint: dict, previous_status: str | None,
+                          run: IngestionRun, deadline: float | None) -> bool:
+        pipeline = self.pipeline
+        rows = pipeline.documents.embedding_rows(file.document_id)
+        existing = pipeline.vector_store.ids()
+        missing = [row for row in rows if int(row["vector_id"]) not in existing]
+        batch = pipeline.settings.embedding_batch_size
+        completed = len(rows) - len(missing)
+        for offset in range(0, len(missing), batch):
+            # Garante ao menos um lote por chamada; nunca reinicia vetores já persistidos.
+            if offset > 0 and deadline is not None and time.monotonic() >= deadline:
+                pipeline.documents.set_status(file.document_id, "pending")
+                return False
+            part = missing[offset:offset + batch]
+            vectors = pipeline.embedder.embed_documents([row["text"] for row in part])
+            pipeline.vector_store.add([int(row["vector_id"]) for row in part], vectors)
+            pipeline.vector_store.save()
+            completed += len(part)
+            pipeline.db.execute(
+                "UPDATE documents SET chunk_count = ?, page_count = ?, updated_at = ? WHERE id = ?",
+                (completed, checkpoint["pages"], now_iso(), file.document_id),
+            )
+            run.stats.chunks_indexed += len(part)
+            pipeline.ingestion_runs.update(run)
+            logger.info("lote_indexado", extra={"document_id": file.document_id, "chunks": completed,
+                                               "total_chunks": len(rows)})
+        pipeline.documents.mark_processed(
+            file.document_id, page_count=checkpoint["pages"], chunk_count=len(rows),
+            warnings=checkpoint["warnings"], fingerprint=checkpoint["fingerprint"],
+        )
+        pipeline.db.set_kv(f"chunk_params:{file.document_id}", checkpoint["params"])
+        pipeline.db.delete_kv(f"ingestion_checkpoint:{file.document_id}")
+        if previous_status is None:
+            run.stats.new += 1
+        else:
+            run.stats.updated += 1
+        return True

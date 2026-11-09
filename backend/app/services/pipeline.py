@@ -107,6 +107,7 @@ class RagPipeline:
                 self._embedder = build_embedding_provider(
                     self.settings.embedding_provider, self.settings.embedding_model,
                     cache_dir=self.settings.embedding_cache_dir, hashing_dim=self.settings.hashing_dim,
+                    batch_size=self.settings.embedding_batch_size, threads=self.settings.embedding_threads,
                 )
                 self.embedder_error = None
             except EmbeddingUnavailableError as exc:
@@ -207,7 +208,11 @@ class RagPipeline:
         if expected == actual:
             return True
         missing = [r for r in rows if int(r["vector_id"]) not in actual]
-        extra = sorted(actual - expected)
+        # Vetores de lotes parciais ainda pertencem a documentos pendentes; preserve-os para a retomada.
+        retained = {int(r[0]) for r in self.db.query(
+            "SELECT c.vector_id FROM chunks c JOIN documents d ON d.id = c.document_id WHERE d.status IN ('pending', 'processing')"
+        )}
+        extra = sorted(actual - expected - retained)
         logger.warning("indice_inconsistente", extra={"faltando": len(missing), "sobrando": len(extra)})
         if not repair:
             return False
@@ -216,8 +221,9 @@ class RagPipeline:
             return False
         if extra:
             self.vector_store.remove(extra)
-        for i in range(0, len(missing), 256):
-            part = missing[i:i + 256]
+        batch = self.settings.embedding_batch_size
+        for i in range(0, len(missing), batch):
+            part = missing[i:i + batch]
             self.vector_store.add([int(r["vector_id"]) for r in part], self.embedder.embed_documents([r["text"] for r in part]))
         self.vector_store.save()
         self.bump()
@@ -228,7 +234,7 @@ class RagPipeline:
         rows = rows if rows is not None else self.documents.indexed_chunk_rows()
         embedder = self.embedder
         self.vector_store.reset(embedder.fingerprint, embedder.dim)
-        batch = 256
+        batch = self.settings.embedding_batch_size
         for i in range(0, len(rows), batch):
             part = rows[i:i + batch]
             vectors = embedder.embed_documents([r["text"] for r in part])

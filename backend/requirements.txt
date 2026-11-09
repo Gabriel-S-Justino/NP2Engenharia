@@ -14,3 +14,6 @@ psycopg[binary]==3.3.6
 # Provedor de LLM opcional (LLM_PROVIDER=anthropic)
 anthropic==2.3.0
 httpx==0.28.1
+
+# Leitura de fontes CFF/Type1 em PDFs comprimidos.
+fonttools==4.68.0

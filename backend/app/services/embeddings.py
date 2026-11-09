@@ -150,7 +150,8 @@ class FastEmbedProvider(EmbeddingProvider):
     semantic = True
     version = "1"
 
-    def __init__(self, model: str, cache_dir: Path | None = None):
+    def __init__(self, model: str, cache_dir: Path | None = None, *, batch_size: int = 8, threads: int = 1):
+        self.batch_size = batch_size
         try:
             from fastembed import TextEmbedding
         except ImportError as exc:  # pragma: no cover - depende da instalação
@@ -160,7 +161,7 @@ class FastEmbedProvider(EmbeddingProvider):
             ) from exc
         self.model = model
         try:
-            self._engine = TextEmbedding(model_name=model, cache_dir=str(cache_dir) if cache_dir else None)
+            self._engine = TextEmbedding(model_name=model, cache_dir=str(cache_dir) if cache_dir else None, threads=threads)
         except Exception as exc:  # pragma: no cover - depende de rede/cache
             raise EmbeddingUnavailableError(
                 f"Não foi possível carregar o modelo de embeddings '{model}'. Verifique o acesso à "
@@ -174,9 +175,9 @@ class FastEmbedProvider(EmbeddingProvider):
         if not texts:
             return np.zeros((0, self.dim), dtype=np.float32)
         if self._e5:
-            vectors = list(self._engine.passage_embed(texts))
+            vectors = list(self._engine.passage_embed(texts, batch_size=self.batch_size))
         else:
-            vectors = list(self._engine.embed(texts))
+            vectors = list(self._engine.embed(texts, batch_size=self.batch_size))
         return _l2_normalize(np.vstack(vectors))
 
     def embed_query(self, text: str) -> np.ndarray:  # pragma: no cover
@@ -187,9 +188,10 @@ class FastEmbedProvider(EmbeddingProvider):
         return _l2_normalize(np.asarray([vector]))[0]
 
 
-def build_embedding_provider(name: str, model: str, *, cache_dir: Path | None = None, hashing_dim: int = 2048) -> EmbeddingProvider:
+def build_embedding_provider(name: str, model: str, *, cache_dir: Path | None = None, hashing_dim: int = 2048,
+                             batch_size: int = 8, threads: int = 1) -> EmbeddingProvider:
     if name == "hashing":
         return HashingEmbeddingProvider(dim=hashing_dim)
     if name == "fastembed":
-        return FastEmbedProvider(model=model, cache_dir=cache_dir)
+        return FastEmbedProvider(model=model, cache_dir=cache_dir, batch_size=batch_size, threads=threads)
     raise EmbeddingUnavailableError(f"Provedor de embeddings desconhecido: {name}")

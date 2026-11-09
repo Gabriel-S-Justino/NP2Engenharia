@@ -24,3 +24,11 @@ Configure `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, `LLM_PROVIDER=gemini`, `
 O commit não envia PDFs, `.env`, banco, índices, modelos ou relatórios locais. Adicionar documentos ao disco local não os disponibiliza na hospedagem. Envie-os manualmente à aplicação publicada e indexe no banco de destino.
 
 As verificações automatizadas usam fixtures e clientes simulados, sem chamada paga ao provedor. Teste manualmente a aplicação com suas credenciais e seu acervo para validar a integração real.
+
+## Documento preso em Processando
+
+A indexação salva trechos e vetores em lotes (`EMBEDDING_BATCH_SIZE=8`, `EMBEDDING_THREADS=1` por padrão). Isso limita o pico de memória do ONNX. Cada lote grava seu progresso no banco; após esgotar o orçamento da função, o documento fica pendente e a próxima chamada continua pelos vetores faltantes.
+
+Se a Vercel encerrar a função à força, a consulta de status recupera documentos antigos em processamento depois que a trava expira. Atualize Documentos e use Indexar pasta para retomar o arquivo já armazenado; não é necessário enviá-lo novamente. Lotes parciais não são disponibilizados para respostas até concluir o documento.
+
+A interface continua os lotes de uploads e reindexações síncronas enquanto estiver aberta. Os logs registram `lote_indexado` com contagem real de trechos. A dependência fontTools dá suporte às fontes CFF/Type1 de PDFs comprimidos.

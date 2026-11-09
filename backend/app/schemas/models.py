@@ -103,6 +103,7 @@ class SourceDetail(BaseModel):
 class UploadResult(BaseModel):
     document: DocumentSummary
     message: str
+    ingestion: IngestionRun | None = None
 
 
 class DeleteResult(BaseModel):
