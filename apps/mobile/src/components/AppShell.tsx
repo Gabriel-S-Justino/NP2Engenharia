@@ -109,7 +109,7 @@ function Sidebar({ collapsed = false, onToggle, onClose }: { collapsed?: boolean
           accessibilityRole="button"
           accessibilityLabel="Ferramentas da equipe"
           accessibilityState={{ expanded: toolsOpen && !collapsed }}
-          onPress={() => { setToolsOpen(!toolsOpen); if (collapsed) onToggle?.(); }}
+          onPress={() => { if (collapsed) { setToolsOpen(true); onToggle?.(); } else setToolsOpen(!toolsOpen); }}
           style={styles.navItem}>
           <View style={[styles.navRow, collapsed && styles.center]}>
             <Ionicons name="grid-outline" size={19} color={colors.textSecondary} />

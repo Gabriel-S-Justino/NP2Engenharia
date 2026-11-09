@@ -89,3 +89,12 @@ it('menu recolhido expande para mostrar a busca e os chats', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Buscar chats' }));
   expect(screen.getByRole('button', { name: 'Abrir conversa: Como funciona a preferência?' })).toBeOnTheScreen();
 });
+
+it('abre as ferramentas pelo ícone mesmo após recolher um grupo já aberto', async () => {
+  await render(<AppShell><Text>Conteúdo</Text></AppShell>);
+  await fireEvent.press(screen.getByRole('button', { name: 'Ferramentas da equipe' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Recolher menu' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Ferramentas da equipe' }));
+  expect(screen.getByRole('link', { name: 'Revisão de qualidade' })).toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: 'Diário da equipe' })).toBeOnTheScreen();
+});
