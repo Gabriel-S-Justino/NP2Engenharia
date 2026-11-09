@@ -21,7 +21,7 @@ A sinalização ilustrada e o livro são decorativos. Não representam progresso
 | /mentoria | Diário da equipe | Mesmos campos e registros de validação |
 | /configuracoes | Configurações | Disponibilidade, ajustes do acervo, token, privacidade e aparência |
 
-No desktop, as opções principais são identificadas como Aprender e consultar; as opções de revisão, diário e configurações aparecem no Espaço da equipe. Nenhuma rota foi removida ou protegida por um novo requisito. No celular, continuam as quatro opções principais e Mais. No tablet, o menu continua recolhido por padrão.
+No desktop, as opções principais são identificadas como Aprender e consultar; as opções de revisão, diário e configurações aparecem no Espaço da equipe. Nenhuma rota foi removida ou protegida por um novo requisito. No celular, a navegação abre em um menu lateral à esquerda pelo botão no topo. No tablet, a sidebar continua recolhida por padrão.
 
 ## Informação útil na consulta
 
@@ -74,4 +74,4 @@ O domínio de produção atual, os identificadores de pacote e de instalação e
 
 ## Histórico de chats
 
-A tela Tire suas dúvidas agora oferece Histórico de chats e Nova conversa. O painel permite buscar pelo título, identificar o chat atual e abrir conversas anteriores, preservando as fontes. A lista pertence ao navegador ou dispositivo. Os controles ficam bloqueados durante envio ou carregamento; falhas são apresentadas com nova tentativa. [Detalhes e limitações](HISTORICO_CHATS.md).
+O histórico fica diretamente na sidebar, no padrão de navegação de aplicações de chat: Nova conversa no topo, busca, lista compacta com rolagem e destaque da conversa atual. No celular, o menu abre pela esquerda; no desktop, pode ser recolhido. Ferramentas da equipe expande os links de revisão e diário; Configurações permanece no rodapé. A busca usa os títulos das conversas. A lista pertence ao navegador ou dispositivo. Trocar de chat preserva as fontes e permanece bloqueado durante envio ou carregamento. [Detalhes e limitações](HISTORICO_CHATS.md).

@@ -53,4 +53,9 @@ O agrupamento Espaço da equipe é somente uma indicação visual: nenhuma rota 
 
 ## Criar e retomar conversas
 
-Tire suas dúvidas → Nova conversa abre um chat vazio sem excluir os anteriores. Histórico de chats → buscar pelo título → selecionar → carregar todas as páginas → continuar a conversa. Falha de carregamento mantém o chat anterior. Para remover, abra o chat → Limpar conversa → confirmar; uma falha no servidor mantém o conteúdo e apresenta o erro. [Guia](HISTORICO_CHATS.md).
+Sidebar → Nova conversa abre um chat vazio sem excluir os anteriores. Sidebar → Buscar chats → buscar pelo título → selecionar → carregar todas as páginas → continuar a conversa. Falha de carregamento mantém o chat anterior. Para remover, abra o chat → Limpar conversa → confirmar; uma falha no servidor mantém o conteúdo e apresenta o erro. [Guia](HISTORICO_CHATS.md).
+
+
+## Navegação lateral
+
+Desktop: sidebar com Nova conversa, atalhos, busca e Seus chats. Recolher menu alterna para ícones; Buscar chats expande a lista. Celular: Abrir menu de conversas mostra o mesmo conteúdo em um painel à esquerda; selecionar conversa ou rota fecha o painel. Ferramentas da equipe expande Revisão de qualidade e Diário da equipe. Configurações permanece no rodapé. A antiga barra inferior e o modal separado de histórico foram substituídos por essa navegação.

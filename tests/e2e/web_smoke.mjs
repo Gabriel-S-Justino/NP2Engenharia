@@ -89,6 +89,7 @@ await step('Fonte: detalhes do trecho citado', async () => {
 });
 
 await step('Laboratório: executar a matriz e ver taxa por categoria', async () => {
+  await desktop.getByRole('button', { name: 'Ferramentas da equipe' }).click();
   await desktop.getByRole('link', { name: 'Revisão de qualidade' }).click();
   await desktop.getByTestId('botao-executar-testes').click();
   await desktop.getByText('Resultado por categoria').waitFor({ timeout: 60000 });
@@ -120,10 +121,12 @@ await step('Navegação por teclado alcança links do menu com foco visível', a
 const mobile = await newPage(390, 844);
 await step('Celular: barra inferior, chat e histórico preservado', async () => {
   await mobile.goto(`${WEB}/chat`, { waitUntil: 'networkidle' });
-  await mobile.getByRole('link', { name: 'Início' }).waitFor();
+  await mobile.getByRole('button', { name: 'Abrir menu de conversas' }).waitFor();
   await mobile.getByText('Tire suas dúvidas').waitFor();
   await mobile.screenshot({ path: `${SHOTS}/09_chat_mobile.png`, fullPage: false });
-  await mobile.getByRole('button', { name: 'Mais opções de navegação' }).click();
+  await mobile.getByRole('button', { name: 'Abrir menu de conversas' }).click();
+  await mobile.getByRole('dialog', { name: 'Menu de conversas' }).waitFor();
+  await mobile.getByRole('button', { name: 'Ferramentas da equipe' }).click();
   await mobile.getByText('Diário da equipe').waitFor();
   await mobile.screenshot({ path: `${SHOTS}/10_menu_mais_mobile.png` });
 });

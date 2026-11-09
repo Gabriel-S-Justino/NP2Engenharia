@@ -62,3 +62,10 @@ Preparar documentos corresponde à ação anterior Indexar pasta; Preparar novam
 O favicon do Lumme usa o fundo verde de lousa (#163F34), livro em tom de papel, detalhe amarelo e três luzes decorativas da marca. A silhueta simplificada permanece legível em abas pequenas, nos temas claro e escuro do navegador.
 
 Fonte vetorial: apps/mobile/assets/favicon-lumme.svg. Imagem de entrada para o Expo: apps/mobile/assets/favicon-lumme.png, 64 × 64 px, com cantos transparentes. O campo web.favicon em app.json aponta para esse PNG; o build web gera favicon.ico automaticamente. A alteração não afeta o ícone nativo, as rotas ou as operações da aplicação.
+
+
+## Sidebar de conversas
+
+Organização inspirada em interfaces de chat: Nova conversa no topo, atalhos compactos, busca, lista de títulos em uma linha com rolagem independente e configurações no rodapé. Seleção usa primarySoft; superfícies usam o verde e os tons do Lumme. A sidebar tem 280 px aberta e 72 px recolhida. Linhas interativas têm ao menos 44 px de altura, foco visível e rótulos acessíveis. Os textos mantêm contraste dos tokens existentes.
+
+Em telas compactas, o botão de menu abre um painel de 280 px limitado a 90% da largura, alinhado à esquerda. Fecha pelo botão, fundo, Escape ou seleção de rota/conversa. A navegação inferior e o modal exclusivo de histórico deixam de ser utilizados. O componente ConversationList apresenta o catálogo existente sem mudar armazenamento, retenção ou endpoints.

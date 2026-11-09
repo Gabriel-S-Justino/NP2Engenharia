@@ -14,7 +14,7 @@ Documentação: [índice](docs/README.md), [UI/UX](docs/UI_UX.md), [design syste
 
 ## Histórico de chats
 
-Na tela Tire suas dúvidas, use Histórico de chats para buscar e retomar conversas anteriores ou Nova conversa para começar outro assunto. A conversa antiga é preservada. O catálogo fica neste navegador ou dispositivo; mensagens e fontes permanecem no servidor conforme o prazo de retenção. Não exige admin token nem cria sincronização entre dispositivos.
+Use a sidebar para buscar e retomar conversas anteriores ou Nova conversa, no topo, para começar outro assunto. No celular, abra o menu lateral pelo botão no cabeçalho. A conversa antiga é preservada. O catálogo fica neste navegador ou dispositivo; mensagens e fontes permanecem no servidor conforme o prazo de retenção. Não exige admin token nem cria sincronização entre dispositivos.
 
 Guia: [Histórico de chats](docs/HISTORICO_CHATS.md).
 

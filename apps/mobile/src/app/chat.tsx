@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ScrollViewInstance, type TextInputKeyPressEvent } from 'react-native';
 
-import { ChatHistoryPanel } from '@/components/ChatHistoryPanel';
 import { TrafficMark } from '@/components/TrafficIdentity';
 import { AssistantMessage, FailedMessage, UserMessage } from '@/components/ChatMessage';
 import { SourceReference, citationToSource } from '@/components/SourceReference';
@@ -33,12 +32,11 @@ function EvidencePanel({ response, onOpenSource }: { response: ChatResponse; onO
 function ChatConversation() {
   const { colors } = useTheme();
   const { isDesktop } = useBreakpoint();
-  const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation, newConversation } = useAppState();
+  const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation } = useAppState();
   const stats = useAsync(() => api.stats(), [connection]);
   const [question, setQuestion] = useState('');
   const [inputError, setInputError] = useState<string | null>(null);
   const [panel, setPanel] = useState<ChatResponse | null>(null);
-  const [historyVisible, setHistoryVisible] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
   const latestAnswer = [...entries].reverse().find((e) => e.kind === 'answer');
@@ -92,11 +90,6 @@ function ChatConversation() {
             </View>
             <IconButton icon="folder-open-outline" accessibilityLabel="Abrir documentos do acervo" onPress={() => router.navigate('/documentos')} />
             <IconButton icon="trash-outline" accessibilityLabel="Limpar conversa" onPress={() => setConfirmClear(true)} disabled={!entries.length || sending || historyLoading} />
-          </View>
-
-          <View style={[styles.chatActions, { borderBottomColor: colors.border }]}>
-            <Button label="Histórico de chats" icon="time-outline" variant="ghost" size="sm" disabled={sending || historyLoading} onPress={() => setHistoryVisible(true)} />
-            <Button label="Nova conversa" icon="add" variant="secondary" size="sm" disabled={sending || historyLoading} onPress={newConversation} />
           </View>
 
           <ScrollView ref={scrollRef} style={styles.flex} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
@@ -187,7 +180,6 @@ function ChatConversation() {
         ) : null}
       </View>
 
-      <ChatHistoryPanel visible={historyVisible} onClose={() => setHistoryVisible(false)} />
       <Dialog visible={panel !== null} title="Fontes da resposta" variant="sheet" onClose={() => setPanel(null)}>
         {panel ? <EvidencePanel response={panel} onOpenSource={(id) => { setPanel(null); openSource(id); }} /> : null}
       </Dialog>
@@ -218,7 +210,6 @@ const styles = StyleSheet.create({
   conversationColumn: { flex: 1 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.lg, borderBottomWidth: 1 },
-  chatActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderBottomWidth: 1 },
   messages: { padding: spacing.md, flexGrow: 1 },
   messagesInner: { width: '100%', maxWidth: maxContentWidth.reading, alignSelf: 'center', gap: spacing.lg },
   turn: { gap: spacing.sm },

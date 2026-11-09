@@ -2,9 +2,11 @@
 
 ## Uso
 
-Na tela Tire suas dúvidas, use Histórico de chats para consultar as conversas salvas neste navegador ou dispositivo. A primeira pergunta dá nome ao chat; a lista é ordenada pela resposta mais recente e permite busca pelo título.
+Use a sidebar para consultar as conversas salvas neste navegador ou dispositivo. No celular, abra o botão Abrir menu de conversas no topo da tela. A primeira pergunta dá nome ao chat; a lista é ordenada pela resposta mais recente e permite busca pelo título.
 
-Nova conversa abre um chat vazio sem apagar os anteriores. Abra um item do histórico para rever perguntas, respostas, avisos e citações e continuar enviando perguntas no mesmo chat. A conversa ativa continua selecionada ao recarregar o aplicativo.
+Nova conversa fica no topo da sidebar e abre um chat vazio sem apagar os anteriores. Abra um item do histórico para rever perguntas, respostas, avisos e citações e continuar enviando perguntas no mesmo chat. A conversa ativa fica destacada na lista e continua selecionada ao recarregar o aplicativo.
+
+A sidebar segue a organização de aplicações de chat: ação Nova conversa no topo, atalhos da aplicação, busca Buscar chats, lista Seus chats com rolagem própria e configurações no rodapé. Ferramentas da equipe expande os links de revisão e diário. O painel pode ser recolhido para uma barra de ícones; Buscar chats o expande novamente. No celular, o menu aparece pela esquerda e fecha ao selecionar uma conversa. O histórico não ocupa mais um modal separado nem a barra de ações da tela de chat.
 
 Para apagar um chat, abra-o e use Limpar conversa, confirmando a remoção. Se a operação falhar no servidor, a interface mantém a conversa e avisa que ela ainda está salva. Nenhuma conversa real deve ser apagada durante testes de produção.
 

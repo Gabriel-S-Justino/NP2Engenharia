@@ -19,7 +19,7 @@ export function useBreakpoint() {
     breakpoint: bp,
     isDesktop: bp === 'desktop',
     isTablet: bp === 'tablet',
-    /** Sidebar fixa a partir do tablet; barra inferior em celulares. */
+    /** Sidebar fixa a partir do tablet; menu lateral deslizante em celulares. */
     hasSidebar: bp === 'desktop' || bp === 'tablet',
     isCompact: bp === 'mobileNarrow' || bp === 'mobileWide',
   };

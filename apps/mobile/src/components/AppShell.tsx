@@ -1,15 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Link, usePathname, type Href } from 'expo-router';
+import { Link, router, usePathname, type Href } from 'expo-router';
 import { useState, type ComponentProps, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppText, Dialog, IconButton } from '@/components/ui';
+import { AppText, Button, IconButton } from '@/components/ui';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useAppState } from '@/state/AppState';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 
 import { ConnectionBadge } from './ConnectionBadge';
+import { ConversationList } from './ConversationList';
 import { TrafficMark } from './TrafficIdentity';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -25,13 +27,10 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/configuracoes', path: '/configuracoes', label: 'Configurações', icon: 'settings-outline', primary: false },
 ];
 
-const SHORT_LABELS: Record<string, string> = { '/': 'Início', '/chat': 'Chat', '/documentos': 'Acervo' };
-
 export function isActive(pathname: string, path: string) {
   return path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`);
 }
 
-/** Item de navegação: na web vira <a href> real (Enter, clique do meio e leitores de tela funcionam). */
 function NavigationItem({ item, active, collapsed, onPress }: { item: NavItem; active: boolean; collapsed?: boolean; onPress?: () => void }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -44,148 +43,149 @@ function NavigationItem({ item, active, collapsed, onPress }: { item: NavItem; a
         aria-current={active ? 'page' : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        // Link (asChild) repassa o estilo ao elemento <a>: precisa ser um objeto simples.
         style={StyleSheet.flatten([
           styles.navItem,
           { backgroundColor: active ? colors.primarySoft : 'transparent' },
           focused && ({ outlineColor: colors.focus, outlineWidth: 2, outlineStyle: 'solid' } as ViewStyle),
         ])}>
-        <View style={[styles.navRow, collapsed && styles.navItemCollapsed]}>
-          <Ionicons name={active ? (item.icon.replace('-outline', '') as IconName) : item.icon} size={20} color={active ? colors.primaryStrong : colors.textSecondary} />
-          {!collapsed ? (
-            <AppText variant={active ? 'bodyStrong' : 'body'} style={{ color: active ? colors.primaryStrong : colors.textPrimary }}>
-              {item.label}
-            </AppText>
-          ) : null}
+        <View style={[styles.navRow, collapsed && styles.center]}>
+          <Ionicons name={item.icon} size={19} color={active ? colors.primaryStrong : colors.textSecondary} />
+          {!collapsed ? <AppText style={{ fontSize: 14, color: active ? colors.primaryStrong : colors.textPrimary }}>{item.label}</AppText> : null}
         </View>
       </Pressable>
     </Link>
   );
 }
 
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function Sidebar({ collapsed = false, onToggle, onClose }: { collapsed?: boolean; onToggle?: () => void; onClose?: () => void }) {
   const { colors } = useTheme();
   const pathname = usePathname();
+  const { newConversation, sending, historyLoading } = useAppState();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const busy = sending || historyLoading;
+  const startChat = () => {
+    if (busy) return;
+    newConversation();
+    router.navigate('/chat');
+    onClose?.();
+  };
+  const goToChat = () => { router.navigate('/chat'); onClose?.(); };
+  const settings = NAV_ITEMS.find((item) => item.path === '/configuracoes')!;
   return (
     <View
       role="navigation"
       aria-label="Navegação principal"
-      style={[styles.sidebar, { width: collapsed ? 80 : 264, backgroundColor: colors.surface, borderRightColor: colors.border }]}>
-      <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
-        <TrafficMark />
+      style={[styles.sidebar, { width: collapsed ? 72 : onClose ? '100%' : 280, backgroundColor: colors.surfaceMuted, borderRightColor: colors.border }]}>
+      <View style={[styles.brand, collapsed && styles.center]}>
         {!collapsed ? (
-          <View style={styles.flex}>
-            <AppText variant="subtitle">Lumme</AppText>
-            <AppText variant="caption" color="textSecondary">
-              Escola de trânsito
-            </AppText>
-          </View>
+          <>
+            <TrafficMark />
+            <View style={styles.flex}>
+              <AppText variant="subtitle">Lumme</AppText>
+              <AppText variant="caption" color="textSecondary">Escola de trânsito</AppText>
+            </View>
+          </>
         ) : null}
+        <IconButton
+          icon={onClose ? 'close-outline' : 'menu-outline'}
+          accessibilityLabel={onClose ? 'Fechar menu de conversas' : collapsed ? 'Expandir menu' : 'Recolher menu'}
+          onPress={onClose ?? onToggle ?? (() => undefined)}
+        />
       </View>
-      {!collapsed ? <AppText variant="caption" color="textSecondary" style={styles.navHeading}>APRENDER E CONSULTAR</AppText> : null}
-      <View style={styles.navList}>
-        {NAV_ITEMS.map((item) => (
-          <View key={item.path}>
-            {item.path === '/testes' && !collapsed ? <AppText variant="caption" color="textSecondary" style={styles.teamHeading}>ESPAÇO DA EQUIPE</AppText> : null}
-            <NavigationItem item={item} collapsed={collapsed} active={isActive(pathname, item.path)} />
-          </View>
+      {collapsed ? (
+        <>
+          <IconButton icon="create-outline" accessibilityLabel="Nova conversa" disabled={busy} onPress={startChat} />
+          <IconButton icon="search-outline" accessibilityLabel="Buscar chats" onPress={onToggle ?? (() => undefined)} />
+        </>
+      ) : <Button label="Nova conversa" icon="create-outline" variant="secondary" disabled={busy} onPress={startChat} />}
+      <View style={styles.links}>
+        {NAV_ITEMS.filter((item) => item.primary).map((item) => (
+          <NavigationItem key={item.path} item={item} active={isActive(pathname, item.path)} collapsed={collapsed} onPress={onClose} />
         ))}
       </View>
-      <View style={styles.sidebarFooter}>
-        {!collapsed ? <ConnectionBadge /> : null}
-        <IconButton icon={collapsed ? 'chevron-forward' : 'chevron-back'} accessibilityLabel={collapsed ? 'Expandir menu' : 'Recolher menu'} onPress={onToggle} />
+      {!collapsed ? <ConversationList active={isActive(pathname, '/chat')} onOpened={goToChat} /> : <View style={styles.flex} />}
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ferramentas da equipe"
+          accessibilityState={{ expanded: toolsOpen && !collapsed }}
+          onPress={() => { setToolsOpen(!toolsOpen); if (collapsed) onToggle?.(); }}
+          style={styles.navItem}>
+          <View style={[styles.navRow, collapsed && styles.center]}>
+            <Ionicons name="grid-outline" size={19} color={colors.textSecondary} />
+            {!collapsed ? (
+              <>
+                <AppText style={[styles.flex, { fontSize: 14 }]}>Ferramentas da equipe</AppText>
+                <Ionicons name={toolsOpen ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textSecondary} />
+              </>
+            ) : null}
+          </View>
+        </Pressable>
+        {toolsOpen && !collapsed ? (
+          <ScrollView style={styles.tools} contentContainerStyle={styles.links}>
+            {NAV_ITEMS.filter((item) => !item.primary && item.path !== '/configuracoes').map((item) => (
+              <NavigationItem key={item.path} item={item} active={isActive(pathname, item.path)} onPress={onClose} />
+            ))}
+          </ScrollView>
+        ) : null}
+        <NavigationItem item={settings} active={isActive(pathname, settings.path)} collapsed={collapsed} onPress={onClose} />
+        {!collapsed ? <View style={styles.connection}><ConnectionBadge /></View> : null}
       </View>
     </View>
   );
 }
 
-function BottomBar() {
-  const { colors } = useTheme();
-  const pathname = usePathname();
-  const insets = useSafeAreaInsets();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const primary = NAV_ITEMS.filter((i) => i.primary);
-  const secondary = NAV_ITEMS.filter((i) => !i.primary);
-  const moreActive = secondary.some((i) => isActive(pathname, i.path));
-  return (
-    <>
-      <View
-        role="navigation"
-        aria-label="Navegação principal"
-        style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
-        {primary.map((item) => {
-          const active = isActive(pathname, item.path);
-          return (
-            <Link key={item.path} href={item.href} asChild>
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={item.label}
-              accessibilityState={{ selected: active }}
-              style={styles.bottomItem}>
-              <View style={styles.bottomInner}>
-              <Ionicons name={active ? (item.icon.replace('-outline', '') as IconName) : item.icon} size={22} color={active ? colors.primary : colors.textSecondary} />
-              <AppText variant="caption" numberOfLines={1} style={{ color: active ? colors.primary : colors.textSecondary }}>
-                {SHORT_LABELS[item.path] ?? item.label}
-              </AppText>
-              </View>
-            </Pressable>
-            </Link>
-          );
-        })}
-        <Pressable accessibilityRole="button" accessibilityLabel="Mais opções de navegação" accessibilityState={{ selected: moreActive }} onPress={() => setMoreOpen(true)} style={styles.bottomItem}>
-          <Ionicons name={moreActive ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'} size={22} color={moreActive ? colors.primary : colors.textSecondary} />
-          <AppText variant="caption" style={{ color: moreActive ? colors.primary : colors.textSecondary }}>
-            Mais
-          </AppText>
-        </Pressable>
-      </View>
-      <Dialog visible={moreOpen} title="Mais opções" onClose={() => setMoreOpen(false)} variant="sheet">
-        <ConnectionBadge />
-        {secondary.map((item) => (
-          <NavigationItem
-            key={item.path}
-            item={item}
-            active={isActive(pathname, item.path)}
-            onPress={() => setMoreOpen(false)}
-          />
-        ))}
-      </Dialog>
-    </>
-  );
-}
-
-/** Estrutura adaptativa: sidebar (tablet/desktop) ou barra inferior (celular). */
+/** Sidebar fixa em telas amplas e painel lateral à esquerda no celular. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
   const { hasSidebar, isTablet } = useBreakpoint();
+  const insets = useSafeAreaInsets();
+  const { newConversation, sending, historyLoading } = useAppState();
   const [collapsed, setCollapsed] = useState<boolean | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const isCollapsed = collapsed ?? isTablet;
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background, flexDirection: hasSidebar ? 'row' : 'column' }]}>
       {hasSidebar ? <Sidebar collapsed={isCollapsed} onToggle={() => setCollapsed(!isCollapsed)} /> : null}
-      <View role="main" style={styles.flex}>
-        {children}
-      </View>
-      {!hasSidebar ? <BottomBar /> : null}
+      {!hasSidebar ? (
+        <View style={[styles.mobileHeader, { backgroundColor: colors.surfaceMuted, borderBottomColor: colors.border, paddingTop: insets.top }]}>
+          <IconButton icon="menu-outline" accessibilityLabel="Abrir menu de conversas" onPress={() => setDrawerOpen(true)} />
+          <AppText variant="subtitle" style={styles.flex}>Lumme</AppText>
+          <IconButton icon="create-outline" accessibilityLabel="Nova conversa" disabled={sending || historyLoading} onPress={() => { newConversation(); router.navigate('/chat'); }} />
+        </View>
+      ) : null}
+      <View role="main" style={[styles.flex, !hasSidebar && { paddingBottom: insets.bottom }]}>{children}</View>
+      <Modal visible={drawerOpen && !hasSidebar} transparent animationType="fade" onRequestClose={() => setDrawerOpen(false)}>
+        <View style={styles.overlay}>
+          <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Fechar menu de conversas" onPress={() => setDrawerOpen(false)} />
+          <View
+            role="dialog"
+            aria-modal
+            aria-label="Menu de conversas"
+            accessibilityViewIsModal
+            style={[styles.drawer, { backgroundColor: colors.surfaceMuted, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <Sidebar onClose={() => setDrawerOpen(false)} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  flex: { flex: 1 },
-  sidebar: { borderRightWidth: 1, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, gap: spacing.lg },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xs },
-  brandCollapsed: { justifyContent: 'center', paddingHorizontal: 0 },
-  logo: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  navHeading: { paddingHorizontal: spacing.sm, letterSpacing: 1.2, fontSize: 10 },
-  teamHeading: { paddingHorizontal: spacing.sm, marginTop: spacing.lg, marginBottom: spacing.xs, letterSpacing: 1.2, fontSize: 10 },
-  navList: { gap: spacing.xxs, flex: 1 },
-  navItem: { minHeight: 48, paddingHorizontal: spacing.sm, borderRadius: radius.md, justifyContent: 'center' },
+  root: { flex: 1, minHeight: 0 },
+  flex: { flex: 1, minHeight: 0, minWidth: 0 },
+  sidebar: { height: '100%', minHeight: 0, borderRightWidth: 1, padding: spacing.sm, gap: spacing.xs },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 52, paddingBottom: spacing.xs },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  links: { gap: 2 },
+  navItem: { minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: radius.sm, justifyContent: 'center' },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  navItemCollapsed: { justifyContent: 'center' },
-  sidebarFooter: { gap: spacing.xs, alignItems: 'flex-start' },
-  bottomBar: { flexDirection: 'row', borderTopWidth: 1, paddingTop: spacing.xxs },
-  bottomItem: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 52, gap: 2 },
-  bottomInner: { alignItems: 'center', gap: 2 },
+  footer: { borderTopWidth: 1, paddingTop: spacing.xs, gap: 2 },
+  tools: { maxHeight: 96 },
+  connection: { paddingHorizontal: spacing.sm, paddingTop: spacing.xs, paddingBottom: spacing.xxs },
+  mobileHeader: { flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: spacing.xs, paddingHorizontal: spacing.xs, borderBottomWidth: 1 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', alignItems: 'flex-start' },
+  drawer: { height: '100%', width: 280, maxWidth: '90%' },
 });
