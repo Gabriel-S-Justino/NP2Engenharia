@@ -12,7 +12,7 @@ from app.services.generation import EvidenceSource, GeminiGenerator, GenerationU
 
 
 def settings(**overrides):
-    return Settings(_env_file=None, app_env="test", **{"llm_provider": "Google", "llm_api_key": "test-key", **overrides})
+    return Settings(_env_file=None, app_env="test", **{"llm_provider": "Google", "llm_api_key": "test-key", "llm_max_retries": 0, "llm_fallback_models": "", **overrides})
 
 
 @pytest.mark.parametrize("provider", ["Google", " google ", "GEMINI", "google-gemini"])
@@ -70,7 +70,7 @@ def test_request_keeps_key_out_of_url_and_delimits_evidence(monkeypatch):
     assert request.url.path.endswith("/models/gemini-flash-latest:generateContent")
     assert not request.url.query and "test-key" not in str(request.url)
     assert request.headers["x-goog-api-key"] == "test-key"
-    assert captured["timeout"] == 7 and captured["follow_redirects"] is False
+    assert 0 < captured["timeout"] <= 7 and captured["follow_redirects"] is False
     assert body["systemInstruction"]["parts"][0]["text"] == generation.SYSTEM_PROMPT
     assert '<fonte id="F1"' in body["contents"][0]["parts"][0]["text"]
     assert "Qual prazo? [tag removida]" in body["contents"][0]["parts"][0]["text"]
@@ -163,3 +163,76 @@ def test_gemini_response_passes_through_api_and_citation_validation(indexed_clie
     assert result["status"] == "answered"
     assert result["generation"]["provider"] == "gemini" and result["generation"]["is_llm"]
     assert result["citations_valid"] and result["citations"][0]["source_id"]
+
+
+def sequence(monkeypatch, statuses):
+    calls, delays = [], []
+    replies = iter(statuses)
+
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        status = next(replies)
+        return httpx.Response(status, json=response() if status == 200 else {"error": {"status": "UNAVAILABLE"}})
+
+    monkeypatch.setattr(generation.httpx, "post", post)
+    monkeypatch.setattr(generation.time, "sleep", delays.append)
+    return calls, delays
+
+
+def test_transient_failure_retries_then_uses_same_model(monkeypatch):
+    calls, delays = sequence(monkeypatch, [503, 200])
+    generator = build_generator(settings(llm_max_retries=1))
+    result = generator.generate("Prazo?", [SOURCE], None)
+    assert len(calls) == 2 and calls[0][0] == calls[1][0]
+    assert delays == [1] and result.model == generator.model
+    assert not result.warnings
+
+
+def test_overloaded_primary_uses_real_fallback_and_reports_actual_model(indexed_client, monkeypatch):
+    calls, delays = sequence(monkeypatch, [503, 503, 200])
+    generator = build_generator(settings(llm_max_retries=1, llm_fallback_models="gemini-3.5-flash-lite"))
+    indexed_client.app.state.container.pipeline.generator = generator
+    result = indexed_client.post("/api/chat", json={"question": "Qual distância manter ao ultrapassar um ciclista?"}).json()
+    assert result["status"] == "answered" and result["citations_valid"]
+    assert result["generation"]["model"] == "gemini-3.5-flash-lite" and result["generation"]["is_llm"]
+    assert result["warnings"] and "gemini-3.5-flash-lite" in result["warnings"][0]
+    assert "gemini-3.5-flash-lite:generateContent" in calls[-1][0]
+    assert all(c[1]["json"] == calls[0][1]["json"] for c in calls)
+    assert generator.model == "gemini-flash-latest"  # não altera estado compartilhado entre requisições
+    assert delays == [1, 2]
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 404, 429])
+def test_permanent_errors_and_quota_do_not_retry_or_switch_model(monkeypatch, status):
+    calls, delays = sequence(monkeypatch, [status])
+    generator = build_generator(settings(llm_max_retries=2, llm_fallback_models="gemini-3.5-flash-lite"))
+    with pytest.raises(GenerationUnavailableError):
+        generator.generate("Prazo?", [SOURCE], None)
+    assert len(calls) == 1 and not delays
+
+
+def test_all_models_unavailable_stop_after_bounded_attempts(monkeypatch):
+    calls, delays = sequence(monkeypatch, [503, 503, 503])
+    generator = build_generator(settings(llm_max_retries=1, llm_fallback_models="gemini-3.5-flash-lite"))
+    with pytest.raises(GenerationUnavailableError, match="HTTP 503"):
+        generator.generate("Prazo?", [SOURCE], None)
+    assert len(calls) == 3 and delays == [1, 2]
+
+
+def test_recovery_respects_shared_deadline(monkeypatch):
+    clock = [0.0]
+    calls = []
+    monkeypatch.setattr(generation.time, "perf_counter", lambda: clock[0])
+    monkeypatch.setattr(generation.time, "sleep", lambda delay: clock.__setitem__(0, clock[0] + delay))
+
+    def post(url, **kwargs):
+        calls.append(kwargs["timeout"])
+        clock[0] += kwargs["timeout"]
+        raise httpx.ReadTimeout("private")
+
+    monkeypatch.setattr(generation.httpx, "post", post)
+    generator = build_generator(settings(llm_timeout_seconds=6, llm_max_retries=1,
+                                         llm_fallback_models="gemini-3.5-flash-lite"))
+    with pytest.raises(GenerationUnavailableError, match="tempo limite"):
+        generator.generate("Prazo?", [SOURCE], None)
+    assert len(calls) <= 3 and clock[0] <= 6

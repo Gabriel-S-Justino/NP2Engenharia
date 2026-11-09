@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     )
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
     llm_max_output_tokens: int = Field(default=2048, ge=128, le=16000)
+    llm_max_retries: int = Field(default=1, ge=0, le=2)
+    llm_fallback_models: str = "gemini-3.5-flash-lite"
     llm_effort: Literal["low", "medium", "high"] = "low"
 
     chunk_size: int = Field(default=800, ge=200, le=4000)

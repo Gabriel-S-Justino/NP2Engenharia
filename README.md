@@ -83,3 +83,9 @@ A calibração usa parâmetros por chamada, sem expor limiares experimentais às
 - `docs/`: arquitetura, segurança, implantação e documentação acadêmica.
 
 Os relatórios históricos de demonstração em `docs/` descrevem execuções anteriores. Não representam validação do LLM real nem do acervo que você ainda vai fornecer.
+
+## Recuperação de indisponibilidade do Gemini
+
+Em erros temporários de conexão ou HTTP 500/502/503/504, a aplicação repete o modelo principal uma vez e depois tenta `gemini-3.5-flash-lite`. Todas as tentativas compartilham `LLM_TIMEOUT_SECONDS` (60 segundos por padrão). Respostas geradas pela alternativa identificam o modelo efetivo e incluem um aviso; as mesmas evidências e validações de citações são mantidas.
+
+Configure `LLM_MAX_RETRIES=0` para desativar a repetição e `LLM_FALLBACK_MODELS=` para desativar alternativas. A lista de alternativas aceita até dois identificadores Gemini separados por vírgula. Erros de chave, permissão, modelo inexistente e cota não são repetidos nem acionam outro modelo. Se todos os modelos estiverem indisponíveis, a aplicação mostra a falha e os trechos recuperados.

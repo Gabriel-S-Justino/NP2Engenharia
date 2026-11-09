@@ -76,6 +76,7 @@ class GenerationOutput:
     latency_ms: float = 0.0
     used_sentences: dict[str, list[str]] = field(default_factory=dict)  # label -> frases (modo demo)
     warnings: list[str] = field(default_factory=list)
+    model: str | None = None  # modelo efetivamente usado, inclusive em uma recuperação
 
 
 class Generator(ABC):
@@ -225,13 +226,53 @@ class GeminiGenerator(Generator):
     is_llm = True
     mode = "llm"
 
-    def __init__(self, *, api_key: str, model: str, timeout: float, max_tokens: int):
+    def __init__(self, *, api_key: str, model: str, timeout: float, max_tokens: int,
+                 max_retries: int = 1, fallback_models: str = ""):
         self._api_key = api_key.strip()
         self.model = model.removeprefix("models/").strip()
         if not re.fullmatch(r"gemini-[A-Za-z0-9._-]+", self.model):
             raise GenerationUnavailableError("LLM_MODEL deve ser um identificador Gemini, como gemini-flash-latest.")
         self.timeout = timeout
         self.max_tokens = max_tokens
+        self.max_retries = max_retries
+        self.fallback_models = list(dict.fromkeys(
+            name.strip().removeprefix("models/") for name in fallback_models.split(",") if name.strip()
+        ))
+        if len(self.fallback_models) > 2 or any(not re.fullmatch(r"gemini-[A-Za-z0-9._-]+", m) for m in self.fallback_models):
+            raise GenerationUnavailableError("LLM_FALLBACK_MODELS aceita no máximo dois identificadores Gemini separados por vírgula.")
+
+    def _request_with_recovery(self, payload: dict, started: float) -> tuple[httpx.Response, str]:
+        """Tentativas limitadas dentro de um orçamento total; erros de credencial/cota não são repetidos."""
+        models = [self.model] * (1 + self.max_retries)
+        models += [m for m in self.fallback_models if m != self.model]
+        deadline = started + self.timeout
+        error = GenerationUnavailableError("O Gemini não respondeu dentro do tempo limite.")
+        for attempt, model in enumerate(models):
+            remaining = deadline - time.perf_counter()
+            if remaining <= 0:
+                break
+            # Reserva tempo para as próximas tentativas/modelos, sem multiplicar o timeout total.
+            attempt_timeout = remaining / (len(models) - attempt)
+            try:
+                response = httpx.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                    headers={"x-goog-api-key": self._api_key}, json=payload,
+                    timeout=attempt_timeout, follow_redirects=False,
+                )
+            except httpx.TimeoutException:
+                error = GenerationUnavailableError("O Gemini não respondeu dentro do tempo limite.")
+            except httpx.RequestError:
+                error = GenerationUnavailableError("Não foi possível conectar ao Gemini.")
+            else:
+                if response.status_code not in {500, 502, 503, 504}:
+                    return response, model
+                error = self._provider_error(response)
+            if attempt + 1 < len(models):
+                logger.info("gemini_retry", extra={"attempt": attempt + 1, "model": model})
+                delay = min(2 ** attempt, max(0.0, deadline - time.perf_counter()))
+                if delay:
+                    time.sleep(delay)
+        raise error
 
     @staticmethod
     def _provider_error(response: httpx.Response) -> GenerationUnavailableError:
@@ -284,22 +325,11 @@ class GeminiGenerator(Generator):
             f"{AnthropicGenerator.build_context(sources)}\n\n<pergunta>\n{escape_context(question)}\n</pergunta>\n\n"
             "Responda usando somente as fontes acima e cite-as no formato [F1]."
         )
-        try:
-            response = httpx.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
-                headers={"x-goog-api-key": self._api_key},
-                json={
-                    "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-                    "contents": [{"role": "user", "parts": [{"text": content}]}],
-                    "generationConfig": {"maxOutputTokens": self.max_tokens},
-                },
-                timeout=self.timeout,
-                follow_redirects=False,
-            )
-        except httpx.TimeoutException as exc:
-            raise GenerationUnavailableError("O Gemini não respondeu dentro do tempo limite.") from exc
-        except httpx.RequestError as exc:
-            raise GenerationUnavailableError("Não foi possível conectar ao Gemini.") from exc
+        response, actual_model = self._request_with_recovery({
+            "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+            "contents": [{"role": "user", "parts": [{"text": content}]}],
+            "generationConfig": {"maxOutputTokens": self.max_tokens},
+        }, started)
         if not response.is_success:
             raise self._provider_error(response)
         try:
@@ -313,19 +343,21 @@ class GeminiGenerator(Generator):
         except (ValueError, AttributeError, TypeError, IndexError) as exc:
             raise GenerationUnavailableError("O Gemini retornou uma resposta inválida.") from exc
         latency = (time.perf_counter() - started) * 1000
+        recovery_warnings = ([f"O modelo principal estava indisponível; resposta gerada por {actual_model}."]
+                             if actual_model != self.model else [])
         if blocked or finish in {"SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"}:
             return GenerationOutput(text="", insufficient=True, latency_ms=latency,
-                                    warnings=["O Gemini recusou a solicitação por política de segurança do provedor."])
+                                    warnings=recovery_warnings + ["O Gemini recusou a solicitação por política de segurança do provedor."], model=actual_model)
         if not text:
             raise GenerationUnavailableError("O Gemini não retornou conteúdo textual. Tente novamente.")
-        warnings = ["A resposta foi interrompida pelo limite de tamanho de saída."] if finish == "MAX_TOKENS" else []
+        warnings = recovery_warnings + (["A resposta foi interrompida pelo limite de tamanho de saída."] if finish == "MAX_TOKENS" else [])
         if text.startswith("SEM_EVIDENCIA:"):
             return GenerationOutput(text=text.removeprefix("SEM_EVIDENCIA:").strip(), insufficient=True,
-                                    latency_ms=latency, warnings=warnings)
+                                    latency_ms=latency, warnings=warnings, model=actual_model)
         if text.startswith("FORA_DO_ESCOPO:"):
             return GenerationOutput(text=text.removeprefix("FORA_DO_ESCOPO:").strip(), out_of_scope=True,
-                                    latency_ms=latency, warnings=warnings)
-        return GenerationOutput(text=text, latency_ms=latency, warnings=warnings)
+                                    latency_ms=latency, warnings=warnings, model=actual_model)
+        return GenerationOutput(text=text, latency_ms=latency, warnings=warnings, model=actual_model)
 
 
 def build_generator(settings) -> Generator:
@@ -333,6 +365,7 @@ def build_generator(settings) -> Generator:
         return GeminiGenerator(
             api_key=settings.llm_api_key.get_secret_value(), model=settings.llm_model,
             timeout=settings.llm_timeout_seconds, max_tokens=settings.llm_max_output_tokens,
+            max_retries=settings.llm_max_retries, fallback_models=settings.llm_fallback_models,
         )
     if settings.llm_provider == "anthropic":
         return AnthropicGenerator(

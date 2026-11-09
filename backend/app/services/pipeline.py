@@ -410,6 +410,8 @@ class RagPipeline:
             citations = [cit.build_citation(label, item, cited=False) for label, item in by_label.items()]
             return finish("provider_error", "none", notice=f"{exc.public_message} {MESSAGES['provider_error']}",
                           citations=citations, retrieval=retrieval_info, gen_info=generation_info)
+        if output.model:
+            generation_info = generation_info.model_copy(update={"model": output.model})
         warnings += output.warnings
         if output.insufficient or output.out_of_scope:
             status = "out_of_scope" if output.out_of_scope else "insufficient_evidence"
