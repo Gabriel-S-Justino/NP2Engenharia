@@ -1,11 +1,11 @@
 # Configuração e acervo fornecidos manualmente
 
-O código exige geração real com Anthropic. Não há download automático de documentos nem modo demonstrativo na aplicação. Os geradores simulados existem somente para testes automatizados em `APP_ENV=test`.
+O código exige geração real com Gemini (Google). Não há download automático de documentos nem modo demonstrativo na aplicação. Os geradores simulados existem somente para testes automatizados em `APP_ENV=test`.
 
 ## Antes de iniciar
 
 1. Execute `npm run setup` para instalar dependências. O setup preserva um `.env` existente.
-2. Configure `LLM_PROVIDER=anthropic`, `LLM_API_KEY` e `LLM_MODEL` com um modelo disponível na sua conta. Uma configuração antiga com `LLM_PROVIDER=demo` deve ser atualizada manualmente.
+2. Configure `LLM_PROVIDER=gemini`, `LLM_API_KEY` e `LLM_MODEL` com um modelo disponível na sua conta. Uma configuração antiga com `LLM_PROVIDER=demo` deve ser atualizada manualmente.
 3. Adicione seus documentos em `Documentos/` e preencha `manifest.json`, ou envie os arquivos pela biblioteca.
 4. Inicie com `npm run dev` e execute a indexação pela interface. Informe o `ADMIN_TOKEN` na tela Configurações quando exigido.
 
@@ -19,7 +19,7 @@ O limiar inicial do modelo semântico não foi calibrado para o seu acervo; a pr
 
 ## Hospedagem
 
-Configure `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, `LLM_PROVIDER=anthropic`, `LLM_API_KEY` e `LLM_MODEL` no servidor. Não copie o `.env` inteiro para a Vercel: os diretórios e padrões serverless são resolvidos automaticamente.
+Configure `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, `LLM_PROVIDER=gemini`, `LLM_API_KEY` e `LLM_MODEL` no servidor. Não copie o `.env` inteiro para a Vercel: os diretórios e padrões serverless são resolvidos automaticamente.
 
 O commit não envia PDFs, `.env`, banco, índices, modelos ou relatórios locais. Adicionar documentos ao disco local não os disponibiliza na hospedagem. Envie-os manualmente à aplicação publicada e indexe no banco de destino.
 

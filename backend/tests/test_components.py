@@ -270,4 +270,4 @@ def test_demo_is_rejected_outside_automated_tests(environment):
 def test_application_defaults_to_real_llm(monkeypatch):
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
     settings = Settings(_env_file=None, app_env="production", llm_api_key="test-only-not-a-real-key")
-    assert settings.llm_provider == "anthropic"
+    assert settings.llm_provider == "gemini"

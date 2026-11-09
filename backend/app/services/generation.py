@@ -7,6 +7,8 @@
 * `AnthropicGenerator` (LLM_PROVIDER=anthropic): usa um modelo Claude pela API oficial,
   com o contexto recuperado delimitado em tags e o prompt de sistema abaixo.
 
+* `GeminiGenerator` (LLM_PROVIDER=gemini): usa a API GenerateContent do Google.
+
 Novos provedores (ex.: modelo local) implementam a interface `Generator`.
 """
 
@@ -17,6 +19,8 @@ import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+import httpx
 
 from app.services.embeddings import content_terms
 from app.services.evidence import TermStatistics, is_heading_line, sentence_score, split_sentences
@@ -214,7 +218,84 @@ class AnthropicGenerator(Generator):
         return GenerationOutput(text=text, latency_ms=latency, warnings=warnings)
 
 
+class GeminiGenerator(Generator):
+    """Gemini GenerateContent REST API: evidências delimitadas, sem busca externa."""
+
+    provider = "gemini"
+    is_llm = True
+    mode = "llm"
+
+    def __init__(self, *, api_key: str, model: str, timeout: float, max_tokens: int):
+        self._api_key = api_key
+        self.model = model.removeprefix("models/").strip()
+        if not re.fullmatch(r"gemini-[A-Za-z0-9._-]+", self.model):
+            raise GenerationUnavailableError("LLM_MODEL deve ser um identificador Gemini, como gemini-flash-latest.")
+        self.timeout = timeout
+        self.max_tokens = max_tokens
+
+    def generate(self, question: str, sources: list[EvidenceSource], stats: TermStatistics) -> GenerationOutput:
+        started = time.perf_counter()
+        content = (
+            f"{AnthropicGenerator.build_context(sources)}\n\n<pergunta>\n{escape_context(question)}\n</pergunta>\n\n"
+            "Responda usando somente as fontes acima e cite-as no formato [F1]."
+        )
+        try:
+            response = httpx.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
+                headers={"x-goog-api-key": self._api_key},
+                json={
+                    "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+                    "contents": [{"role": "user", "parts": [{"text": content}]}],
+                    "generationConfig": {"maxOutputTokens": self.max_tokens},
+                },
+                timeout=self.timeout,
+                follow_redirects=False,
+            )
+        except httpx.TimeoutException as exc:
+            raise GenerationUnavailableError("O Gemini não respondeu dentro do tempo limite.") from exc
+        except httpx.RequestError as exc:
+            raise GenerationUnavailableError("Não foi possível conectar ao Gemini.") from exc
+        if response.status_code in (401, 403):
+            raise GenerationUnavailableError("Credencial do Gemini inválida ou sem permissão no servidor.")
+        if response.status_code == 429:
+            raise GenerationUnavailableError("Limite de uso do Gemini atingido. Tente novamente em instantes.")
+        if response.status_code == 404:
+            raise GenerationUnavailableError("Modelo Gemini não encontrado. Confira LLM_MODEL no servidor.")
+        if not response.is_success:
+            logger.warning("gemini_status_error", extra={"status": response.status_code})
+            raise GenerationUnavailableError("O Gemini retornou um erro. Confira a configuração do provedor no servidor.")
+        try:
+            data = response.json()
+            candidates = data.get("candidates") or []
+            blocked = (data.get("promptFeedback") or {}).get("blockReason")
+            candidate = candidates[0] if candidates else {}
+            finish = candidate.get("finishReason")
+            parts = (candidate.get("content") or {}).get("parts") or []
+            text = "".join(p.get("text", "") for p in parts if not p.get("thought")).strip()
+        except (ValueError, AttributeError, TypeError, IndexError) as exc:
+            raise GenerationUnavailableError("O Gemini retornou uma resposta inválida.") from exc
+        latency = (time.perf_counter() - started) * 1000
+        if blocked or finish in {"SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"}:
+            return GenerationOutput(text="", insufficient=True, latency_ms=latency,
+                                    warnings=["O Gemini recusou a solicitação por política de segurança do provedor."])
+        if not text:
+            raise GenerationUnavailableError("O Gemini não retornou conteúdo textual. Tente novamente.")
+        warnings = ["A resposta foi interrompida pelo limite de tamanho de saída."] if finish == "MAX_TOKENS" else []
+        if text.startswith("SEM_EVIDENCIA:"):
+            return GenerationOutput(text=text.removeprefix("SEM_EVIDENCIA:").strip(), insufficient=True,
+                                    latency_ms=latency, warnings=warnings)
+        if text.startswith("FORA_DO_ESCOPO:"):
+            return GenerationOutput(text=text.removeprefix("FORA_DO_ESCOPO:").strip(), out_of_scope=True,
+                                    latency_ms=latency, warnings=warnings)
+        return GenerationOutput(text=text, latency_ms=latency, warnings=warnings)
+
+
 def build_generator(settings) -> Generator:
+    if settings.llm_provider == "gemini":
+        return GeminiGenerator(
+            api_key=settings.llm_api_key.get_secret_value(), model=settings.llm_model,
+            timeout=settings.llm_timeout_seconds, max_tokens=settings.llm_max_output_tokens,
+        )
     if settings.llm_provider == "anthropic":
         return AnthropicGenerator(
             api_key=settings.llm_api_key.get_secret_value(),

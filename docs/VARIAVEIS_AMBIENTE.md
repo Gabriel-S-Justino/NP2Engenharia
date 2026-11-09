@@ -12,9 +12,9 @@ Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido
 | `DATABASE_URL` | Postgres com pgvector (dados, vetores, originais). Também aceita `POSTGRES_URL` | — (usa SQLite) | **auto** (integração Neon) | **SEGREDO** |
 | `ADMIN_TOKEN` | Token das operações administrativas (header `X-Admin-Token`) | — (livre em desenvolvimento) | **definir** (obrigatório em produção) | **SEGREDO** |
 | `CRON_SECRET` | Autoriza `/api/cron/ingestion` (a Vercel envia `Authorization: Bearer …`) | — | **definir** (recomendado) | **SEGREDO** |
-| `LLM_API_KEY` | Chave do provedor de LLM | — | definir se `LLM_PROVIDER=anthropic` | **SEGREDO** |
-| `LLM_PROVIDER` | `anthropic`; `demo` restrito aos testes com `APP_ENV=test` | anthropic | anthropic | servidor |
-| `LLM_MODEL` | Modelo de geração | claude-opus-5-5 | padrão | servidor |
+| `LLM_API_KEY` | Chave do provedor de LLM | — | obrigatória; também aceita `GEMINI_API_KEY` ou `GOOGLE_API_KEY` | **SEGREDO** |
+| `LLM_PROVIDER` | `gemini` (aceita Google) ou `anthropic`; `demo` apenas em `APP_ENV=test` | gemini | gemini | servidor |
+| `LLM_MODEL` | Modelo de geração | gemini-flash-latest | padrão | servidor |
 | `LLM_TIMEOUT_SECONDS` / `LLM_MAX_OUTPUT_TOKENS` / `LLM_EFFORT` | Limites da geração | 60 / 2048 / low | padrão | servidor |
 | `SERVERLESS` | Modo serverless (síncrono, em lotes, carga sob demanda) | detecta `VERCEL=1` | **auto** | servidor |
 | `APP_ENV` | development, test ou production | development | **auto** = production | servidor |

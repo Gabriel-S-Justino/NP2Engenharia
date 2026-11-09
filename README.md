@@ -4,15 +4,17 @@ Aplicação web e mobile de consulta a leis de trânsito com RAG: recupera evid�
 
 ## Configuração obrigatória
 
-A aplicação utiliza `LLM_PROVIDER=anthropic` por padrão. Configure no servidor:
+A aplicação utiliza `LLM_PROVIDER=gemini` por padrão. Configure no servidor:
 
 ```dotenv
-LLM_PROVIDER=anthropic
+LLM_PROVIDER=gemini
 LLM_API_KEY=<sua chave>
-LLM_MODEL=<modelo disponível na sua conta>
+LLM_MODEL=gemini-flash-latest
 ```
 
 A inicialização é bloqueada sem chave. O gerador extrativo é restrito aos testes automatizados (`APP_ENV=test`); não existe fallback demonstrativo na aplicação. Nunca coloque credenciais em variáveis `EXPO_PUBLIC_*`.
+
+O provedor também aceita `Google`, `google` e `GEMINI`, normalizados para `gemini`. A chave pode estar em `LLM_API_KEY`, `GEMINI_API_KEY` ou `GOOGLE_API_KEY` (nessa ordem de prioridade). Para Anthropic, use `LLM_PROVIDER=anthropic` e um modelo Claude. O adaptador Gemini segue a [API GenerateContent oficial](https://ai.google.dev/api/generate-content).
 
 ## Documentos adicionados manualmente
 
@@ -36,7 +38,7 @@ Pré-requisitos: Python 3.11+, Node.js 20+ e npm.
 npm run setup
 ```
 
-O setup instala dependências e cria `.env` com tokens aleatórios se ele ainda não existir. Um `.env` existente é preservado: revise `LLM_PROVIDER=anthropic`, `LLM_API_KEY` e `LLM_MODEL` antes de iniciar.
+O setup instala dependências e cria `.env` com tokens aleatórios se ele ainda não existir. Um `.env` existente é preservado: revise `LLM_PROVIDER=gemini`, `LLM_API_KEY` e `LLM_MODEL` antes de iniciar.
 
 ```bash
 npm run dev
@@ -52,7 +54,7 @@ Importe o repositório com a raiz como Root Directory. O `vercel.json` reúne we
 
 - `DATABASE_URL`: Postgres com pgvector; sem persistência, upload e indexação são bloqueados.
 - `ADMIN_TOKEN`: obrigatório para operações administrativas em produção; informe-o em Configurações na interface.
-- `LLM_PROVIDER=anthropic`, `LLM_API_KEY` e um `LLM_MODEL` disponível na sua conta.
+- `LLM_PROVIDER=gemini`, `LLM_API_KEY` e um `LLM_MODEL` disponível na sua conta.
 - `CRON_SECRET`: para a chamada agendada de ingestão.
 
 Não copie o `.env` local inteiro para a hospedagem. Deixe `DATA_DIR`, `EMBEDDING_CACHE_DIR`, `APP_ENV` e `EXPO_PUBLIC_API_URL` ausentes para os padrões serverless. Depois do deploy, adicione documentos manualmente e indexe no banco de destino. Banco, índice e calibração locais não são transferidos pelo Git.

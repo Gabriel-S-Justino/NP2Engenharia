@@ -52,7 +52,7 @@ def strip_injection_sentences(text: str) -> tuple[str, int]:
 
 def escape_context(text: str) -> str:
     """Impede que o conteúdo recuperado feche ou abra as tags que delimitam o contexto."""
-    return re.sub(r"</?\s*(documento|fonte|contexto|sistema|system|instru[cç][aã]o)[^>]*>", "[tag removida]", text, flags=re.IGNORECASE)
+    return re.sub(r"</?\s*(documento|fonte|contexto|pergunta|sistema|system|instru[cç][aã]o)[^>]*>", "[tag removida]", text, flags=re.IGNORECASE)
 
 
 def scrub_secrets(text: str, secrets: list[str]) -> tuple[str, bool]:

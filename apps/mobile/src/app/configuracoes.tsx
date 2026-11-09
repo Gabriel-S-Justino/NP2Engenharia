@@ -124,7 +124,7 @@ export default function SettingsScreen() {
               <Item label="Execução" value={`Serverless (Vercel) · lotes de até ${Math.round(s.ingestion_time_budget_seconds ?? 0)} s na indexação`} />
             ) : null}
             {!s.llm_is_real ? (
-              <Notice tone="info">Para usar um LLM real, configure LLM_PROVIDER=anthropic e LLM_API_KEY no servidor (nunca no aplicativo). Veja docs/VARIAVEIS_AMBIENTE.md.</Notice>
+              <Notice tone="info">Para usar um LLM real, configure LLM_PROVIDER=gemini, LLM_MODEL e LLM_API_KEY (chave do Google) no servidor (nunca no aplicativo). Veja docs/VARIAVEIS_AMBIENTE.md.</Notice>
             ) : null}
           </Card>
 

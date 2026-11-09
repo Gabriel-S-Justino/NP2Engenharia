@@ -19,7 +19,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 EmbeddingProviderName = Literal["fastembed", "hashing"]
-LLMProviderName = Literal["demo", "anthropic"]
+LLMProviderName = Literal["demo", "anthropic", "gemini"]
 VectorStoreName = Literal["faiss", "numpy", "pgvector"]
 
 # Limiares iniciais por provedor de embeddings (similaridade de cosseno).
@@ -69,9 +69,11 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path | None = None
     hashing_dim: int = Field(default=2048, ge=128, le=16384)
 
-    llm_provider: LLMProviderName = "anthropic"
-    llm_model: str = "claude-opus-5-5"
-    llm_api_key: SecretStr | None = None
+    llm_provider: LLMProviderName = "gemini"
+    llm_model: str = ""
+    llm_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("LLM_API_KEY", "llm_api_key", "GEMINI_API_KEY", "GOOGLE_API_KEY")
+    )
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
     llm_max_output_tokens: int = Field(default=2048, ge=128, le=16000)
     llm_effort: Literal["low", "medium", "high"] = "low"
@@ -109,10 +111,20 @@ class Settings(BaseSettings):
             return None
         return value
 
+    @field_validator("llm_provider", mode="before")
+    @classmethod
+    def _normalize_llm_provider(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip().lower()
+            return "gemini" if value in ("google", "google-gemini") else value
+        return value
+
     @model_validator(mode="after")
     def _resolve_environment(self) -> Settings:
         """Valores padrão que dependem do ambiente (local x Vercel). Valores explícitos sempre prevalecem."""
         explicit = self.model_fields_set
+        if not self.llm_model.strip():
+            self.llm_model = "gemini-flash-latest" if self.llm_provider == "gemini" else "claude-opus-5-5"
         if self.serverless is None:
             self.serverless = os.environ.get("VERCEL") == "1"
         if self.serverless:
@@ -137,7 +149,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _check_coherence(self) -> Settings:
         if self.llm_provider == "demo" and self.app_env != "test":
-            raise ValueError("LLM_PROVIDER=demo é exclusivo dos testes automatizados (APP_ENV=test). Configure anthropic e LLM_API_KEY.")
+            raise ValueError("LLM_PROVIDER=demo é exclusivo dos testes automatizados (APP_ENV=test). Configure gemini ou anthropic e LLM_API_KEY.")
         if self.similarity_threshold is None:
             self.similarity_threshold = DEFAULT_THRESHOLDS[self.embedding_provider]
         if self.chunk_overlap >= self.chunk_size:
@@ -146,9 +158,9 @@ class Settings(BaseSettings):
             )
         if self.min_chunk_chars >= self.chunk_size:
             raise ValueError("MIN_CHUNK_CHARS deve ser menor que CHUNK_SIZE.")
-        if self.llm_provider == "anthropic" and self.llm_api_key is None:
+        if self.llm_provider in ("anthropic", "gemini") and self.llm_api_key is None:
             raise ValueError(
-                "LLM_PROVIDER=anthropic exige LLM_API_KEY configurada no servidor. "
+                f"LLM_PROVIDER={self.llm_provider} exige LLM_API_KEY configurada no servidor. "
                 "Configure a chave do provedor antes de iniciar a aplicação."
             )
         if self.app_env == "production" and "*" in self.cors_list:
