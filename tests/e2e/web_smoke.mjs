@@ -119,7 +119,7 @@ await step('Navegação por teclado alcança links do menu com foco visível', a
 });
 
 const mobile = await newPage(390, 844);
-await step('Celular: barra inferior, chat e histórico preservado', async () => {
+await step('Celular: menu lateral, chat e histórico preservado', async () => {
   await mobile.goto(`${WEB}/chat`, { waitUntil: 'networkidle' });
   await mobile.getByRole('button', { name: 'Abrir menu de conversas' }).waitFor();
   await mobile.getByText('Tire suas dúvidas').waitFor();

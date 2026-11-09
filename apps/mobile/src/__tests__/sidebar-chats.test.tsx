@@ -77,9 +77,9 @@ it('no celular abre o mesmo histórico em um menu lateral e fecha após selecion
   await render(<AppShell><Text>Conteúdo</Text></AppShell>);
   expect(screen.queryByRole('button', { name: /Abrir conversa:/ })).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: 'Abrir menu de conversas' }));
-  expect(screen.getByRole('dialog', { name: 'Menu de conversas' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Abrir conversa: Como funciona a preferência?' })).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Abrir conversa: O que significa esta placa?' }));
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() => expect(screen.queryByRole('button', { name: /Abrir conversa:/ })).toBeNull());
 });
 
 it('menu recolhido expande para mostrar a busca e os chats', async () => {
