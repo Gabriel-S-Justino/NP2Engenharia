@@ -7,9 +7,9 @@ export default function NotFound() {
     <PageContainer>
       <EmptyState
         icon="compass-outline"
-        title="Página não encontrada"
+        title="Parece que saímos da rota"
         message="O endereço acessado não existe no Acervo IA."
-        action={<Button label="Ir para a visão geral" onPress={() => router.replace('/')} />}
+        action={<Button label="Ir para o início" onPress={() => router.replace('/')} />}
       />
     </PageContainer>
   );

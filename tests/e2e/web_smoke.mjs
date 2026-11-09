@@ -42,35 +42,35 @@ const desktop = await newPage(1366, 900);
 
 await step('Dashboard carrega com indicadores reais e conexão', async () => {
   await desktop.goto(WEB, { waitUntil: 'networkidle' });
-  await desktop.getByText('Visão geral').first().waitFor();
-  await desktop.getByText('Backend conectado').first().waitFor({ timeout: 15000 });
-  await desktop.getByText('Documentos cadastrados').waitFor();
+  await desktop.getByRole('heading', { name: 'Seu ponto de partida' }).waitFor();
+  await desktop.getByText('Tudo pronto').first().waitFor({ timeout: 15000 });
+  await desktop.getByText('Materiais na biblioteca').waitFor();
   await desktop.screenshot({ path: `${SHOTS}/01_dashboard_desktop.png`, fullPage: true });
 });
 
 await step('Biblioteca: indexar pasta e ver documentos processados', async () => {
-  await desktop.getByRole('link', { name: 'Documentos' }).click();
-  await desktop.getByRole('button', { name: 'Indexar pasta' }).click();
-  await desktop.getByText(/Última indexação/).waitFor({ timeout: 30000 });
-  await desktop.getByText('Processado').first().waitFor({ timeout: 30000 });
+  await desktop.getByRole('link', { name: 'Biblioteca' }).click();
+  await desktop.getByRole('button', { name: 'Preparar documentos' }).click();
+  await desktop.getByText(/Última preparação/).waitFor({ timeout: 30000 });
+  await desktop.getByText('Pronto para consulta').first().waitFor({ timeout: 30000 });
   await desktop.screenshot({ path: `${SHOTS}/02_documentos_desktop.png`, fullPage: true });
 });
 
 await step('Detalhes do documento mostram metadados e trechos', async () => {
   await desktop.getByLabel(/Abrir detalhes de Regulamento/).click();
-  await desktop.getByRole('heading', { name: 'Metadados' }).waitFor();
-  await desktop.getByText(/Trechos indexados/).waitFor();
+  await desktop.getByRole('heading', { name: 'Sobre o documento' }).waitFor();
+  await desktop.getByText(/Trechos para consulta/).waitFor();
   await desktop.screenshot({ path: `${SHOTS}/03_documento_detalhe.png`, fullPage: true });
 });
 
 await step('Chat: pergunta respondida com evidências e painel lateral', async () => {
-  await desktop.getByRole('link', { name: 'Assistente' }).click();
+  await desktop.getByRole('link', { name: 'Tire suas dúvidas' }).click();
   const input = desktop.getByTestId('campo-pergunta');
   await input.fill('Qual é a velocidade máxima permitida nas vias escolares de Vila Exemplo?');
   await input.press('Enter');
   await desktop.getByText('RESPOSTA').first().waitFor({ timeout: 30000 });
   await desktop.getByText(/25 km\/h/).first().waitFor();
-  await desktop.getByText('Evidências da última resposta').waitFor();
+  await desktop.getByText('De onde vem a resposta').waitFor();
   await desktop.screenshot({ path: `${SHOTS}/04_chat_resposta_desktop.png`, fullPage: true });
 });
 
@@ -84,12 +84,12 @@ await step('Chat: pergunta sem evidência resulta em recusa clara', async () => 
 
 await step('Fonte: detalhes do trecho citado', async () => {
   await desktop.getByLabel(/Abrir detalhes de Fonte F1/).first().click();
-  await desktop.getByText('Trecho de origem').waitFor({ timeout: 15000 });
+  await desktop.getByText('Leia no material').waitFor({ timeout: 15000 });
   await desktop.screenshot({ path: `${SHOTS}/06_fonte_detalhe.png`, fullPage: true });
 });
 
 await step('Laboratório: executar a matriz e ver taxa por categoria', async () => {
-  await desktop.getByRole('link', { name: 'Avaliação' }).click();
+  await desktop.getByRole('link', { name: 'Revisão de qualidade' }).click();
   await desktop.getByTestId('botao-executar-testes').click();
   await desktop.getByText('Resultado por categoria').waitFor({ timeout: 60000 });
   await desktop.getByText('Taxa de aprovação').waitFor();
@@ -98,7 +98,7 @@ await step('Laboratório: executar a matriz e ver taxa por categoria', async () 
 
 await step('Configurações exibem parâmetros sem segredos', async () => {
   await desktop.getByRole('link', { name: 'Configurações' }).click();
-  await desktop.getByText('Recuperação e chunking').waitFor();
+  await desktop.getByText('Ajustes do acervo').waitFor();
   const html = await desktop.content();
   if (/sk-ant-[A-Za-z0-9]/.test(html)) throw new Error('possível chave exposta');
   await desktop.screenshot({ path: `${SHOTS}/08_configuracoes.png`, fullPage: true });
@@ -110,21 +110,21 @@ await step('Navegação por teclado alcança links do menu com foco visível', a
   for (let i = 0; i < 25 && !found; i++) {
     await desktop.keyboard.press('Tab');
     const label = await desktop.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
-    if (label === 'Assistente') found = true;
+    if (label === 'Tire suas dúvidas') found = true;
   }
   if (!found) throw new Error('link "Assistente" não alcançado por Tab');
   await desktop.keyboard.press('Enter');
-  await desktop.getByText('Assistente documental').waitFor();
+  await desktop.getByText('Tire suas dúvidas').waitFor();
 });
 
 const mobile = await newPage(390, 844);
 await step('Celular: barra inferior, chat e histórico preservado', async () => {
   await mobile.goto(`${WEB}/chat`, { waitUntil: 'networkidle' });
-  await mobile.getByRole('link', { name: 'Visão geral' }).waitFor();
-  await mobile.getByText('Assistente documental').waitFor();
+  await mobile.getByRole('link', { name: 'Início' }).waitFor();
+  await mobile.getByText('Tire suas dúvidas').waitFor();
   await mobile.screenshot({ path: `${SHOTS}/09_chat_mobile.png`, fullPage: false });
   await mobile.getByRole('button', { name: 'Mais opções de navegação' }).click();
-  await mobile.getByText('Diário da IA mentora').waitFor();
+  await mobile.getByText('Diário da equipe').waitFor();
   await mobile.screenshot({ path: `${SHOTS}/10_menu_mais_mobile.png` });
 });
 

@@ -1,5 +1,7 @@
 # Procedimento de rollback
 
+> **Interface revisada em 09/11/2026.** O rollback visual deve restaurar conjuntamente os componentes, tokens e textos do frontend. Nenhuma migração de banco é exigida por esta revisão. Os rótulos anteriores podem reaparecer, mas as rotas e os contratos permanecem compatíveis.
+
 A aplicação inteira (web + função Python) é um único deploy da Vercel; os dados ficam no Neon Postgres.
 Reverter o código **não** reverte os dados, e vice-versa.
 
@@ -32,7 +34,7 @@ pg_restore --clean --if-exists -d "$DATABASE_URL" acervo-AAAAMMDD.dump
 - As migrações só **adicionam** estruturas. Se uma versão antiga não reconhecer dados novos, restaure o backup
   feito antes do deploy.
 - Se o modelo de embeddings mudou entre versões, a versão em uso detecta o índice incompatível e pede
-  **Reindexar tudo** (continua em lotes a partir dos originais guardados no banco).
+  **Preparar novamente** (continua em lotes a partir dos originais guardados no banco).
 
 ## Dados do acervo
 - Documento removido por engano: uploads são apagados do banco (reenvie o arquivo); documentos de `Documentos/`

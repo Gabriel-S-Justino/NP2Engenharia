@@ -1,5 +1,7 @@
 # Segurança, privacidade e ética
 
+> **Interface revisada em 09/11/2026.** A interface mantém avisos de recusa, conteúdo suspeito, citações inválidas, privacidade e confirmação de ações destrutivas. Textos técnicos e códigos HTTP podem ser simplificados visualmente; o erro, seu status, os dados originais e os controles de autorização não são alterados.
+
 > Nenhum sistema é totalmente seguro. Este documento descreve as proteções **implementadas e testadas** e os
 > **riscos residuais**.
 

@@ -1,5 +1,7 @@
 # Inventário de variáveis de ambiente
 
+> **Interface revisada em 09/11/2026.** O tema Escola de trânsito não adiciona variáveis de ambiente nem altera valores. Informações de API, modelo e banco deixam de aparecer nas telas de consulta; continuam documentadas aqui e disponíveis aos responsáveis pela implantação.
+
 Arquivo de exemplo: `.env.example` (sem segredos). O `.env` real é ignorado pelo Git.
 **Nunca cole segredos no chat, em issues ou no código**: na Vercel, use *Settings → Environment Variables*;
 localmente, o arquivo `.env`.

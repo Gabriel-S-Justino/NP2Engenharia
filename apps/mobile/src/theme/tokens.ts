@@ -32,50 +32,60 @@ export type ColorTokens = {
   evidence: string;
   evidenceSoft: string;
   overlay: string;
+  accent: string;
+  accentSoft: string;
+  board: string;
+  boardText: string;
+  boardMuted: string;
 };
 
 export const lightColors: ColorTokens = {
-  background: '#F6F8FC',
+  background: '#F6F5EE',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  surfaceMuted: '#EEF2F8',
-  textPrimary: '#172033',
-  textSecondary: '#556275',
+  surfaceMuted: '#EDEFE5',
+  textPrimary: '#19382F',
+  textSecondary: '#53645B',
   textOnPrimary: '#FFFFFF',
-  border: '#E2E8F0',
-  borderStrong: '#B8C2D1',
-  primary: '#4F46E5',
-  primaryStrong: '#3730A3',
-  primarySoft: '#EEF0FF',
-  success: '#15803D',
-  successSoft: '#E8F6EE',
-  warning: '#B45309',
-  warningSoft: '#FDF3E3',
-  danger: '#B91C1C',
+  border: '#DCE2D5',
+  borderStrong: '#A0AFA0',
+  primary: '#1C6048',
+  primaryStrong: '#154A38',
+  primarySoft: '#E4F0E5',
+  success: '#216942',
+  successSoft: '#E7F2E7',
+  warning: '#87520C',
+  warningSoft: '#FFF1C8',
+  danger: '#B32630',
   dangerSoft: '#FCEBEB',
-  info: '#0E6A8A',
-  infoSoft: '#E6F3F8',
-  focus: '#4F46E5',
-  disabled: '#E2E8F0',
-  disabledText: '#5B6676',
-  evidence: '#0F766E',
-  evidenceSoft: '#E6F4F2',
-  overlay: 'rgba(15, 23, 42, 0.45)',
+  info: '#245E76',
+  infoSoft: '#E7F2F6',
+  focus: '#1C6048',
+  disabled: '#DCE2D5',
+  disabledText: '#546255',
+  evidence: '#1B654B',
+  evidenceSoft: '#E7F1E7',
+  overlay: 'rgba(14, 36, 28, 0.48)',
+  accent: '#EFC64B',
+  accentSoft: '#FFF2C8',
+  board: '#163F34',
+  boardText: '#FFFDF2',
+  boardMuted: '#CCDFD0',
 };
 
 export const darkColors: ColorTokens = {
-  background: '#0B1020',
-  surface: '#121A2B',
-  surfaceElevated: '#1B263A',
-  surfaceMuted: '#172238',
-  textPrimary: '#F1F5F9',
-  textSecondary: '#A3B2C7',
-  textOnPrimary: '#0B1020',
-  border: '#29364B',
-  borderStrong: '#3B4A63',
-  primary: '#818CF8',
-  primaryStrong: '#A5B4FC',
-  primarySoft: '#1E2447',
+  background: '#101C17',
+  surface: '#182820',
+  surfaceElevated: '#20362B',
+  surfaceMuted: '#22362B',
+  textPrimary: '#F5F5E9',
+  textSecondary: '#B6C8B9',
+  textOnPrimary: '#101C17',
+  border: '#304A39',
+  borderStrong: '#58735F',
+  primary: '#9DD8B4',
+  primaryStrong: '#B8E9C7',
+  primarySoft: '#233E2D',
   success: '#4ADE80',
   successSoft: '#12291D',
   warning: '#FBBF24',
@@ -84,21 +94,26 @@ export const darkColors: ColorTokens = {
   dangerSoft: '#311717',
   info: '#67C7E8',
   infoSoft: '#102633',
-  focus: '#A5B4FC',
-  disabled: '#22304A',
-  disabledText: '#9AA8BC',
+  focus: '#B8E9C7',
+  disabled: '#304333',
+  disabledText: '#B7C9B8',
   evidence: '#5EEAD4',
   evidenceSoft: '#0F2A2A',
   overlay: 'rgba(0, 0, 0, 0.6)',
+  accent: '#F2CB59',
+  accentSoft: '#3C331B',
+  board: '#193D2F',
+  boardText: '#FFFDF2',
+  boardMuted: '#CCDFD0',
 };
 
 /** Escala de espaçamento (px). */
 export const spacing = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxl: 40, xxxl: 48 } as const;
 
-export const radius = { sm: 6, md: 10, lg: 14, pill: 999 } as const;
+export const radius = { sm: 8, md: 12, lg: 20, pill: 999 } as const;
 
 export const typography = {
-  display: { fontSize: 30, lineHeight: 38, fontWeight: '700' as const },
+  display: { fontSize: 34, lineHeight: 42, fontWeight: '800' as const },
   title: { fontSize: 22, lineHeight: 30, fontWeight: '700' as const },
   subtitle: { fontSize: 17, lineHeight: 24, fontWeight: '600' as const },
   body: { fontSize: 16, lineHeight: 24, fontWeight: '400' as const },
@@ -121,7 +136,7 @@ export const iconSize = { sm: 16, md: 20, lg: 24, xl: 32 } as const;
 /** Altura mínima de controles; 44px atende à área de toque recomendada (WCAG 2.5.8 / HIG). */
 export const controlHeight = { sm: 36, md: 44, lg: 52 } as const;
 
-export const maxContentWidth = { reading: 760, page: 1120 } as const;
+export const maxContentWidth = { reading: 760, page: 1240 } as const;
 
 /** Breakpoints (largura mínima, px). */
 export const breakpoints = { mobileNarrow: 0, mobileWide: 400, tablet: 768, desktop: 1024 } as const;

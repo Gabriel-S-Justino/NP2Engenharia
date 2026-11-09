@@ -167,15 +167,15 @@ export default function EvaluationScreen() {
   return (
     <PageContainer>
       <PageHeader
-        title="Laboratório de avaliação"
-        description="Matriz de testes do RAG: 6 perguntas com informação presente, 2 ausentes e 2 fora do escopo/adversariais. Meta: 80% de comportamentos adequados."
+        title="Revisão de qualidade"
+        description="Espaço da equipe para conferir as respostas, revisar fontes e registrar melhorias."
         right={<Button label={running ? 'Executando…' : 'Executar testes'} icon="play" onPress={() => void run()} loading={running} disabled={!suiteInfo?.ready} testID="botao-executar-testes" />}
       />
 
       {overview.error ? <ErrorState message={overview.error.message} onRetry={() => void overview.reload()} /> : null}
       <Row gap={spacing.xs}>
         {overview.data?.suites.map((s) => (
-          <FilterChip key={s.id} label={`${s.synthetic ? 'Sintética' : 'Acervo real'}: ${s.id}${s.ready ? '' : ' (não pronta)'}`} selected={suite === s.id} onPress={() => { setSuite(s.id); setRunId(null); }} />
+          <FilterChip key={s.id} label={`${s.synthetic ? 'Material de teste' : 'Seu acervo'}${s.ready ? '' : ' (em preparação)'}`} selected={suite === s.id} onPress={() => { setSuite(s.id); setRunId(null); }} />
         ))}
       </Row>
       {suiteInfo ? (
@@ -208,16 +208,6 @@ export default function EvaluationScreen() {
                 <Badge label={`${c.passed}/${c.executed} · ${formatPercent(c.pass_rate, true)}`} tone={c.passed === c.executed ? 'success' : 'warning'} />
               </Row>
             ))}
-            <SectionHeader title="Métricas de recuperação" description="Medem a busca, não a qualidade da resposta." />
-            {Object.entries(summary.retrieval_metrics).map(([k, v]) => (
-              <AppText key={k} variant="helper">
-                {k}: {v === null ? '—' : String(v).replace('.', ',')}
-              </AppText>
-            ))}
-            <AppText variant="caption" color="textSecondary">
-              Parâmetros: top-k {String(summary.params.top_k)} · limiar {String(summary.params.similarity_threshold)} · chunk {String(summary.params.chunk_size)}/
-              {String(summary.params.chunk_overlap)} · embeddings {String(summary.params.embedding)}
-            </AppText>
           </Card>
           <Row gap={spacing.xs}>
             <FilterChip label="Todos os casos" selected={filter === 'all'} onPress={() => setFilter('all')} />
@@ -237,7 +227,7 @@ export default function EvaluationScreen() {
           <SectionHeader title="Histórico de execuções" />
           {overview.data.runs.map((r) => (
             <Row key={r.id}>
-              <Button label={r.id} variant="ghost" size="sm" onPress={() => { setSuite(r.suite); setRunId(r.id); }} />
+              <Button label={`Ver revisão de ${formatDateTime(r.started_at)}`} variant="ghost" size="sm" onPress={() => { setSuite(r.suite); setRunId(r.id); }} />
               <AppText variant="caption" color="textSecondary">
                 {r.suite} · {formatDateTime(r.started_at)} · {r.status}
                 {r.summary?.pass_rate !== undefined && r.summary?.pass_rate !== null ? ` · ${formatPercent(r.summary.pass_rate, true)}` : ''}

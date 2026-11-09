@@ -1,81 +1,65 @@
-# UI/UX — Acervo IA
+# UI/UX — Escola de trânsito
 
-## Objetivos da experiência
-Confiança, clareza, precisão e transparência. Princípio central: **cada resposta precisa ser compreensível,
-verificável e acompanhada de suas evidências.** A interface nunca sugere que a IA é infalível.
+Atualização de apresentação em 09/11/2026. O Acervo IA aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
 
-## Público e problema
-Motoristas iniciantes e interessados em leis de trânsito, majoritariamente em celular, com pouca familiaridade
-com textos normativos. Problema: localizar a regra certa em vários PDFs longos sem perder a origem da informação.
+## Identidade e público
 
-## Princípios de design
-1. **Evidência visível:** resposta e evidências em blocos distintos ("RESPOSTA" × "EVIDÊNCIAS CITADAS"); rótulos
-   [F1] clicáveis; painel lateral (desktop) ou painel inferior (celular).
-2. **Honestidade:** sem percentuais de "confiança" inventados; "Similaridade 0,53" com legenda de que não é
-   probabilidade; avisos para evidência fraca, divergência e insuficiência; modo demonstração identificado.
-3. **Dados reais apenas:** indicadores vêm da API; ausência = "—"/"Não informado"/"Ainda não avaliado".
-4. **Estado sempre explícito:** carregando, vazio, erro (o que houve, o que fazer, se dá para repetir), sucesso.
-5. **Sobriedade:** cores frias, contraste verificado, poucos efeitos; animação só para mudança de estado.
+Motoristas iniciantes, estudantes e pessoas que querem compreender as regras de circulação. A linguagem é acolhedora e direta, sem infantilizar. Verde de lousa, amarelo de sinalização e fundo claro de papel conectam trânsito e aprendizado. O tema escuro mantém a mesma identidade.
 
-## Arquitetura de informação
+A sinalização ilustrada e o livro são decorativos. Não representam progresso, aprovação, semáforo real, habilitação ou recomendação para agir no trânsito.
 
-| Rota | Tela | Objetivo |
+## Telas e navegação
+
+| Rota mantida | Nome atual | Conteúdo |
 |---|---|---|
-| `/` | Visão geral | Estado do acervo, conexão, avaliação e atalho para perguntar |
-| `/chat` | Assistente documental | Perguntar e verificar evidências (tela prioritária) |
-| `/documentos` | Biblioteca | Enviar, indexar, filtrar, reindexar e remover documentos |
-| `/documentos/[id]` | Detalhe do documento | Metadados e trechos indexados |
-| `/fontes` (`?source=`) | Fontes e evidências | Rastrear a origem de um trecho citado |
-| `/testes` | Laboratório de avaliação | Executar a matriz, ver resultados e registrar ajustes |
-| `/mentoria` | Diário da IA mentora | Registrar validações reais |
-| `/configuracoes` | Configurações | Parâmetros, conexão, token, privacidade, tema |
+| / | Início / Seu ponto de partida | Apresentação, materiais na biblioteca, documentos prontos e dúvidas respondidas |
+| /chat | Tire suas dúvidas | Pergunta, resposta, avisos e fontes clicáveis |
+| /documentos | Sua biblioteca | Enviar arquivo, Preparar documentos, Preparar novamente, filtros, busca e remoção |
+| /documentos/[id] | Detalhe do material | Informações do documento, cuidados e trechos para consulta |
+| /fontes | Fontes para conferir | Documento, página, texto original e autoria disponível |
+| /testes | Revisão de qualidade | Mesmas avaliações, filtros, resultados e registro de ajustes |
+| /mentoria | Diário da equipe | Mesmos campos e registros de validação |
+| /configuracoes | Configurações | Disponibilidade, ajustes do acervo, token, privacidade e aparência |
 
-## Navegação e responsividade
+No desktop, as opções principais são identificadas como Aprender e consultar; as opções de revisão, diário e configurações aparecem no Espaço da equipe. Nenhuma rota foi removida ou protegida por um novo requisito. No celular, continuam as quatro opções principais e Mais. No tablet, o menu continua recolhido por padrão.
 
-| Breakpoint | Largura | Navegação | Layout |
-|---|---|---|---|
-| mobileNarrow | < 400 px | Barra inferior (Início, Chat, Acervo, Fontes, Mais) | Coluna única, padding 16 |
-| mobileWide | 400–767 px | Barra inferior | Coluna única |
-| tablet | 768–1023 px | Sidebar **recolhida** (ícones), expansível | Grades com quebra |
-| desktop | ≥ 1024 px | Sidebar expandida, recolhível | Conteúdo até 1120 px; chat com painel de evidências de 420 px |
+## Informação útil na consulta
 
-"Mais" abre um painel inferior com Avaliação, Diário e Configurações. A tela atual é indicada por cor, peso da
-fonte, ícone preenchido e `aria-current="page"`. A conversa vive no estado global: trocar de tela não a apaga, e o
-histórico é recuperado do backend ao reabrir (identificador salvo no dispositivo).
+Permanecem visíveis: pergunta, resposta, origem do trecho, página, acesso à fonte, ausência de informação, divergências, citações inválidas e falhas. Dados ausentes continuam como Não informado ou —.
 
-## Hierarquia visual
-Título da página (display/título) → descrição → ações primárias à direita (desktop) ou abaixo (celular) → cartões
-de indicadores → conteúdo. No chat: pergunta do usuário (fundo primário suave, à direita) → cartão da resposta com
-selos (modo de geração, nível de evidência, latência) → aviso → resposta → evidências.
+Saem da apresentação de consulta: scores de similaridade, top-k, limiar, candidatos descartados, métricas de latência, nome do modelo, banco, fingerprints, identificadores internos, offsets de caracteres e caminhos de desenvolvimento. A API preserva esses campos.
 
-## Estados por tela (implementados)
+A página inicial deixa de funcionar como painel técnico. Ela apresenta materiais e acesso à conversa, com a mesma condição anterior: a conversa só fica habilitada quando existe documento processado.
 
-| Tela | Estados |
+A revisão e o diário continuam sendo ferramentas da equipe, sem se apresentarem como prova de direção, quiz ou avaliação do aluno. Não foram criados pontos, certificados, aulas, ranking ou progresso fictício.
+
+## Textos dos estados
+
+| Código original | Rótulo atual |
 |---|---|
-| Chat | conversa vazia; carregando histórico; envio em andamento (botão bloqueado, prevenção de duplicidade); resposta; evidência fraca; fontes divergentes; sem evidência; fora do escopo; instrução maliciosa ignorada; nenhum documento indexado (envio desabilitado); erro de conexão/timeout com "Tentar novamente"; provedor de IA indisponível (mostra trechos); citações inválidas; índice indisponível |
-| Documentos | carregando (skeleton); vazio; erro; aguardando; processando com progresso real (n de m); lotes pendentes na Vercel ("Lote N concluído, X pendente(s)", continuação automática); processado; falha com motivo; fora do índice; upload em andamento/concluído; arquivo não suportado; acima do limite; duplicado; confirmação de remoção e de reindexação |
-| Fontes | lista; filtro por tipo; detalhe; falha ao recuperar fonte; metadados "Não informado" |
-| Avaliação | "Ainda não avaliado"; executando; resultados; abaixo/acima da meta; somente falhas; suíte não pronta; registro de ajuste |
-| Configurações | leitura; edição validada; confirmação de reindexação; token; backend offline; endereço "mesma origem"; banco/armazenamento persistente e modo serverless |
+| processed | Pronto para consulta |
+| pending | Na fila |
+| processing | Preparando |
+| failed | Precisa de atenção |
+| excluded | Não utilizado |
+| conexão online | Tudo pronto |
+| provider_error | O assistente precisa de um momento |
+| index_unavailable | Acervo temporariamente indisponível |
 
-## Acessibilidade (WCAG 2.2 AA como referência)
-- Contraste de todos os pares texto/fundo ≥ 4,5:1 nos dois temas — **verificado por teste automatizado**
-  (`src/__tests__/tokens.test.ts`); o teste encontrou e corrigiu o texto desabilitado (4,13:1 → ≥ 4,7:1).
-- Foco visível (contorno de 2–3 px) em botões, campos e itens de navegação; navegação por Tab + Enter testada no
-  E2E (encontrou e corrigiu um defeito: itens do menu não respondiam a Enter).
-- Itens de navegação são links reais (`<a href>`) na web.
-- Rótulos acessíveis em todos os botões de ícone; papéis `heading` com nível, `alert`, `progressbar`, `dialog`.
-- Erros associados aos campos (`aria-describedby`, `aria-invalid`) e anunciados (`accessibilityLiveRegion`).
-- Estados nunca só por cor (selo com texto e ícone). Áreas de toque ≥ 44 px. Fonte escala até 160%.
-- Skeleton respeita "reduzir movimento".
-- **Não verificado:** leitores de tela reais (NVDA/VoiceOver/TalkBack) e dispositivos físicos.
+Os códigos e as decisões permanecem iguais. A função de apresentação apenas simplifica alguns termos e remove códigos HTTP da mensagem visual. Falhas e avisos continuam sendo apresentados; os dados originais não são regravados.
 
-## Justificativas de UX
-- **Painel de evidências** ao lado da conversa no desktop: verificar sem perder o contexto; no celular, as
-  evidências aparecem compactas sob cada resposta, com expansão do trecho, e "Ver painel de evidências" em sheet.
-- **Recusa como resposta legítima:** o estado "sem evidência" tem o mesmo peso visual de uma resposta, com
-  explicação, para que o usuário não interprete como erro.
-- **Sugestões de perguntas não são inventadas:** o estado inicial explica o que perguntar sem citar documentos
-  que podem não existir no acervo.
-- **Operações destrutivas** sempre com diálogo de confirmação; remover documento de `Documentos/` explica que o
-  arquivo original é preservado.
+## Interações preservadas
+
+Enviar, repetir e limpar perguntas; navegar até a fonte; expandir trechos; enviar arquivos; preparar e reprocessar documentos; filtrar e paginar; confirmar remoção; executar avaliações; registrar ajustes; salvar diário; salvar/remover token; alterar parâmetros e tema continuam com os mesmos handlers.
+
+Não foram acrescentados modais, etapas obrigatórias, assistentes de onboarding ou atalhos que enviam perguntas automaticamente.
+
+## Responsividade e acessibilidade
+
+Breakpoints preservados: 400, 768 e 1024 px. Conteúdo geral até 1240 px; leitura até 760 px; painel de fontes no chat desktop com 360 px. Cards e ações quebram em linhas; a ilustração maior não ocupa a versão compacta.
+
+Os pares de contraste são verificados nos temas claro e escuro, incluindo texto de lousa e amarelo sobre o painel. Estados usam texto além da cor. Foco, links reais, rótulos de botões, redução de movimento, confirmações e escala de fonte permanecem. Ilustrações decorativas ficam fora da leitura assistiva.
+
+## Documentação e evidências
+
+Design detalhado em [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); operações em [FLUXOS_UX.md](FLUXOS_UX.md); contrato preservado em [CONTRATO_FRONTEND.md](CONTRATO_FRONTEND.md). Relatórios e capturas anteriores são registros históricos, não prova da aparência atual. A validação desta revisão está em [REVISAO_UI_2026-11-09.md](REVISAO_UI_2026-11-09.md).

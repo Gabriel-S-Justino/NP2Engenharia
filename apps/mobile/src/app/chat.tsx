@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ScrollViewInstance, type TextInputKeyPressEvent } from 'react-native';
 
+import { TrafficMark } from '@/components/TrafficIdentity';
 import { AssistantMessage, FailedMessage, UserMessage } from '@/components/ChatMessage';
 import { SourceReference, citationToSource } from '@/components/SourceReference';
 import { AppText, Badge, Button, ConfirmDialog, Dialog, EmptyState, IconButton, LoadingState, Notice, Row, TextField } from '@/components/ui';
@@ -12,40 +13,18 @@ import { useAppState } from '@/state/AppState';
 import { useTheme } from '@/theme/ThemeProvider';
 import { maxContentWidth, spacing } from '@/theme/tokens';
 import type { ChatResponse } from '@/types/api';
-import { formatScore, pageLabel } from '@/utils/format';
 
 const MAX_CHARS = 1000;
 
 function EvidencePanel({ response, onOpenSource }: { response: ChatResponse; onOpenSource: (id: string) => void }) {
-  const r = response.retrieval;
   return (
     <View style={styles.panelBody}>
       <AppText variant="helper" color="textSecondary">
         Pergunta: “{response.question}”
       </AppText>
-      {r ? (
-        <AppText variant="caption" color="textSecondary">
-          top-k {r.top_k} · limiar {formatScore(r.similarity_threshold)} · {r.metric} · embeddings {r.embedding_provider}
-          {r.embedding_semantic ? '' : ' (lexical)'} · {r.candidates_considered} candidatos avaliados
-        </AppText>
-      ) : null}
       {response.citations.map((c) => (
         <SourceReference key={c.source_id} source={citationToSource(c)} onOpen={onOpenSource} />
       ))}
-      {r && r.candidates.some((c) => !c.selected) ? (
-        <View style={styles.panelBody}>
-          <AppText variant="caption" color="textSecondary" headingLevel={3}>
-            CANDIDATOS NÃO SELECIONADOS
-          </AppText>
-          {r.candidates
-            .filter((c) => !c.selected)
-            .map((c) => (
-              <AppText key={c.source_id} variant="caption" color="textSecondary">
-                • {c.document_title} ({pageLabel(c.page)}) — similaridade {formatScore(c.score)} — {c.reason ?? 'não selecionado'}
-              </AppText>
-            ))}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -99,13 +78,13 @@ export default function ChatScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={styles.body}>
         <View style={styles.conversationColumn}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}><TrafficMark />
             <View style={styles.flex}>
               <AppText variant="title" headingLevel={1}>
-                Assistente documental
+                Tire suas dúvidas
               </AppText>
               <AppText variant="caption" color="textSecondary">
-                Respostas limitadas aos documentos indexados. Confira sempre as fontes.
+                Aprenda sobre trânsito com respostas apoiadas nos seus materiais.
               </AppText>
             </View>
             <IconButton icon="folder-open-outline" accessibilityLabel="Abrir documentos do acervo" onPress={() => router.navigate('/documentos')} />
@@ -119,15 +98,15 @@ export default function ChatScreen() {
                 noDocuments ? (
                   <EmptyState
                     icon="folder-open-outline"
-                    title="Nenhum documento indexado"
-                    message="O assistente só responde com base no acervo. Adicione e indexe documentos para começar."
+                    title="Seu material ainda não está pronto"
+                    message="Adicione documentos à biblioteca ou aguarde a preparação dos arquivos enviados."
                     action={<Button label="Ir para documentos" onPress={() => router.navigate('/documentos')} />}
                   />
                 ) : (
                   <EmptyState
                     icon="chatbubbles-outline"
-                    title="Pergunte sobre as leis de trânsito do acervo"
-                    message="As respostas usam apenas os documentos indexados e mostram os trechos que as sustentam. Se não houver evidência suficiente, o assistente informará isso em vez de inventar uma resposta."
+                    title="Qual caminho você quer entender melhor?"
+                    message="Pergunte sobre regras, sinalização ou segurança. A cada resposta, você pode conferir o documento e a página de origem."
                   />
                 )
               ) : null}
@@ -177,11 +156,11 @@ export default function ChatScreen() {
         </View>
 
         {showSidePanel && latestAnswer?.kind === 'answer' ? (
-          <View style={[styles.sidePanel, { borderLeftColor: colors.border, backgroundColor: colors.surface }]} aria-label="Painel de evidências">
+          <View style={[styles.sidePanel, { borderLeftColor: colors.border, backgroundColor: colors.surface }]} aria-label="Fontes da resposta">
             <ScrollView contentContainerStyle={styles.sidePanelContent}>
               <Row>
                 <AppText variant="subtitle" headingLevel={2}>
-                  Evidências da última resposta
+                  De onde vem a resposta
                 </AppText>
                 <Badge label={`${latestAnswer.response.citations.length} trecho(s)`} tone="evidence" />
               </Row>
@@ -191,7 +170,7 @@ export default function ChatScreen() {
         ) : null}
       </View>
 
-      <Dialog visible={panel !== null} title="Evidências da resposta" variant="sheet" onClose={() => setPanel(null)}>
+      <Dialog visible={panel !== null} title="Fontes da resposta" variant="sheet" onClose={() => setPanel(null)}>
         {panel ? <EvidencePanel response={panel} onOpenSource={(id) => { setPanel(null); openSource(id); }} /> : null}
       </Dialog>
       <ConfirmDialog
@@ -215,14 +194,14 @@ const styles = StyleSheet.create({
   body: { flex: 1, flexDirection: 'row' },
   conversationColumn: { flex: 1 },
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.md, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.lg, borderBottomWidth: 1 },
   messages: { padding: spacing.md, flexGrow: 1 },
   messagesInner: { width: '100%', maxWidth: maxContentWidth.reading, alignSelf: 'center', gap: spacing.lg },
   turn: { gap: spacing.sm },
   composer: { borderTopWidth: 1, padding: spacing.sm },
   composerInner: { width: '100%', maxWidth: maxContentWidth.reading, alignSelf: 'center', gap: spacing.xs },
   composerRow: { alignItems: 'flex-start' },
-  sidePanel: { width: 420, borderLeftWidth: 1 },
+  sidePanel: { width: 360, borderLeftWidth: 1 },
   sidePanelContent: { padding: spacing.md, gap: spacing.md },
   panelBody: { gap: spacing.sm },
 });

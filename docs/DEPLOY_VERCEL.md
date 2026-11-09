@@ -1,5 +1,7 @@
 # Deploy da aplicação completa na Vercel
 
+> **Interface revisada em 09/11/2026.** O tema Escola de trânsito é entregue pelo mesmo build Expo e pela mesma implantação. Após publicar, confira Início, Tire suas dúvidas, Sua biblioteca, Fontes para conferir e Configurações nos temas claro/escuro. Não há novas variáveis obrigatórias, serviços ou dependências.
+
 Toda a aplicação roda em **um único projeto Vercel**:
 
 | Parte | Como roda na Vercel | Arquivo |
@@ -64,7 +66,7 @@ O script extrai, gera embeddings localmente (mesmo modelo da função), grava tr
 no Postgres. A aplicação na Vercel passa a responder imediatamente e consegue reindexar a partir dos originais.
 
 **C. Versionando documentos públicos em `Documentos/`** (leis, resoluções): ajuste o `.gitignore`; os arquivos
-entram no pacote da função e são indexados por **Documentos → Indexar pasta** ou pelo cron diário.
+entram no pacote da função e são indexados por **Documentos → Preparar documentos** ou pelo cron diário.
 
 **Indexação em lotes:** cada chamada de indexação na Vercel processa documentos até ~240 s (pelo menos um por
 chamada) e deixa o restante **pendente** no banco. A tela Documentos continua chamando automaticamente até
@@ -135,7 +137,7 @@ Apps nativos não dependem de CORS. Para builds de loja, use EAS com essa variá
 | Primeira resposta demora | Download/carga do modelo no cold start; é esperado. |
 | "Modelo de embeddings indisponível" | A função não conseguiu baixar do Hugging Face; tente novamente ou verifique os logs da função. |
 | 413 no upload | Limite de 4,5 MB da requisição na Vercel: use a opção B (CLI). |
-| "Índice incompatível" | Mudou o modelo de embeddings: Documentos → **Reindexar tudo** (continua em lotes). |
+| "Índice incompatível" | Mudou o modelo de embeddings: Documentos → **Preparar novamente** (continua em lotes). |
 | 404 ao recarregar `/chat` | Reescritas ausentes: confirme que o projeto usa o `vercel.json` da raiz (Root Directory vazio). |
 | Build excede limite da função | O pacote medido é ~221 MB; se o plano tiver limite menor, veja PRODUCAO.md → Alternativas. |
 

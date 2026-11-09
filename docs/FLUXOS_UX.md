@@ -1,108 +1,51 @@
-# Fluxos de UX
+# Fluxos de UX — apresentação Escola de trânsito
 
-## 1. Primeira utilização
-```mermaid
-flowchart TD
-  A[Abrir o app] --> B{Backend conectado?}
-  B -- não --> E[ErrorState: verificar serviço / endereço em Configurações]
-  B -- sim --> C{Há documentos processados?}
-  C -- não --> D[Visão geral: 'Seu acervo ainda está vazio' → Abrir biblioteca]
-  D --> F[Documentos: Indexar pasta ou Enviar arquivo]
-  F --> G[Indexação concluída] --> H[Assistente habilitado]
-  C -- sim --> H
-```
+Revisão de 09/11/2026. São os fluxos existentes, com novos nomes e aparência. Não há novas etapas, validações ou condições de acesso.
 
-## 2. Adição e indexação de documentos
-```mermaid
-flowchart TD
-  A[Enviar arquivo] --> B{Tipo e tamanho válidos no cliente?\nlimite vem de /api/settings: 4 MB na Vercel}
-  B -- não --> X[Toast: não suportado / acima do limite]
-  B -- sim --> C[POST /api/documents/upload]
-  C --> D{Backend valida conteúdo real, duplicata, token, banco persistente}
-  D -- erro --> Y[Toast com mensagem pública: 415/409/413/403/503]
-  D -- ok --> E{Modo}
-  E -- local --> F[Indexação em segundo plano\npolling /api/ingestion/status: n de m]
-  E -- Vercel --> G[Indexado na própria requisição]
-  F --> H{Resultado}
-  G --> H
-  H -- processado --> I[Selo 'Processado' + n trechos]
-  H -- falha --> J[Selo 'Falha' + motivo]
-```
+## Consulta
 
-"Indexar pasta" / "Reindexar tudo" na Vercel (lotes com orçamento de tempo):
-```mermaid
-flowchart TD
-  A[POST /api/ingestion/scan] --> B["Lote processado até ~240 s (pelo menos 1 documento)"]
-  B --> C{stats.remaining > 0?}
-  C -- sim --> D["Aviso: 'Lote N concluído. X pendente(s); continuando…'"] --> A
-  C -- não --> E[Toast: indexação concluída + resumo da última execução]
-```
-
-## 3. Envio de uma pergunta
-```mermaid
-flowchart TD
-  A[Digitar pergunta] --> B{Vazia ou > 1000 caracteres?}
-  B -- sim --> C[Erro no campo]
-  B -- não --> D[Bloqueia envio duplicado + 'Buscando trechos…']
-  D --> E[POST /api/chat]
-  E --> F{Status}
-  F -- answered --> G[Fluxo 4]
-  F -- insufficient/out_of_scope --> H[Fluxo 5]
-  F -- blocked --> I[Aviso: instruções ignoradas]
-  F -- erro de rede/timeout --> J[Fluxo 6]
-```
-
-## 4. Resposta com fontes
 ```mermaid
 flowchart LR
-  A[Resposta] --> B[Selos: modo de geração, nível de evidência, latência]
-  A --> C[Texto com rótulos F1, F2]
-  C -- toque no rótulo --> D[Fontes: detalhe do trecho]
-  A --> E[Evidências citadas: documento, página, trecho, similaridade]
-  E --> F[Detalhes da fonte]
-  A --> G[Desktop: painel lateral com candidatos e motivos]
+  A[Início] --> B[Tire suas dúvidas]
+  B --> C[Digitar e enviar pergunta]
+  C --> D[Mesma API de chat]
+  D --> E[Resposta ou aviso]
+  E --> F[Conferir fonte e página]
+  F --> G[Detalhe do documento]
 ```
 
-## 5. Pergunta sem evidências suficientes
+O botão Iniciar conversa mantém a condição de documento processado. Enter envia e Shift+Enter quebra a linha na web. A prevenção de envio duplicado, o histórico, a repetição e a confirmação de limpeza permanecem.
+
+## Biblioteca e preparação
+
 ```mermaid
 flowchart TD
-  A[Backend: nenhum trecho acima do limiar\nou termo central ausente] --> B[status insufficient_evidence / out_of_scope]
-  B --> C[Notice: 'Não encontrei evidências suficientes…' + maior similaridade e limiar]
-  C --> D[Sem resposta factual e sem citações]
-  D --> E[Usuário reformula ou consulta Documentos]
+  A[Enviar arquivo] --> B[Mesmas validações de tipo, tamanho e token]
+  B --> C[Arquivo recebido]
+  C --> D[Preparação nos lotes existentes]
+  D --> E{Resultado real}
+  E --> F[Pronto para consulta]
+  E --> G[Na fila ou Preparando]
+  E --> H[Precisa de atenção e motivo]
+  G --> D
 ```
 
-## 6. Falha de conexão
-```mermaid
-flowchart TD
-  A[fetch falha ou excede o tempo] --> B[ApiError network/timeout]
-  B --> C[Mensagem: 'Não foi possível conectar ao serviço…']
-  C --> D{Repetível?}
-  D -- sim --> E[Botão 'Tentar novamente' reenvia a MESMA pergunta]
-  D -- não --> F[Somente a mensagem]
-  G[Health check a cada 30 s] --> H[Selo de conexão: Conectado / Com alertas / Indisponível]
-```
+Preparar documentos chama a mesma operação de scan; Preparar novamente chama a mesma reindexação e mantém a confirmação. A continuação de lotes, o polling e a recuperação de interrupções não foram modificados nesta revisão visual.
 
-## 7. Execução dos testes
-```mermaid
-flowchart TD
-  A[Laboratório: escolher suíte] --> B{Suíte pronta?}
-  B -- não --> C[Botão desabilitado + instrução para preencher a matriz]
-  B -- sim --> D[POST /api/evaluations/run]
-  D --> E[Polling GET /api/evaluations até concluir]
-  E --> F[Taxa, por categoria, métricas de recuperação, casos]
-  F --> G{Falhou algum caso?}
-  G -- sim --> H[Registrar ajuste → corrigir → executar de novo]
-```
+Busca, filtros, ordenação, paginação, envio e remoção mantêm os handlers existentes. Documentos de pasta conservam o arquivo original ao serem excluídos da busca, conforme a regra anterior.
 
-## 8. Remoção de documentos
-```mermaid
-flowchart TD
-  A[Ícone remover] --> B[ConfirmDialog explica o efeito]
-  B -- cancelar --> Z[Nada muda]
-  B -- confirmar --> C[DELETE /api/documents/id]
-  C --> D{Origem}
-  D -- upload --> E[Remove vetores, trechos, registro e arquivo enviado]
-  D -- Documentos/ --> F[Remove vetores e trechos; arquivo original preservado; estado 'Fora do índice']
-  F --> G[Reindexar o documento o reinclui]
-```
+## Conferência das fontes
+
+Na conversa, o rótulo F1 leva à fonte. No desktop, o painel De onde vem a resposta permanece ao lado; no celular, Conferir fontes abre o mesmo painel inferior. Ver trecho, Detalhes da fonte, Abrir original e paginação continuam disponíveis.
+
+Scores e candidatos descartados deixam de ser apresentados. Documento, página, autoria, licença, trecho e avisos relevantes permanecem.
+
+## Estados e falhas
+
+Avisos de informação insuficiente, divergência, conteúdo suspeito, citação inválida e indisponibilidade continuam presentes. A mensagem visual pode traduzir termos técnicos; os status e os dados da API não mudam. Somente falhas já classificadas como repetíveis mostram a ação existente Tentar novamente.
+
+## Ferramentas da equipe
+
+Revisão de qualidade mantém seleção de conjunto, execução, histórico, filtros e registro de ajustes. Diário da equipe mantém formulário, validação e salvamento. Configurações mantém verificação de disponibilidade, quatro parâmetros editáveis, confirmação de reprocessamento, token, privacidade e tema.
+
+O agrupamento Espaço da equipe é somente uma indicação visual: nenhuma rota foi removida ou recebeu nova autenticação.

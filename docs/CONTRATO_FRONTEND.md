@@ -1,5 +1,7 @@
 # Contrato frontend ↔ backend
 
+> **Revisão visual de 09/11/2026.** Nenhum endpoint, schema, tipo TypeScript, parâmetro, autenticação ou comportamento de rede foi alterado nesta revisão.
+
 Fonte da verdade: schemas Pydantic em `backend/app/schemas/models.py` (OpenAPI em `/api/openapi.json` e
 documentação interativa em `/api/docs`).
 Espelho TypeScript: `apps/mobile/src/types/api.ts`. Cliente: `apps/mobile/src/services/api.ts`.
@@ -27,7 +29,7 @@ na aplicação (mocks existem apenas nos testes automatizados).
 | GET `/api/health` | — | `Health` | não |
 | GET `/api/stats` | — | `Stats` | não |
 | GET `/api/documents` | `page, page_size, status, search, file_type, sort` | `Paginated<DocumentSummary>` | não |
-| POST `/api/documents/upload` | multipart `file` (≤ `max_upload_size_mb`; 4 MB na Vercel) | `UploadResult` (201; em serverless já indexado) | sim |
+| POST `/api/documents/upload` | multipart `file` (≤ `max_upload_size_mb`; 4 MB na Vercel) | `UploadResult` (201; documento e execução do lote, que pode ter continuação pendente) | sim |
 | GET `/api/documents/{id}` | — | `DocumentSummary` | não |
 | GET `/api/documents/{id}/chunks` | `page, page_size` | `Paginated<ChunkOut>` | não |
 | DELETE `/api/documents/{id}` | — | `DeleteResult` | sim |
@@ -91,3 +93,13 @@ recusa alterar o acervo sem banco persistente em serverless.
 - O frontend depende de `EXPO_PUBLIC_API_URL` (pública) e do CORS do backend incluir a origem da web.
 - Pendências: nenhuma divergência de contrato conhecida. Mudanças futuras no backend exigem atualizar `types/api.ts`
   (não há geração automática de tipos a partir do OpenAPI — melhoria possível).
+
+## Separação entre dados e apresentação
+
+O frontend continua recebendo retrieval (scores, candidatos e parâmetros), generation (provedor e modelo real), latency e IDs. Essas informações deixam de aparecer na consulta cotidiana, mas não foram removidas do payload.
+
+Os status processed/pending/processing/failed/excluded são apresentados como Pronto para consulta/Na fila/Preparando/Precisa de atenção/Não utilizado. A tabela de mapeamento muda somente texto e cor.
+
+A função userFacingText em utils/presentation.ts atua apenas na string renderizada; não altera respostas persistidas, regras de recusa, flags de segurança ou tratamento de erro. Campos de token e ajustes mantêm os mesmos nomes internos, validações e chamadas HTTP.
+
+UploadResult já contém document, message e a execução opcional ingestion, usada pelo fluxo existente de continuação de lotes. Esta revisão não muda esse contrato.

@@ -32,10 +32,10 @@ export default function DocumentDetail() {
   return (
     <PageContainer>
       <Button label="Voltar" icon="arrow-back" variant="ghost" size="sm" onPress={() => (router.canGoBack() ? router.back() : router.navigate('/documentos'))} style={styles.back} />
-      <PageHeader title={d.metadata.title ?? d.filename} description={d.relative_path} right={<Badge label={DOCUMENT_STATUS[d.status].label} tone={DOCUMENT_STATUS[d.status].tone} />} />
+      <PageHeader title={d.metadata.title ?? d.filename} description="Material da sua biblioteca de trânsito." right={<Badge label={DOCUMENT_STATUS[d.status].label} tone={DOCUMENT_STATUS[d.status].tone} />} />
       {d.error_message ? <Notice tone={d.status === 'failed' ? 'danger' : 'info'} title={d.status === 'failed' ? 'Motivo da falha' : 'Observação'}>{d.error_message}</Notice> : null}
       {d.warnings.length ? (
-        <Notice tone="warning" title="Avisos da extração">
+        <Notice tone="warning" title="Cuidados com este material">
           {d.warnings.map((w) => (
             <AppText key={w} variant="helper">
               • {w}
@@ -44,11 +44,11 @@ export default function DocumentDetail() {
         </Notice>
       ) : null}
       <Card>
-        <SectionHeader title="Metadados" description="Campos não fornecidos pela fonte aparecem como “Não informado”." />
+        <SectionHeader title="Sobre o documento" description="Campos não fornecidos pela fonte aparecem como “Não informado”." />
         <MetadataTable document={d} />
       </Card>
       <View style={styles.chunks}>
-        <SectionHeader title={`Trechos indexados (${chunks.data?.total ?? d.chunk_count})`} description="Texto original de cada trecho usado na busca, com página e seção." />
+        <SectionHeader title={`Trechos para consulta (${chunks.data?.total ?? d.chunk_count})`} description="Texto original de cada trecho usado na busca, com página e seção." />
         {chunks.loading && !chunks.data ? <LoadingState /> : null}
         {chunks.error ? <ErrorState message={chunks.error.message} onRetry={() => void chunks.reload()} /> : null}
         {chunks.data?.items.map((c) => (

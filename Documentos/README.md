@@ -1,5 +1,7 @@
 # Documentos/ — acervo real da equipe
 
+> **Interface revisada em 09/11/2026.** No aplicativo, esta coleção aparece como Sua biblioteca. Enviar arquivo e Preparar documentos usam o mesmo fluxo anterior; os arquivos e o manifesto não foram modificados pela revisão visual.
+
 Coloque aqui os documentos **reais** reunidos pela equipe sobre leis de trânsito (PDF, TXT ou MD).
 Subpastas são permitidas (ex.: `legislacao/`, `resolucoes/`, `cartilhas/`).
 
@@ -25,7 +27,7 @@ equipe adicionar e validar os arquivos.
    ```bash
    python scripts/inventario_documentos.py
    ```
-4. Indexe pela interface (Documentos → "Indexar pasta") ou pelo terminal:
+4. Indexe pela interface (Documentos → "Preparar documentos") ou pelo terminal:
    ```bash
    python scripts/ingest_documents.py
    ```

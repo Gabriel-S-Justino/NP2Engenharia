@@ -2,6 +2,9 @@ import { contrastRatio } from '@/theme/contrast';
 import { darkColors, lightColors, type ColorTokens } from '@/theme/tokens';
 
 const TEXT_PAIRS: [keyof ColorTokens, keyof ColorTokens][] = [
+  ['boardText', 'board'],
+  ['boardMuted', 'board'],
+  ['accent', 'board'],
   ['textPrimary', 'background'],
   ['textPrimary', 'surface'],
   ['textSecondary', 'background'],

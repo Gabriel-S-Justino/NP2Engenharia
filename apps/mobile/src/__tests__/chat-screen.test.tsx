@@ -75,7 +75,7 @@ it('envia pergunta, impede envio duplicado e exibe resposta com fontes', async (
   expect(mocked.chat).toHaveBeenCalledTimes(1);
   expect(screen.getByText('Buscando trechos e preparando a resposta…')).toBeOnTheScreen();
   resolve(chatResponse());
-  expect(await screen.findByText('EVIDÊNCIAS CITADAS (1)')).toBeOnTheScreen();
+  expect(await screen.findByText('FONTES DA RESPOSTA (1)')).toBeOnTheScreen();
 });
 
 it('mostra erro de conexão com opção de tentar novamente', async () => {
@@ -94,6 +94,6 @@ it('mostra erro de conexão com opção de tentar novamente', async () => {
 it('desabilita envio quando não há documentos indexados', async () => {
   mocked.stats.mockResolvedValue({ documents_processed: 0 } as never);
   await renderChat();
-  expect(await screen.findByText('Nenhum documento indexado')).toBeOnTheScreen();
+  expect(await screen.findByText('Seu material ainda não está pronto')).toBeOnTheScreen();
   expect(screen.getByTestId('botao-enviar')).toBeDisabled();
 });

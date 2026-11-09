@@ -18,17 +18,13 @@ export function MetadataTable({ document: d }: { document: DocumentSummary }) {
     ['Data', m.published_date],
     ['Versão', m.version],
     ['Assunto', m.subject],
-    ['URL', m.url],
+    ['Endereço original', m.url],
     ['Licença', m.license],
     ['Confiabilidade', m.reliability_notes],
-    ['Origem dos metadados', m.metadata_origin],
     ['Tipo', d.file_type.toUpperCase()],
     ['Tamanho', formatBytes(d.size_bytes)],
     ['Páginas', d.page_count !== null ? String(d.page_count) : null],
-    ['Trechos', String(d.chunk_count)],
-    ['Origem do arquivo', { documentos: 'Pasta Documentos/', upload: 'Enviado pela interface', fixtures: 'Material sintético de teste' }[d.origin]],
-    ['Indexado em', d.indexed_at ? formatDateTime(d.indexed_at) : null],
-    ['ID', d.id],
+    ['Disponível desde', d.indexed_at ? formatDateTime(d.indexed_at) : null],
   ];
   return (
     <View accessibilityRole="list">

@@ -1,5 +1,7 @@
 # Matriz de conformidade com o guia do professor
 
+> **Interface revisada em 09/11/2026.** A apresentação foi revisada para motoristas e estudantes: fontes e páginas seguem acessíveis, os avisos de segurança permanecem e os detalhes técnicos deixam de competir com a resposta. Avaliação, diário e configurações continuam nas mesmas rotas, identificados como espaço da equipe.
+
 Estados: **Atendido** (implementado e verificado) · **Parcial** (implementado, falta etapa da equipe ou verificação
 externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **Não atendido**.
 
@@ -27,7 +29,7 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 | Matriz ≥ 10 perguntas, exatamente 6/2/2 | `matriz_fixtures.json`; `matriz_acervo_real.json` (modelo) | Atendido (sintética); real pendente |
 | Meta ≥ 80% calculada sobre testes executados | `evaluation.summarize`; `test_evaluation_run_and_results` | Atendido |
 | Causa, ajuste e nova execução das falhas | MATRIZ_TESTES §3; ajustes registráveis pela interface | Atendido |
-| Diário da IA mentora (prompt, resposta, decisão, alteração, evidência) | DIARIO_VALIDACAO_IA.md + formulário | Parcial (sem registros reais) |
+| Diário da equipe (prompt, resposta, decisão, alteração, evidência) | DIARIO_VALIDACAO_IA.md + formulário | Parcial (sem registros reais) |
 | Segurança, privacidade, ética, instruções maliciosas, limites, evidência insuficiente | SEGURANCA.md, LIMITACOES.md | Atendido |
 | Aplicação funcional, código organizado, README, relatório, matriz, diário, apresentação ≤ 7 min | repositório; ROTEIRO_APRESENTACAO.md | Atendido/Parcial (itens da equipe) |
 | Equipe de 5, divisão de tarefas, cada integrante explica algo | DIVISAO_TAREFAS.md (sem nomes inventados) | Parcial |

@@ -1,5 +1,7 @@
 # Fontes do acervo
 
+> **Interface revisada em 09/11/2026.** A revisão visual não adiciona nem remove fontes. Título, página, trecho, autoria e acesso ao original permanecem disponíveis. A pontuação de similaridade não é exibida ao usuário final; ela continua no contrato da API.
+
 > **Estado:** nenhum documento real foi adicionado até esta versão. A tabela abaixo deve ser preenchida pela
 > equipe **depois** de ler e validar cada documento. Não preencha campos que a fonte não informa: use "não informado".
 

@@ -1,5 +1,7 @@
 # Resultado da avaliação — suíte `fixtures`
 
+> Registro histórico preservado. Os rótulos e as capturas desta execução podem corresponder à interface anterior. A revisão Escola de trânsito de 09/11/2026 está documentada em [UI/UX](../UI_UX.md) e não reexecuta nem altera os resultados abaixo.
+
 - Execução: `eval_5b6978d26ca54296` — início 2026-10-29T22:55:30+00:00, fim 2026-10-29T22:55:30+00:00
 - Testes executados: **10** · aprovados: **10** · reprovados: **0**
 - Taxa de aprovação: **100.0%** (meta 80%: atingida)

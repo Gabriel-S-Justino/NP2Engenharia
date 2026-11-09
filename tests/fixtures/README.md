@@ -1,5 +1,7 @@
 # tests/fixtures/ — MATERIAL SINTÉTICO DE TESTE
 
+> **Interface revisada em 09/11/2026.** As fixtures continuam restritas aos testes automatizados. A interface usa os mesmos dados e estados; os testes de UI foram ajustados apenas aos novos textos e à retirada de informações técnicas.
+
 Os arquivos em `documentos_sinteticos/` são **fictícios** ("Município de Vila Exemplo") e foram criados pela
 equipe de desenvolvimento apenas para validar o software (ingestão, recuperação, citações, recusa e segurança).
 

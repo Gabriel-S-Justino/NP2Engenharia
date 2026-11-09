@@ -1,5 +1,7 @@
 # Diário de validação com a IA mentora
 
+> **Interface revisada em 09/11/2026.** A tela de registro agora se chama Diário da equipe, em /mentoria. Seus campos, validações e operação de salvamento não mudaram. Esta revisão de interface não constitui uma validação acadêmica feita pela equipe; não foram inventados registros.
+
 O guia da disciplina exige registrar, para cada validação: **prompt enviado, resposta da IA, decisão da equipe,
 alteração realizada e evidência do resultado**. A IA mentora deve avaliar problema, base documental, arquitetura,
 respostas, riscos, segurança e privacidade — e a equipe deve **conferir as sugestões contra as fontes originais**.
@@ -8,7 +10,7 @@ respostas, riscos, segurança e privacidade — e a equipe deve **conferir as su
 > prontos. **Não registre interações que não aconteceram.** O agente de desenvolvimento que implementou o software
 > não é a IA mentora e não preencheu entradas em nome da equipe.
 
-Registros também podem ser feitos na tela **Diário da IA mentora** do aplicativo (`POST /api/mentor-log`), que os
+Registros também podem ser feitos na tela **Diário da equipe** do aplicativo (`POST /api/mentor-log`), que os
 persiste no banco; copie-os para cá antes da entrega.
 
 ## Modelo de registro

@@ -1,5 +1,7 @@
 # Relatório técnico — Acervo IA
 
+> **Interface revisada em 09/11/2026.** A interface atual segue o tema Escola de trânsito: verde de lousa, amarelo de sinalização e fundo de papel. A revisão é somente de apresentação; métricas e resultados anteriores abaixo são históricos, não uma nova medição do RAG.
+
 **Disciplina:** Engenharia de Inteligência Artificial
 **Equipe:** _[nomes dos cinco integrantes — a preencher pela equipe]_
 **Data desta versão:** 29/10/2026

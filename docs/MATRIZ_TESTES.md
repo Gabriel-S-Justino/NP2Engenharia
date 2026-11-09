@@ -1,8 +1,10 @@
 # Matriz de testes do RAG
 
+> **Interface revisada em 09/11/2026.** Os testes funcionais e conjuntos de perguntas não foram alterados nesta revisão. Seletores e expectativas de textos do frontend acompanham a nova nomenclatura. Relatórios de avaliação existentes continuam históricos; a validação visual atual está em REVISAO_UI_2026-11-09.md.
+
 Arquivos executáveis: `tests/acceptance/matriz_fixtures.json` (sintética, pronta) e
 `tests/acceptance/matriz_acervo_real.json` (acervo real, **a preencher pela equipe**).
-Execução: Laboratório de avaliação na interface ou `python scripts/run_evaluation.py [--suite …]`.
+Execução: Revisão de qualidade na interface ou `python scripts/run_evaluation.py [--suite …]`.
 
 Taxa de aprovação = aprovados / executados × 100. **Meta: ≥ 80%.** Nenhum resultado é ajustado manualmente.
 

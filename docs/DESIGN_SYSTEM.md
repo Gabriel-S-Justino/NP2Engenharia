@@ -1,75 +1,57 @@
-# Design system
+# Design system — Escola de trânsito
 
-Código: `apps/mobile/src/theme/tokens.ts` (tokens), `ThemeProvider.tsx` (tema claro/escuro/sistema),
-`src/components/ui/` (componentes base) e `src/components/` (componentes de domínio).
+Revisado em 09/11/2026. Tokens em apps/mobile/src/theme/tokens.ts; componentes base em src/components/ui; marca e ilustração em TrafficIdentity.tsx.
 
-## Cores (tokens semânticos)
+## Direção visual
+
+Verde de lousa para ações e identidade, amarelo de sinalização como destaque decorativo, superfícies de papel e bordas suaves. A associação com escola acontece pelo livro, pela placa de escola e pela linguagem de aprendizado; não há promessa de formação, prova oficial ou habilitação.
 
 | Token | Claro | Escuro | Uso |
 |---|---|---|---|
-| background | `#F6F8FC` | `#0B1020` | Fundo da página |
-| surface | `#FFFFFF` | `#121A2B` | Cartões, campos |
-| surfaceElevated | `#FFFFFF` | `#1B263A` | Diálogos |
-| surfaceMuted | `#EEF2F8` | `#172238` | Trechos, skeleton |
-| textPrimary | `#172033` | `#F1F5F9` | Texto principal |
-| textSecondary | `#556275` | `#A3B2C7` | Texto auxiliar (ajustado de `#64748B` para garantir ≥ 4,5:1 sobre o fundo) |
-| primary / primaryStrong / primarySoft | `#4F46E5` / `#3730A3` / `#EEF0FF` | `#818CF8` / `#A5B4FC` / `#1E2447` | Ações, item ativo |
-| border / borderStrong | `#E2E8F0` / `#B8C2D1` | `#29364B` / `#3B4A63` | Divisórias / contorno de campos |
-| success, warning, danger, info (+Soft) | `#15803D`, `#B45309`, `#B91C1C`, `#0E6A8A` | `#4ADE80`, `#FBBF24`, `#F87171`, `#67C7E8` | Estados |
-| evidence / evidenceSoft | `#0F766E` / `#E6F4F2` | `#5EEAD4` / `#0F2A2A` | Identidade visual das fontes e citações |
-| focus | `#4F46E5` | `#A5B4FC` | Contorno de foco |
-| disabled / disabledText | `#E2E8F0` / `#5B6676` | `#22304A` / `#9AA8BC` | Controles desabilitados |
+| background | #F6F5EE | #101C17 | Papel / fundo geral |
+| surface | #FFFFFF | #182820 | Cards e campos |
+| surfaceMuted | #EDEFE5 | #22362B | Trechos e apoio |
+| textPrimary | #19382F | #F5F5E9 | Leitura principal |
+| textSecondary | #53645B | #B6C8B9 | Legendas |
+| primary | #1C6048 | #9DD8B4 | Ações |
+| primaryStrong | #154A38 | #B8E9C7 | Ênfase |
+| primarySoft | #E4F0E5 | #233E2D | Perguntas e seleção |
+| border | #DCE2D5 | #304A39 | Contornos |
+| borderStrong | #A0AFA0 | #58735F | Campos |
+| accent | #EFC64B | #F2CB59 | Sinalização decorativa |
+| board | #163F34 | #193D2F | Painel de abertura e marca |
+| boardText | #FFFDF2 | #FFFDF2 | Texto sobre lousa |
+| boardMuted | #CCDFD0 | #CCDFD0 | Apoio sobre lousa |
 
-A cor **evidence** (verde-azulado) é exclusiva de fontes/citações, diferenciando "de onde veio" de "ação".
+Success, warning, danger e info continuam reservados a estados reais, sempre com texto. As três luzes da marca são ilustração decorativa; o estado de conexão permanece em um selo separado.
 
-## Tipografia
-Fontes do sistema (sem download). Escala: display 30/38 bold · title 22/30 bold · subtitle 17/24 semibold ·
-body 16/24 · bodyStrong 16/24 semibold · helper 14/20 · caption 13/18 medium · mono 13/18 (identificadores).
-`maxFontSizeMultiplier = 1.6` mantém o layout com fontes ampliadas.
+## Tipografia e composição
 
-## Espaçamento, bordas, elevação e outros tokens
-- Espaçamento: 4, 8, 12, 16, 24, 32, 40, 48 (`xxs`…`xxxl`).
-- Raios: 6 (sm), 10 (md), 14 (lg), 999 (pill). Elevação: `none`, `low` (cartões), `medium` (diálogos, toasts).
-- Ícones (Ionicons): 16, 20, 24, 32. Altura de controles: 36, 44 (padrão, área de toque), 52.
-- Larguras máximas: leitura 760, página 1120. Breakpoints: 0, 400, 768, 1024. Durações: 120, 200, 320 ms.
+Fontes do sistema; display 34/42 com peso 800, título 22/30, subtítulo 17/24 e corpo 16/24. O painel de abertura usa 38/46 no espaço amplo e 29/36 no compacto. Raios 8/12/20 e pílula 999; espaçamento 4–48 px. Largura de página 1240 px e de leitura 760 px.
+
+A faixa Escola de trânsito identifica os cabeçalhos. Os cartões deixam espaço para leitura e as ações existentes mantêm foco e estados desabilitados. Elementos não dependem de hover.
 
 ## Componentes
-| Componente | Arquivo | Notas |
-|---|---|---|
-| AppText | `ui/AppText.tsx` | Variantes tipográficas, cor por token, `headingLevel` |
-| Button, IconButton | `ui/Button.tsx` | primary/secondary/ghost/danger; carregando; desabilitado; foco visível; IconButton exige rótulo |
-| TextField (TextInput, TextArea, SearchInput) | `ui/TextField.tsx` | Rótulo, ajuda, erro associado, contador |
-| Card, PageContainer, PageHeader, SectionHeader, Row | `ui/Layout.tsx` | Estrutura responsiva |
-| Badge, FilterChip | `ui/Badge.tsx` | Estado com texto + cor (+ ícone) |
-| Dialog (modal / bottom sheet / painel lateral), ConfirmDialog | `ui/Dialog.tsx` | `variant="sheet"` vira painel inferior no celular e lateral no desktop |
-| ToastProvider/useToast | `ui/Toast.tsx` | Feedback anunciado a leitores de tela |
-| EmptyState, ErrorState, LoadingState, Skeleton, ProgressIndicator, Notice | `ui/Feedback.tsx` | Progresso só com dados reais |
-| StatCard | `ui/StatCard.tsx` | Valor ausente = "—" |
-| SourceReference, CitationChip (rótulo [F1] em FormattedText) | `SourceReference.tsx`, `FormattedText.tsx` | Componente central de rastreabilidade |
-| UserMessage, AssistantMessage, ConfidenceNotice, FailedMessage | `ChatMessage.tsx` | Separa resposta e evidências |
-| DocumentCard, MetadataTable | `DocumentCard.tsx`, `MetadataTable.tsx` | "Não informado" para metadados ausentes |
-| AppShell (Sidebar, BottomBar, NavigationItem), ConnectionBadge | `AppShell.tsx`, `ConnectionBadge.tsx` | Navegação adaptativa |
 
-Tooltip não foi implementado: em toque não há hover; as informações ficam em texto visível ou `accessibilityHint`
-(e `title` em botões de ícone na web).
+| Componente | Responsabilidade visual |
+|---|---|
+| TrafficMark | Marca com livro e sinalização, sem estado ou ação |
+| StudyHero | Painel de abertura com placa escolar e faixa de pista |
+| PageHeader / SectionHeader | Hierarquia e contexto |
+| Card / StatCard | Conteúdo e indicadores reais |
+| ChatMessage | Pergunta e resposta em blocos distintos; selo Assistente IA |
+| SourceReference | Fonte, página, trecho e ações de conferência; sem score |
+| MetadataTable | Dados úteis do original; sem ID interno e origem técnica |
+| ConnectionBadge | Tudo pronto, atenção ou falta de conexão |
+| AppShell | Mesmas rotas, menu adaptativo e grupo da equipe |
+| Button / IconButton / TextField / Dialog | Controles e confirmações existentes |
 
-## Estados visuais
-Hover (web: cursor de ponteiro padrão do React Native Web; sem realce adicional — a informação nunca depende de hover), foco (contorno `focus`), pressionado (opacidade 0,85 / fundo `surfaceMuted`),
-carregando (indicador + `busy`), desabilitado (`disabled`/`disabledText`), selecionado (fundo `primarySoft` +
-ícone de check/ícone preenchido), erro (`danger` + mensagem).
+A arte geométrica usa Views e Ionicons existentes. Não há novos pacotes, download de fontes, imagem remota ou animação ornamental. As cores da ilustração são decorativas; os textos e ações usam tokens semânticos.
 
-## Regras de uso
-- Componentes usam **somente tokens semânticos** (nunca hex direto, exceto branco do botão `danger`).
-- Toda ação destrutiva usa `ConfirmDialog` com `destructive`.
-- Todo ícone isolado usa `IconButton` com `accessibilityLabel`.
-- Dados indisponíveis nunca viram zero.
+## Acessibilidade e integridade
 
-## Exemplo
-```tsx
-<Card>
-  <SectionHeader title="Base documental" />
-  <Badge label="Processado" tone="success" />
-  <SourceReference source={citationToSource(citation)} onOpen={(id) => router.push({ pathname: '/fontes', params: { source: id } })} />
-  <Button label="Indexar pasta" icon="sync-outline" onPress={scan} loading={busy} />
-</Card>
-```
+Texto sobre fundos principais com contraste mínimo de 4,5:1, foco visível, rótulos de ícones, estados por texto e área de toque preservados. Os testes incluem os pares boardText/board, boardMuted/board e accent/board. O tema não muda a classificação dos estados nem os dados da API.
+
+## Microcopy
+
+Preparar documentos corresponde à ação anterior Indexar pasta; Preparar novamente à reindexação. Biblioteca, fontes e consultas usam termos cotidianos. Parâmetros editáveis continuam em Ajustes do acervo, destinados à equipe; nomes de variáveis, scripts e infraestrutura ficam na documentação técnica.

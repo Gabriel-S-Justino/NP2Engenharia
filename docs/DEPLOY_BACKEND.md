@@ -1,5 +1,7 @@
 # Deploy alternativo do backend em contêiner (fora da Vercel)
 
+> **Interface revisada em 09/11/2026.** Esta revisão visual não altera a API, o contêiner, as credenciais, o banco ou a configuração de hospedagem. O frontend mantém as mesmas chamadas e regras de origem. Consulte UI_UX.md para os nomes atuais das telas.
+
 > **O caminho principal é a aplicação completa na Vercel** ([DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)): web + função
 > Python + Neon Postgres. Este documento descreve a **alternativa** de hospedar a API como contêiner — útil se um
 > limite da plataforma mudar, para indexações muito longas no próprio servidor ou para uso com OCR.
@@ -41,7 +43,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD/data:/var/data" -e APP_ENV=devel
 4. `autoDeploy: false`: publique manualmente após validar (botão *Manual Deploy*).
 5. Após o deploy: `GET https://<backend>/api/health` deve retornar `status: ok` (na 1ª inicialização, o download
    do modelo de embeddings pode levar alguns minutos).
-6. Indexe: na interface (Configurações → token administrativo → Documentos → Indexar pasta), ou envie arquivos pela
+6. Indexe: na interface (Configurações → token administrativo → Documentos → Preparar documentos), ou envie arquivos pela
    interface. Com `AUTO_INGEST_ON_STARTUP=true`, documentos versionados em `Documentos/` são indexados no início.
 
 ## Railway / Fly.io (alternativas)

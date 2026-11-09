@@ -1,6 +1,8 @@
 # Arquitetura de produção (Vercel + Neon Postgres)
 
-## Visão geral
+> **Interface revisada em 09/11/2026.** O build atual apresenta a identidade Escola de trânsito. As rotas e os contratos continuam iguais, inclusive upload em lotes e recuperação do Gemini já existentes. A revisão não altera configuração de produção, políticas de acesso ou processamento.
+
+## Início
 
 ```mermaid
 flowchart LR
@@ -57,7 +59,7 @@ fixtures ao acervo real; os **resultados** da avaliação são gravados no Postg
 - O Neon mantém histórico e permite restaurar um *branch* para um ponto no tempo (confira a janela de retenção do
   seu plano). Antes de mudanças grandes, crie um *branch* de backup no painel.
 - Exportação manual: `pg_dump "$DATABASE_URL" -Fc -f acervo.dump`; restauração: `pg_restore -d "$DATABASE_URL" acervo.dump`.
-- Os vetores são derivados: podem ser recalculados por **Reindexar tudo** a partir dos originais no banco.
+- Os vetores são derivados: podem ser recalculados por **Preparar novamente** a partir dos originais no banco.
 
 ## Segurança em produção
 - `APP_ENV=production` automático na Vercel: upload, indexação, exclusão, avaliação e configurações exigem

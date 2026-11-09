@@ -1,5 +1,7 @@
 # Limitações conhecidas
 
+> **Interface revisada em 09/11/2026.** Remover scores e informações de infraestrutura da interface não modifica a qualidade ou o alcance da busca. A apresentação continua mostrando falta de evidência, divergências e falhas; não apresenta semelhança como certeza nem cria indicadores de aprendizado.
+
 ## Formatos e extração
 - Suporte a PDF, TXT e MD. DOCX/HTML exigem um novo leitor (registrar em `LOADERS` em `document_loader.py`).
 - PDFs digitalizados (imagem) não têm texto extraível; o OCR é **opcional** (`OCR_ENABLED=true`, requer

@@ -1,5 +1,7 @@
 # Configuração e acervo fornecidos manualmente
 
+> **Interface revisada em 09/11/2026.** As ações Indexar pasta e Reindexar tudo agora aparecem como Preparar documentos e Preparar novamente. A preparação, o token, as confirmações e as chamadas ao servidor são os mesmos. Não é necessário reenviar o acervo por causa da atualização visual.
+
 O código exige geração real com Gemini (Google). Não há download automático de documentos nem modo demonstrativo na aplicação. Os geradores simulados existem somente para testes automatizados em `APP_ENV=test`.
 
 ## Antes de iniciar
@@ -29,6 +31,6 @@ As verificações automatizadas usam fixtures e clientes simulados, sem chamada 
 
 A indexação salva trechos e vetores em lotes (`EMBEDDING_BATCH_SIZE=8`, `EMBEDDING_THREADS=1` por padrão). Isso limita o pico de memória do ONNX. Cada lote grava seu progresso no banco; após esgotar o orçamento da função, o documento fica pendente e a próxima chamada continua pelos vetores faltantes.
 
-Se a Vercel encerrar a função à força, a consulta de status recupera documentos antigos em processamento depois que a trava expira. Atualize Documentos e use Indexar pasta para retomar o arquivo já armazenado; não é necessário enviá-lo novamente. Lotes parciais não são disponibilizados para respostas até concluir o documento.
+Se a Vercel encerrar a função à força, a consulta de status recupera documentos antigos em processamento depois que a trava expira. Atualize Documentos e use Preparar documentos para retomar o arquivo já armazenado; não é necessário enviá-lo novamente. Lotes parciais não são disponibilizados para respostas até concluir o documento.
 
 A interface continua os lotes de uploads e reindexações síncronas enquanto estiver aberta. Os logs registram `lote_indexado` com contagem real de trechos. A dependência fontTools dá suporte às fontes CFF/Type1 de PDFs comprimidos.

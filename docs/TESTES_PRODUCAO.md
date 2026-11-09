@@ -1,5 +1,7 @@
 # Testes de produção (pré e pós-deploy)
 
+> **Interface revisada em 09/11/2026.** Na checagem visual atual, procure Tudo pronto, Sua biblioteca, Pronto para consulta e FONTES DA RESPOSTA. Verifique foco, ausência de rolagem horizontal, abertura de fontes, confirmações e alternância de tema. Os passos de backend abaixo permanecem válidos.
+
 Ambiente desta verificação: contêiner Linux de desenvolvimento, Python 3.13 (testes) e 3.12 (função gerada pelo
 `vercel build`), Node 22, PostgreSQL 16 + pgvector 0.6 local, Chromium do Playwright. **Sem acesso** a
 Hugging Face, Docker Hub (429), vercel.com/docs.expo.dev (documentação) e sem contas Vercel/Neon.

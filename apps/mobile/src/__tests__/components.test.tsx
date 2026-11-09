@@ -15,7 +15,7 @@ describe('SourceReference', () => {
     expect(screen.getByText('Documento de teste')).toBeOnTheScreen();
     expect(screen.getByText(/p\. 2/)).toBeOnTheScreen();
     expect(screen.getByText(/25 km\/h/)).toBeOnTheScreen();
-    expect(screen.getByText('Similaridade 0,52')).toBeOnTheScreen();
+    expect(screen.queryByText(/Similaridade/)).toBeNull();
     await fireEvent.press(screen.getByLabelText(/Abrir detalhes de Fonte F1/));
     expect(onOpen).toHaveBeenCalledWith('doc_teste-c0001');
   });
@@ -23,7 +23,7 @@ describe('SourceReference', () => {
   it('não inventa página ausente e sinaliza trecho suspeito', async () => {
     await render(<SourceReference source={citationToSource(citation({ page: null, suspicious: true }))} />);
     expect(screen.getByText(/Página não informada/)).toBeOnTheScreen();
-    expect(screen.getByText(/formato de instrução/)).toBeOnTheScreen();
+    expect(screen.getByText(/conteúdo que exige atenção/)).toBeOnTheScreen();
   });
 
   it('indica fonte indisponível sem ação de abrir', async () => {
@@ -38,7 +38,7 @@ describe('AssistantMessage', () => {
   it('separa resposta gerada das evidências e identifica o modo demonstração', async () => {
     await render(<AssistantMessage response={chatResponse()} onOpenSource={jest.fn()} />);
     expect(screen.getByText('RESPOSTA')).toBeOnTheScreen();
-    expect(screen.getByText('EVIDÊNCIAS CITADAS (1)')).toBeOnTheScreen();
+    expect(screen.getByText('FONTES DA RESPOSTA (1)')).toBeOnTheScreen();
     expect(screen.getByText('Modo demonstração (extrativo, sem LLM)')).toBeOnTheScreen();
   });
 
@@ -64,7 +64,7 @@ describe('AssistantMessage', () => {
   it('indica falha do provedor de IA', async () => {
     const response = chatResponse({ status: 'provider_error', evidence_status: 'none', answer: null, notice: 'O provedor de IA está indisponível.' });
     await render(<AssistantMessage response={response} onOpenSource={jest.fn()} />);
-    expect(screen.getByText('Provedor de IA indisponível')).toBeOnTheScreen();
+    expect(screen.getByText('O assistente precisa de um momento')).toBeOnTheScreen();
   });
 });
 

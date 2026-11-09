@@ -4,7 +4,9 @@ import { AppText, Badge, Button, Notice } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import type { ChatResponse } from '@/types/api';
-import { CHAT_STATUS, EVIDENCE_STATUS, formatMs } from '@/utils/format';
+import { CHAT_STATUS, EVIDENCE_STATUS } from '@/utils/format';
+
+import { userFacingText } from '@/utils/presentation';
 
 import { FormattedText } from './FormattedText';
 import { SourceReference, citationToSource } from './SourceReference';
@@ -34,7 +36,7 @@ export function ConfidenceNotice({ response }: { response: ChatResponse }) {
           : 'info';
   return (
     <Notice tone={tone} title={response.status === 'answered' ? EVIDENCE_STATUS[response.evidence_status].label : CHAT_STATUS[response.status]}>
-      {response.notice ?? 'Confira os trechos antes de concluir.'}
+      {userFacingText(response.notice ?? 'Confira os trechos antes de concluir.')}
     </Notice>
   );
 }
@@ -60,16 +62,14 @@ export function AssistantMessage({ response, onOpenSource, onShowEvidence, showI
     <View style={[styles.assistant, { backgroundColor: colors.surface, borderColor: colors.border }]} testID={`resposta-${response.interaction_id}`}>
       <View style={styles.metaRow}>
         <Badge
-          label={response.generation.is_llm ? `Gerado por ${response.generation.model}` : response.generation.mode === 'demo_extractive' ? 'Modo demonstração (extrativo, sem LLM)' : 'Sem geração'}
+          label={response.generation.is_llm ? 'Assistente IA' : response.generation.mode === 'demo_extractive' ? 'Modo demonstração (extrativo, sem LLM)' : 'Sem geração'}
           tone={response.generation.is_llm ? 'primary' : 'neutral'}
           icon={response.generation.is_llm ? 'sparkles-outline' : 'document-text-outline'}
         />
         {response.status === 'answered' ? (
           <Badge label={EVIDENCE_STATUS[response.evidence_status].label} tone={EVIDENCE_STATUS[response.evidence_status].tone} />
         ) : null}
-        <AppText variant="caption" color="textSecondary">
-          {formatMs(response.latency.total_ms)}
-        </AppText>
+
       </View>
 
       <ConfidenceNotice response={response} />
@@ -92,7 +92,7 @@ export function AssistantMessage({ response, onOpenSource, onShowEvidence, showI
         <View style={styles.section}>
           {response.warnings.map((w) => (
             <AppText key={w} variant="caption" color="warning">
-              • {w}
+              • {userFacingText(w)}
             </AppText>
           ))}
         </View>
@@ -101,21 +101,21 @@ export function AssistantMessage({ response, onOpenSource, onShowEvidence, showI
       {showInlineSources && response.citations.length ? (
         <View style={[styles.section, styles.evidence, { borderTopColor: colors.border }]}>
           <AppText variant="caption" color="textSecondary" headingLevel={3}>
-            {cited.length ? `EVIDÊNCIAS CITADAS (${cited.length})` : `TRECHOS RECUPERADOS (${others.length})`}
+            {cited.length ? `FONTES DA RESPOSTA (${cited.length})` : `CONSULTE NO MATERIAL (${others.length})`}
           </AppText>
           {(cited.length ? cited : others).map((c) => (
             <SourceReference key={c.source_id} source={citationToSource(c)} onOpen={onOpenSource} compact />
           ))}
           {cited.length && others.length ? (
             <AppText variant="caption" color="textSecondary">
-              +{others.length} trecho(s) recuperado(s) e não citado(s).
+              +{others.length} trecho(s) de apoio para consulta.
             </AppText>
           ) : null}
         </View>
       ) : null}
 
       {onShowEvidence && response.retrieval ? (
-        <Button label="Ver painel de evidências" icon="layers-outline" variant="ghost" size="sm" onPress={() => onShowEvidence(response)} />
+        <Button label="Conferir fontes" icon="layers-outline" variant="ghost" size="sm" onPress={() => onShowEvidence(response)} />
       ) : null}
     </View>
   );
@@ -132,7 +132,7 @@ export function FailedMessage({ message, onRetry }: { message: string; onRetry?:
 
 const styles = StyleSheet.create({
   user: { alignSelf: 'flex-end', maxWidth: '90%', padding: spacing.sm, borderRadius: radius.lg, gap: 2 },
-  assistant: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm },
+  assistant: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.xs },
   section: { gap: spacing.xs },
   evidence: { borderTopWidth: 1, paddingTop: spacing.sm },

@@ -33,21 +33,21 @@ export function formatMs(ms: number | null | undefined): string {
 }
 
 export const DOCUMENT_STATUS: Record<DocumentStatus, { label: string; tone: 'success' | 'danger' | 'warning' | 'info' | 'neutral' }> = {
-  processed: { label: 'Processado', tone: 'success' },
-  failed: { label: 'Falha', tone: 'danger' },
-  pending: { label: 'Aguardando', tone: 'warning' },
-  processing: { label: 'Processando', tone: 'info' },
-  excluded: { label: 'Fora do índice', tone: 'neutral' },
+  processed: { label: 'Pronto para consulta', tone: 'success' },
+  failed: { label: 'Precisa de atenção', tone: 'danger' },
+  pending: { label: 'Na fila', tone: 'warning' },
+  processing: { label: 'Preparando', tone: 'info' },
+  excluded: { label: 'Não utilizado', tone: 'neutral' },
 };
 
 export const CHAT_STATUS: Record<ChatStatus, string> = {
   answered: 'Respondida com evidências',
   insufficient_evidence: 'Evidências insuficientes',
   out_of_scope: 'Fora do escopo do acervo',
-  no_documents: 'Acervo sem documentos processados',
-  blocked: 'Instruções maliciosas ignoradas',
-  provider_error: 'Provedor de IA indisponível',
-  index_unavailable: 'Índice indisponível',
+  no_documents: 'Seu material ainda não está pronto',
+  blocked: 'Pergunta não atendida',
+  provider_error: 'O assistente precisa de um momento',
+  index_unavailable: 'Acervo temporariamente indisponível',
 };
 
 export const EVIDENCE_STATUS: Record<EvidenceStatus, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }> = {
@@ -55,7 +55,7 @@ export const EVIDENCE_STATUS: Record<EvidenceStatus, { label: string; tone: 'suc
   weak: { label: 'Evidência fraca', tone: 'warning' },
   conflicting: { label: 'Fontes divergentes', tone: 'warning' },
   insufficient: { label: 'Sem evidência suficiente', tone: 'danger' },
-  none: { label: 'Sem recuperação', tone: 'neutral' },
+  none: { label: 'Sem fontes para esta pergunta', tone: 'neutral' },
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {

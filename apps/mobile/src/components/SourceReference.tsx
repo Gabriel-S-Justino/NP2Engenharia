@@ -6,7 +6,7 @@ import { AppText, Badge } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import type { Citation } from '@/types/api';
-import { NOT_INFORMED, formatScore, pageLabel } from '@/utils/format';
+import { NOT_INFORMED, pageLabel } from '@/utils/format';
 
 /** Dados mínimos de uma referência. Só exibe o que o backend forneceu. */
 export type SourceRefData = {
@@ -95,11 +95,8 @@ export function SourceReference({ source, onOpen, compact, highlighted, testID }
       </View>
 
       <View style={styles.badges}>
-        {source.cited === false ? <Badge label="Recuperado, não citado" tone="neutral" /> : null}
-        {source.relevance !== undefined && source.relevance !== null ? (
-          <Badge label={`Similaridade ${formatScore(source.relevance)}`} tone="evidence" icon="analytics-outline" />
-        ) : null}
-        {source.suspicious ? <Badge label="Contém texto com formato de instrução (ignorado)" tone="warning" icon="shield-outline" /> : null}
+        {source.cited === false ? <Badge label="Trecho de apoio" tone="neutral" /> : null}
+        {source.suspicious ? <Badge label="Trecho com conteúdo que exige atenção" tone="warning" icon="shield-outline" /> : null}
         {source.unavailable ? <Badge label="Fonte indisponível" tone="danger" /> : null}
       </View>
 
@@ -149,7 +146,7 @@ export function SourceReference({ source, onOpen, compact, highlighted, testID }
           <Pressable accessibilityRole="link" accessibilityLabel={`Abrir URL da fonte ${source.title}`} onPress={() => void Linking.openURL(source.url as string)} style={styles.action}>
             <Ionicons name="link-outline" size={16} color={colors.primary} />
             <AppText variant="caption" color="primary">
-              URL original
+              Abrir original
             </AppText>
           </Pressable>
         ) : null}

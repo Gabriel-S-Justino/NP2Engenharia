@@ -1,5 +1,7 @@
 # Roteiro de apresentação (até 7 minutos)
 
+> **Interface revisada em 09/11/2026.** Na demonstração, use Início → Tire suas dúvidas → Fontes para conferir e Sua biblioteca. Mostre as citações e as páginas; reserve métricas técnicas para a explicação da equipe. As rotas e as ações de envio, revisão e remoção permanecem as mesmas.
+
 Organizado pelos critérios de avaliação do professor. Substitua os campos **[ ]** pelos dados reais da equipe.
 Preparação: backend e web rodando (ou URLs de produção), acervo real indexado, uma conversa limpa, aba do
 Laboratório com a última execução, capturas de reserva em `docs/capturas/` caso a rede falhe.

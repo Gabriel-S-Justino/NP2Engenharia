@@ -1,6 +1,14 @@
-# Acervo IA — consulta documental com fontes verificáveis
+# Acervo IA — Escola de trânsito
 
 Aplicação web e mobile de consulta a leis de trânsito com RAG: recupera evidências dos documentos adicionados pela equipe, responde com um LLM real e apresenta citações verificáveis. Sem evidências suficientes, recusa a pergunta.
+
+## Interface de trânsito e escola
+
+A interface usa verde de lousa, amarelo de sinalização, livro e placa escolar para orientar a consulta aos materiais. As telas principais são Início, Tire suas dúvidas, Biblioteca e Fontes. Revisão de qualidade, Diário da equipe e Configurações continuam disponíveis no espaço da equipe, com as mesmas rotas e ações.
+
+A consulta apresenta resposta, avisos e fontes verificáveis. Scores, latências, nomes de modelos e identificadores internos não aparecem no conteúdo destinado ao usuário; continuam no contrato técnico. Upload, preparação dos documentos, recuperação, geração, validações, autenticação e persistência não mudam nesta revisão visual.
+
+Documentação: [índice](docs/README.md), [UI/UX](docs/UI_UX.md), [design system](docs/DESIGN_SYSTEM.md), [fluxos](docs/FLUXOS_UX.md) e [validação da revisão](docs/REVISAO_UI_2026-11-09.md).
 
 ## Configuração obrigatória
 
@@ -86,6 +94,6 @@ Os relatórios históricos de demonstração em `docs/` descrevem execuções an
 
 ## Recuperação de indisponibilidade do Gemini
 
-Em erros temporários de conexão ou HTTP 500/502/503/504, a aplicação repete o modelo principal uma vez e depois tenta `gemini-3.5-flash-lite`. Todas as tentativas compartilham `LLM_TIMEOUT_SECONDS` (60 segundos por padrão). Respostas geradas pela alternativa identificam o modelo efetivo e incluem um aviso; as mesmas evidências e validações de citações são mantidas.
+Em erros temporários de conexão ou HTTP 500/502/503/504, a aplicação repete o modelo principal uma vez e depois tenta `gemini-3.5-flash-lite`. Todas as tentativas compartilham `LLM_TIMEOUT_SECONDS` (60 segundos por padrão). Respostas geradas pela alternativa registram o modelo efetivo no contrato da API e exibem um aviso em linguagem simples; as mesmas evidências e validações de citações são mantidas.
 
 Configure `LLM_MAX_RETRIES=0` para desativar a repetição e `LLM_FALLBACK_MODELS=` para desativar alternativas. A lista de alternativas aceita até dois identificadores Gemini separados por vírgula. Erros de chave, permissão, modelo inexistente e cota não são repetidos nem acionam outro modelo. Se todos os modelos estiverem indisponíveis, a aplicação mostra a falha e os trechos recuperados.

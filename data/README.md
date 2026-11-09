@@ -1,5 +1,7 @@
 # data/
 
+> **Interface revisada em 09/11/2026.** Os artefatos de preparação visual em data/ui-before e data/ui-docs são locais e ignorados pelo Git. Não são documentos do acervo nem estado da aplicação e não fazem parte da implantação.
+
 Arquivos **derivados** gerados pelo backend (não versionados):
 
 - `database/acervo.sqlite3` — documentos, trechos, arquivos enviados, histórico, avaliações e diário da IA mentora.

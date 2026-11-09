@@ -191,20 +191,20 @@ export default function DocumentsScreen() {
   return (
     <PageContainer>
       <PageHeader
-        title="Documentos"
-        description="Acervo usado nas respostas. Os arquivos da pasta Documentos/ nunca são alterados pelo sistema."
+        title="Sua biblioteca"
+        description="Seus materiais de estudo, reunidos para tirar dúvidas e conferir as fontes."
         right={
           <>
             <Button label="Enviar arquivo" icon="cloud-upload-outline" onPress={() => void pickAndUpload()} loading={uploading} disabled={running || busy} />
-            <Button label="Indexar pasta" icon="sync-outline" variant="secondary" onPress={() => void startScan()} loading={busy} disabled={running || uploading} />
-            <Button label="Reindexar tudo" icon="refresh" variant="ghost" onPress={() => setConfirmReindex(true)} disabled={running || busy} />
+            <Button label="Preparar documentos" icon="sync-outline" variant="secondary" onPress={() => void startScan()} loading={busy} disabled={running || uploading} />
+            <Button label="Preparar novamente" icon="refresh" variant="ghost" onPress={() => setConfirmReindex(true)} disabled={running || busy} />
           </>
         }
       />
 
       <AppText variant="caption" color="textSecondary">
         Formatos aceitos: {settings.data?.supported_file_types.join(', ').toUpperCase() ?? 'PDF, TXT, MD'} · limite de {maxMb} MB por arquivo.
-        PDFs digitalizados (imagem) precisam de OCR.
+        Prefira PDFs com texto selecionável; arquivos digitalizados podem precisar de reconhecimento de texto.
       </AppText>
 
       {batchInfo ? (
@@ -220,7 +220,7 @@ export default function DocumentsScreen() {
         <Card>
           <AppText variant="bodyStrong">Os documentos estão sendo preparados para consulta.</AppText>
           {current.stats.to_process > 0 ? (
-            <ProgressIndicator current={current.stats.processed_so_far} total={current.stats.to_process} label="Documentos processados" />
+            <ProgressIndicator current={current.stats.processed_so_far} total={current.stats.to_process} label="Documentos prontos" />
           ) : (
             <AppText variant="helper" color="textSecondary">
               Verificando arquivos novos ou alterados…
@@ -230,23 +230,23 @@ export default function DocumentsScreen() {
       ) : null}
 
       {!running && last ? (
-        <Notice tone={last.status === 'failed' ? 'danger' : last.stats.failed ? 'warning' : 'success'} title={`Última indexação (${formatDateTime(last.finished_at)})`}>
+        <Notice tone={last.status === 'failed' ? 'danger' : last.stats.failed ? 'warning' : 'success'} title={`Última preparação (${formatDateTime(last.finished_at)})`}>
           <AppText variant="helper">
             {last.status === 'failed'
               ? last.error_message ?? 'A indexação falhou.'
-              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} ignorado(s)${last.stats.remaining ? `, ${last.stats.remaining} pendente(s) — use “Indexar pasta” para continuar` : ''}.`}
+              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} sem necessidade de preparo${last.stats.remaining ? `, ${last.stats.remaining} pendente(s) — use “Preparar documentos” para continuar` : ''}.`}
           </AppText>
         </Notice>
       ) : null}
 
       {ingestion.status && !ingestion.status.index.compatible ? (
-        <Notice tone="danger" title="Índice incompatível">
+        <Notice tone="danger" title="O acervo precisa ser preparado novamente">
           {ingestion.status.index.message ?? 'Reindexe o acervo para continuar.'}
         </Notice>
       ) : null}
 
       <View style={styles.filters}>
-        <TextField label="Buscar por nome ou metadado" icon="search" value={search} onChangeText={setSearch} placeholder="Buscar documentos" hideLabel />
+        <TextField label="Buscar materiais" icon="search" value={search} onChangeText={setSearch} placeholder="Buscar documentos" hideLabel />
         <Row gap={spacing.xs}>
           {STATUS_FILTERS.map((s) => (
             <FilterChip
@@ -281,7 +281,7 @@ export default function DocumentsScreen() {
           message={
             search || statusFilter !== 'all'
               ? 'Ajuste a busca ou os filtros.'
-              : 'Adicione documentos para começar a consultar suas fontes. Coloque arquivos em Documentos/ e use “Indexar pasta”, ou envie um arquivo.'
+              : 'Adicione documentos para começar a consultar suas fontes. Coloque arquivos em Documentos/ e use “Preparar documentos”, ou envie um arquivo.'
           }
         />
       ) : (
@@ -318,7 +318,7 @@ export default function DocumentsScreen() {
       <ConfirmDialog
         visible={confirmReindex}
         title="Reindexar todo o acervo?"
-        message="Todos os documentos serão processados novamente (extração, chunks e embeddings). Durante a operação, as respostas podem ficar indisponíveis."
+        message="Todos os documentos serão preparados novamente. Durante esse período, as respostas podem ficar indisponíveis."
         confirmLabel="Reindexar"
         onCancel={() => setConfirmReindex(false)}
         onConfirm={() => void reindexAll()}

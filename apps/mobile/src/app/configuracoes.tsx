@@ -3,8 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Button, Card, ConfirmDialog, ErrorState, FilterChip, LoadingState, Notice, PageContainer, PageHeader, Row, SectionHeader, TextField, useToast } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
-import { api, errorMessage, getBaseUrl } from '@/services/api';
-import { describeBaseUrl } from '@/services/config';
+import { api, errorMessage } from '@/services/api';
 import { useAppState } from '@/state/AppState';
 import { useTheme, type ThemePreference } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
@@ -35,7 +34,7 @@ function Item({ label, value, tone }: { label: string; value: string; tone?: 'su
 export default function SettingsScreen() {
   const toast = useToast();
   const { preference, setPreference } = useTheme();
-  const { health, connection, lastHealthCheck, refreshHealth, adminToken, saveAdminToken } = useAppState();
+  const { connection, lastHealthCheck, refreshHealth, adminToken, saveAdminToken } = useAppState();
   const settings = useAsync(() => api.settings(), [connection]);
   // Rascunho local; null = valores atuais do servidor.
   const [draft, setForm] = useState<RetrievalForm | null>(null);
@@ -79,21 +78,16 @@ export default function SettingsScreen() {
 
   return (
     <PageContainer width="reading">
-      <PageHeader title="Configurações" description="Parâmetros do pipeline RAG e da conexão. Chaves de API nunca são exibidas." />
+      <PageHeader title="Configurações" description="Cuide do seu acesso, da aparência e das preferências do acervo." />
 
       <Card>
         <SectionHeader title="Conexão" right={<Button label="Verificar agora" size="sm" variant="secondary" onPress={() => void refreshHealth()} />} />
-        <Item label="Endereço da API" value={describeBaseUrl(getBaseUrl())} />
         <Item
-          label="Estado do backend"
+          label="Disponibilidade do serviço"
           value={{ checking: 'Verificando', online: 'Conectado', degraded: 'Conectado com alertas', offline: 'Indisponível' }[connection]}
           tone={connection === 'online' ? 'success' : connection === 'degraded' ? 'warning' : connection === 'offline' ? 'danger' : undefined}
         />
         <Item label="Última verificação" value={formatDateTime(lastHealthCheck)} />
-        {health ? <Item label="Ambiente / versão" value={`${health.app_env} · ${health.version}`} /> : null}
-        <AppText variant="caption" color="textSecondary">
-          Na web publicada, o app usa a mesma origem (/api). Em outros casos, o endereço vem de EXPO_PUBLIC_API_URL no build; em celular físico, use o IP do computador ou a URL da Vercel (não “localhost”).
-        </AppText>
       </Card>
 
       {settings.loading && !s ? <LoadingState /> : null}
@@ -102,61 +96,34 @@ export default function SettingsScreen() {
       {s ? (
         <>
           <Card>
-            <SectionHeader title="Modelos" />
-            <Item label="Provedor de geração" value={s.llm_provider === 'demo' ? 'Demonstração (extrativo, sem LLM)' : s.llm_provider} />
-            <Item label="Modelo de geração" value={s.llm_model} />
-            <Item label="Provedor configurado" value={s.llm_configured ? 'Sim' : 'Não'} tone={s.llm_configured ? 'success' : 'danger'} />
-            <Item label="Provedor de embeddings" value={s.embedding_provider} />
-            <Item label="Modelo de embeddings" value={s.embedding_model} />
-            <Item
-              label="Busca semântica"
-              value={s.embedding_semantic === null ? 'Indisponível' : s.embedding_semantic ? 'Sim' : 'Não (lexical, apenas testes)'}
-              tone={s.embedding_semantic ? 'success' : 'warning'}
-            />
-            <Item label="Índice vetorial" value={`${s.vector_store} · ${s.similarity_metric}`} />
-            <Item label="Banco de dados" value={s.storage_backend === 'postgres' ? 'Postgres (persistente)' : 'SQLite local'} />
-            <Item
-              label="Armazenamento persistente"
-              value={s.persistent_storage ? 'Sim' : 'Não — dados perdidos ao reiniciar (configure DATABASE_URL)'}
-              tone={s.persistent_storage ? 'success' : 'danger'}
-            />
-            {s.serverless ? (
-              <Item label="Execução" value={`Serverless (Vercel) · lotes de até ${Math.round(s.ingestion_time_budget_seconds ?? 0)} s na indexação`} />
-            ) : null}
-            {!s.llm_is_real ? (
-              <Notice tone="info">Para usar um LLM real, configure LLM_PROVIDER=gemini, LLM_MODEL e LLM_API_KEY (chave do Google) no servidor (nunca no aplicativo). Veja docs/VARIAVEIS_AMBIENTE.md.</Notice>
-            ) : null}
-          </Card>
-
-          <Card>
-            <SectionHeader title="Recuperação e chunking" description={`Unidade dos chunks: ${s.chunk_unit}. Filtros disponíveis: ${s.available_filters.join(', ')}.`} />
+            <SectionHeader title="Ajustes do acervo" description="Opções da equipe responsável pela preparação e consulta dos materiais." />
             {s.requires_reindex ? <Notice tone="warning">Há documentos indexados com parâmetros diferentes dos atuais. Reindexe o acervo.</Notice> : null}
             {form ? (
               <>
                 <Row>
                   <View style={styles.half}>
-                    <TextField label="Trechos recuperados (top-k)" keyboardType="number-pad" value={form.top_k} onChangeText={(v) => setForm({ ...form, top_k: v })} error={errors.top_k} />
+                    <TextField label="Quantidade de trechos consultados" keyboardType="number-pad" value={form.top_k} onChangeText={(v) => setForm({ ...form, top_k: v })} error={errors.top_k} />
                   </View>
                   <View style={styles.half}>
                     <TextField
-                      label="Limiar de similaridade"
+                      label="Correspondência mínima"
                       keyboardType="decimal-pad"
                       value={form.similarity_threshold}
                       onChangeText={(v) => setForm({ ...form, similarity_threshold: v })}
                       error={errors.similarity_threshold}
-                      helper="Calibre com scripts/calibrate_threshold.py"
+                      helper="Define o quanto um trecho precisa se relacionar com a pergunta."
                     />
                   </View>
                 </Row>
                 <Row>
                   <View style={styles.half}>
-                    <TextField label="Tamanho do chunk" keyboardType="number-pad" value={form.chunk_size} onChangeText={(v) => setForm({ ...form, chunk_size: v })} error={errors.chunk_size} />
+                    <TextField label="Tamanho dos trechos (caracteres)" keyboardType="number-pad" value={form.chunk_size} onChangeText={(v) => setForm({ ...form, chunk_size: v })} error={errors.chunk_size} />
                   </View>
                   <View style={styles.half}>
-                    <TextField label="Sobreposição" keyboardType="number-pad" value={form.chunk_overlap} onChangeText={(v) => setForm({ ...form, chunk_overlap: v })} error={errors.chunk_overlap} />
+                    <TextField label="Sobreposição (caracteres)" keyboardType="number-pad" value={form.chunk_overlap} onChangeText={(v) => setForm({ ...form, chunk_overlap: v })} error={errors.chunk_overlap} />
                   </View>
                 </Row>
-                {chunkChanged ? <Notice tone="warning">Alterar o chunking exige reindexar todo o acervo.</Notice> : null}
+                {chunkChanged ? <Notice tone="warning">Alterar o tamanho dos trechos exige preparar novamente os documentos.</Notice> : null}
                 <Row>
                   <Button label="Salvar parâmetros" onPress={() => void submit()} loading={saving} />
                   <Button label="Descartar" variant="ghost" onPress={() => { setForm(null); setErrors({}); }} />
@@ -168,14 +135,12 @@ export default function SettingsScreen() {
                 ) : null}
               </>
             ) : null}
-            <AppText variant="caption" color="textSecondary">
-              Margem de evidência fraca: {s.weak_evidence_margin} · cobertura mínima de termos (modo demonstração): {s.min_term_coverage}
-            </AppText>
+
           </Card>
 
           <Card>
-            <SectionHeader title="Acesso administrativo" description="Upload, indexação, exclusão, avaliação e alterações exigem o token quando o servidor o define." />
-            <Item label="Token exigido pelo servidor" value={s.admin_required ? 'Sim' : 'Não (ambiente local)'} />
+            <SectionHeader title="Acesso administrativo" description="O token autoriza o envio e a organização dos documentos. Solicite-o à equipe responsável." />
+            <Item label="Acesso protegido" value={s.admin_required ? 'Sim' : 'Não exigido'} />
             <Item label="Token neste dispositivo" value={adminToken ? 'Configurado' : 'Não configurado'} tone={adminToken ? 'success' : undefined} />
             <TextField label="Token administrativo" secureTextEntry autoCapitalize="none" autoCorrect={false} value={tokenInput} onChangeText={setTokenInput} placeholder="Cole o token fornecido pelo responsável" />
             <Row>
@@ -191,7 +156,7 @@ export default function SettingsScreen() {
             <Item label="Limite por pergunta" value={`${s.max_question_chars} caracteres`} />
             <Notice tone={s.llm_is_real ? 'warning' : 'info'}>
               {s.llm_is_real
-                ? 'Os trechos recuperados são enviados ao provedor de IA externo para gerar a resposta. Não indexe documentos confidenciais sem autorização.'
+                ? 'Partes dos documentos são enviadas ao serviço de IA para responder às perguntas. Use apenas materiais que você tem autorização para compartilhar.'
                 : 'No modo demonstração nenhum conteúdo é enviado a serviços externos.'}
             </Notice>
           </Card>
@@ -210,7 +175,7 @@ export default function SettingsScreen() {
       <ConfirmDialog
         visible={confirmReindex}
         title="Reindexar o acervo?"
-        message="Os novos parâmetros de chunking só valem após reprocessar todos os documentos. Durante a reindexação, as respostas podem ficar indisponíveis."
+        message="As novas preferências de preparação só valem após reprocessar todos os documentos. Durante a reindexação, as respostas podem ficar indisponíveis."
         confirmLabel="Salvar e reindexar"
         loading={saving}
         onCancel={() => setConfirmReindex(false)}

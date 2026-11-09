@@ -1,5 +1,7 @@
 # Divisão de tarefas (sugestão)
 
+> **Interface revisada em 09/11/2026.** Inclua a revisão da identidade Escola de trânsito e dos textos na atividade de frontend/documentação. A revisão visual não preenche nomes ou contribuições dos integrantes e não altera responsabilidades já definidas.
+
 Equipe de cinco integrantes. **Nomes e contribuições reais devem ser preenchidos pela equipe** — este documento
 não atribui trabalho a ninguém. Cada integrante deve conseguir explicar ao menos **uma decisão técnica, uma fonte
 utilizada ou um teste realizado** (ver última coluna).

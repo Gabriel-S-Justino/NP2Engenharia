@@ -10,17 +10,18 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 
 import { ConnectionBadge } from './ConnectionBadge';
+import { TrafficMark } from './TrafficIdentity';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 type NavItem = { href: Href; path: string; label: string; icon: IconName; primary: boolean };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: '/', path: '/', label: 'Visão geral', icon: 'grid-outline', primary: true },
-  { href: '/chat', path: '/chat', label: 'Assistente', icon: 'chatbubbles-outline', primary: true },
-  { href: '/documentos', path: '/documentos', label: 'Documentos', icon: 'folder-outline', primary: true },
+  { href: '/', path: '/', label: 'Início', icon: 'compass-outline', primary: true },
+  { href: '/chat', path: '/chat', label: 'Tire suas dúvidas', icon: 'chatbubbles-outline', primary: true },
+  { href: '/documentos', path: '/documentos', label: 'Biblioteca', icon: 'book-outline', primary: true },
   { href: '/fontes', path: '/fontes', label: 'Fontes', icon: 'library-outline', primary: true },
-  { href: '/testes', path: '/testes', label: 'Avaliação', icon: 'flask-outline', primary: false },
-  { href: '/mentoria', path: '/mentoria', label: 'Diário da IA mentora', icon: 'school-outline', primary: false },
+  { href: '/testes', path: '/testes', label: 'Revisão de qualidade', icon: 'clipboard-outline', primary: false },
+  { href: '/mentoria', path: '/mentoria', label: 'Diário da equipe', icon: 'school-outline', primary: false },
   { href: '/configuracoes', path: '/configuracoes', label: 'Configurações', icon: 'settings-outline', primary: false },
 ];
 
@@ -69,23 +70,25 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     <View
       role="navigation"
       aria-label="Navegação principal"
-      style={[styles.sidebar, { width: collapsed ? 72 : 248, backgroundColor: colors.surface, borderRightColor: colors.border }]}>
+      style={[styles.sidebar, { width: collapsed ? 80 : 264, backgroundColor: colors.surface, borderRightColor: colors.border }]}>
       <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
-        <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-          <Ionicons name="library" size={18} color={colors.textOnPrimary} />
-        </View>
+        <TrafficMark />
         {!collapsed ? (
           <View style={styles.flex}>
             <AppText variant="subtitle">Acervo IA</AppText>
             <AppText variant="caption" color="textSecondary">
-              Leis de trânsito com fontes
+              Escola de trânsito
             </AppText>
           </View>
         ) : null}
       </View>
+      {!collapsed ? <AppText variant="caption" color="textSecondary" style={styles.navHeading}>APRENDER E CONSULTAR</AppText> : null}
       <View style={styles.navList}>
         {NAV_ITEMS.map((item) => (
-          <NavigationItem key={item.path} item={item} collapsed={collapsed} active={isActive(pathname, item.path)} />
+          <View key={item.path}>
+            {item.path === '/testes' && !collapsed ? <AppText variant="caption" color="textSecondary" style={styles.teamHeading}>ESPAÇO DA EQUIPE</AppText> : null}
+            <NavigationItem item={item} collapsed={collapsed} active={isActive(pathname, item.path)} />
+          </View>
         ))}
       </View>
       <View style={styles.sidebarFooter}>
@@ -175,8 +178,10 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xs },
   brandCollapsed: { justifyContent: 'center', paddingHorizontal: 0 },
   logo: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  navHeading: { paddingHorizontal: spacing.sm, letterSpacing: 1.2, fontSize: 10 },
+  teamHeading: { paddingHorizontal: spacing.sm, marginTop: spacing.lg, marginBottom: spacing.xs, letterSpacing: 1.2, fontSize: 10 },
   navList: { gap: spacing.xxs, flex: 1 },
-  navItem: { minHeight: 44, paddingHorizontal: spacing.sm, borderRadius: radius.md, justifyContent: 'center' },
+  navItem: { minHeight: 48, paddingHorizontal: spacing.sm, borderRadius: radius.md, justifyContent: 'center' },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   navItemCollapsed: { justifyContent: 'center' },
   sidebarFooter: { gap: spacing.xs, alignItems: 'flex-start' },

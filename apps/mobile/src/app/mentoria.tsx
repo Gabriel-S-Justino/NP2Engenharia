@@ -55,11 +55,11 @@ export default function MentorScreen() {
   return (
     <PageContainer width="reading">
       <PageHeader
-        title="Diário da IA mentora"
-        description="Registre cada validação real: prompt enviado, resposta recebida, evidências conferidas, decisão da equipe, alteração e resultado."
+        title="Diário da equipe"
+        description="Registre as revisões, os aprendizados e as decisões sobre o acervo."
       />
       <Notice tone="info" title="Somente interações reais">
-        Não registre interações que não aconteceram. Confira as sugestões da IA mentora contra as fontes originais antes de decidir. Os prompts sugeridos estão em docs/DIARIO_VALIDACAO_IA.md.
+        Não registre interações que não aconteceram. Confira as sugestões da IA mentora contra as fontes originais antes de decidir. Descreva o que foi conferido e a decisão tomada pela equipe.
       </Notice>
 
       <Card>
@@ -69,7 +69,7 @@ export default function MentorScreen() {
             <TextField label="Data (AAAA-MM-DD) *" value={form.entry_date} onChangeText={set('entry_date')} error={errors.entry_date} />
           </View>
           <View style={styles.half}>
-            <TextField label="Etapa do projeto *" placeholder="Ex.: chunking, limiar, segurança" value={form.stage} onChangeText={set('stage')} error={errors.stage} />
+            <TextField label="Etapa do projeto *" placeholder="Ex.: revisão de materiais e conferência de fontes" value={form.stage} onChangeText={set('stage')} error={errors.stage} />
           </View>
         </Row>
         <TextField label="Prompt enviado à IA mentora *" multiline value={form.prompt} onChangeText={set('prompt')} error={errors.prompt} />

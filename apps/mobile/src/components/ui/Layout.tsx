@@ -29,9 +29,14 @@ export function PageContainer({ children, scroll = true, width = 'page' }: { chi
 
 export function PageHeader({ title, description, right }: { title: string; description?: string; right?: ReactNode }) {
   const { isCompact } = useBreakpoint();
+  const { colors } = useTheme();
   return (
     <View style={[styles.header, isCompact && styles.headerCompact]}>
       <View style={styles.headerText}>
+        <View style={styles.eyebrow}>
+          <View style={[styles.marker, { backgroundColor: colors.accent }]} />
+          <AppText variant="caption" color="textSecondary" style={styles.eyebrowText}>ESCOLA DE TRÂNSITO</AppText>
+        </View>
         <AppText variant={isCompact ? 'title' : 'display'} headingLevel={1}>
           {title}
         </AppText>
@@ -85,6 +90,9 @@ export function Row({ children, gap = spacing.sm, wrap = true, style }: { childr
 }
 
 const styles = StyleSheet.create({
+  eyebrow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', marginBottom: 4 },
+  eyebrowText: { fontSize: 10, letterSpacing: 1.8, fontWeight: '700' },
+  marker: { width: 20, height: 4, borderRadius: 2 },
   flex: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   inner: { width: '100%', alignSelf: 'center', gap: spacing.lg, flex: 1 },
@@ -93,5 +101,5 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, minWidth: 220, gap: spacing.xxs },
   headerRight: { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
   section: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  card: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm },
+  card: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
 });

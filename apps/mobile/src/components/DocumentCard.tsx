@@ -32,18 +32,16 @@ export function DocumentCard({ document: doc, onOpen, onDelete, onReindex }: Pro
             {doc.metadata.title ?? doc.filename}
           </AppText>
           <AppText variant="caption" color="textSecondary" numberOfLines={1}>
-            {doc.relative_path} · {doc.file_type.toUpperCase()} · {formatBytes(doc.size_bytes)}
+            {doc.filename} · {doc.file_type.toUpperCase()} · {formatBytes(doc.size_bytes)}
           </AppText>
           <View style={styles.badges}>
             <Badge label={status.label} tone={status.tone} />
-            {doc.status === 'processed' ? <Badge label={`${doc.chunk_count} trechos`} tone="evidence" /> : null}
             {doc.page_count ? <Badge label={`${doc.page_count} pág.`} /> : null}
-            {doc.origin === 'upload' ? <Badge label="Enviado pela interface" tone="info" /> : null}
             {doc.origin === 'fixtures' ? <Badge label="Material sintético de teste" tone="warning" /> : null}
           </View>
           <AppText variant="caption" color="textSecondary">
             Atualizado em {formatDateTime(doc.updated_at)}
-            {doc.indexed_at ? ` · indexado em ${formatDateTime(doc.indexed_at)}` : ''}
+            {doc.indexed_at ? ` · pronto em ${formatDateTime(doc.indexed_at)}` : ''}
           </AppText>
           {doc.error_message ? (
             <AppText variant="caption" color={doc.status === 'failed' ? 'danger' : 'textSecondary'}>

@@ -14,7 +14,7 @@
     "android": {
       "package": "br.edu.acervoia.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#E4F0E5",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -24,7 +24,7 @@
     "web": {
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "Acervo IA — consulta a leis de trânsito com fontes",
+      "name": "Acervo IA — Escola de trânsito",
       "lang": "pt-BR"
     },
     "plugins": [
