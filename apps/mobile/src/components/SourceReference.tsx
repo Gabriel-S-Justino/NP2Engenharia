@@ -56,7 +56,7 @@ type Props = {
 
 /**
  * Componente central de rastreabilidade: documento, página, seção, trecho e metadados.
- * A "relevância" é a similaridade de cosseno com a pergunta — não é probabilidade de acerto.
+ * A "relevância" é a similaridade de cosseno com a pergunta - não é probabilidade de acerto.
  */
 export function SourceReference({ source, onOpen, compact, highlighted, testID }: Props) {
   const { colors } = useTheme();

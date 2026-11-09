@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 SQLITE_MIGRATIONS: list[str] = [
-    # 1 — esquema inicial
+    # 1 - esquema inicial
     """
     CREATE TABLE documents (
         id TEXT PRIMARY KEY,
@@ -125,7 +125,7 @@ SQLITE_MIGRATIONS: list[str] = [
         created_at TEXT NOT NULL
     );
     """,
-    # 2 — arquivos originais guardados no banco (uploads e, opcionalmente, todo o acervo)
+    # 2 - arquivos originais guardados no banco (uploads e, opcionalmente, todo o acervo)
     """
     CREATE TABLE document_files (
         document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
@@ -138,7 +138,7 @@ SQLITE_MIGRATIONS: list[str] = [
 ]
 
 POSTGRES_MIGRATIONS: list[str] = [
-    # 1 — esquema inicial completo (equivalente às migrações 1 e 2 do SQLite + vetores pgvector)
+    # 1 - esquema inicial completo (equivalente às migrações 1 e 2 do SQLite + vetores pgvector)
     """
     CREATE EXTENSION IF NOT EXISTS vector;
     CREATE TABLE IF NOT EXISTS documents (

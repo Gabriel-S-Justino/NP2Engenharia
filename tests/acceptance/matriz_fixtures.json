@@ -1,6 +1,6 @@
 {
   "id": "fixtures",
-  "title": "Matriz mínima — documentos sintéticos de teste",
+  "title": "Matriz mínima - documentos sintéticos de teste",
   "description": "10 casos (6 presentes, 2 ausentes, 2 fora do escopo/adversariais) sobre os documentos FICTÍCIOS de tests/fixtures/documentos_sinteticos. Valida o comportamento do software; não valida o conteúdo real sobre leis de trânsito.",
   "synthetic": true,
   "ready": true,

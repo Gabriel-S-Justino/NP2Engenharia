@@ -75,7 +75,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         <TrafficMark />
         {!collapsed ? (
           <View style={styles.flex}>
-            <AppText variant="subtitle">Acervo IA</AppText>
+            <AppText variant="subtitle">Lume</AppText>
             <AppText variant="caption" color="textSecondary">
               Escola de trânsito
             </AppText>

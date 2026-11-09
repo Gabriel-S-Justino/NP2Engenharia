@@ -1,4 +1,4 @@
-# Design system — Escola de trânsito
+# Design system - Lume, Escola de trânsito
 
 Revisado em 09/11/2026. Tokens em apps/mobile/src/theme/tokens.ts; componentes base em src/components/ui; marca e ilustração em TrafficIdentity.tsx.
 
@@ -27,7 +27,7 @@ Success, warning, danger e info continuam reservados a estados reais, sempre com
 
 ## Tipografia e composição
 
-Fontes do sistema; display 34/42 com peso 800, título 22/30, subtítulo 17/24 e corpo 16/24. O painel de abertura usa 38/46 no espaço amplo e 29/36 no compacto. Raios 8/12/20 e pílula 999; espaçamento 4–48 px. Largura de página 1240 px e de leitura 760 px.
+Fontes do sistema; display 34/42 com peso 800, título 22/30, subtítulo 17/24 e corpo 16/24. O painel de abertura usa 38/46 no espaço amplo e 29/36 no compacto. Raios 8/12/20 e pílula 999; espaçamento 4-48 px. Largura de página 1240 px e de leitura 760 px.
 
 A faixa Escola de trânsito identifica os cabeçalhos. Os cartões deixam espaço para leitura e as ações existentes mantêm foco e estados desabilitados. Elementos não dependem de hover.
 

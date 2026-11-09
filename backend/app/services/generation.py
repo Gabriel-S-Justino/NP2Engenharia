@@ -1,7 +1,7 @@
 """Geração de respostas a partir das evidências recuperadas.
 
 * `ExtractiveDemoGenerator` (LLM_PROVIDER=demo): regras determinísticas que selecionam
-  frases dos trechos recuperados e as apresentam com citação. **Não é um LLM** — não
+  frases dos trechos recuperados e as apresentam com citação. **Não é um LLM** - não
   parafraseia, não infere e não sintetiza. Serve para demonstrar o pipeline sem
   credenciais externas.
 * `AnthropicGenerator` (LLM_PROVIDER=anthropic): usa um modelo Claude pela API oficial,

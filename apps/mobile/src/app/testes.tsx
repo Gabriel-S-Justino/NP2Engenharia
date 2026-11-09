@@ -42,7 +42,7 @@ function CaseCard({ result, onAdjust }: { result: EvaluationCaseResult; onAdjust
           <AppText variant="caption" color="textSecondary">
             OBTIDO
           </AppText>
-          <AppText variant="helper">{result.obtained_answer ?? '—'}</AppText>
+          <AppText variant="helper">{result.obtained_answer ?? '-'}</AppText>
         </View>
       </View>
       <Row gap={spacing.xxs}>
@@ -53,7 +53,7 @@ function CaseCard({ result, onAdjust }: { result: EvaluationCaseResult; onAdjust
       {result.retrieved_sources.length ? (
         <AppText variant="caption" color="textSecondary">
           Fontes recuperadas:{' '}
-          {result.retrieved_sources.map((s) => `${s.label} ${s.filename} p.${s.page ?? '—'} (${s.relevance.toFixed(2)}${s.cited_in_answer ? ', citada' : ''})`).join('; ')}
+          {result.retrieved_sources.map((s) => `${s.label} ${s.filename} p.${s.page ?? '-'} (${s.relevance.toFixed(2)}${s.cited_in_answer ? ', citada' : ''})`).join('; ')}
         </AppText>
       ) : (
         <AppText variant="caption" color="textSecondary">
@@ -239,7 +239,7 @@ export default function EvaluationScreen() {
 
       <Dialog
         visible={adjusting !== null}
-        title={`Ajuste após a falha — ${adjusting?.case_id ?? ''}`}
+        title={`Ajuste após a falha - ${adjusting?.case_id ?? ''}`}
         onClose={() => setAdjusting(null)}
         footer={
           <>

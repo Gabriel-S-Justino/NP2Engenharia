@@ -1,4 +1,4 @@
-# Fluxos de UX — apresentação Escola de trânsito
+# Fluxos de UX - apresentação Escola de trânsito
 
 Revisão de 09/11/2026. São os fluxos existentes, com novos nomes e aparência. Não há novas etapas, validações ou condições de acesso.
 

@@ -1,4 +1,4 @@
-# Calibração do limiar — hashing:lexical-hashing-ngrams:2048:v1
+# Calibração do limiar - hashing:lexical-hashing-ngrams:2048:v1
 
 > Registro histórico preservado. Os rótulos e as capturas desta execução podem corresponder à interface anterior. A revisão Escola de trânsito de 09/11/2026 está documentada em [UI/UX](../UI_UX.md) e não reexecuta nem altera os resultados abaixo.
 

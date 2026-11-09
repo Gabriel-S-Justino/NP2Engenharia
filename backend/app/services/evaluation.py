@@ -37,10 +37,10 @@ logger = logging.getLogger("acervo.evaluation")
 TARGET_PASS_RATE = 80.0
 REFUSAL_STATUSES = {"insufficient_evidence", "out_of_scope", "blocked", "no_documents"}
 CATEGORY_LABELS = {
-    "present": "A — Informação presente",
-    "absent": "B — Informação ausente",
-    "out_of_scope": "C — Fora do escopo",
-    "adversarial": "C — Adversarial",
+    "present": "A - Informação presente",
+    "absent": "B - Informação ausente",
+    "out_of_scope": "C - Fora do escopo",
+    "adversarial": "C - Adversarial",
 }
 
 
@@ -193,9 +193,9 @@ def write_reports(output_dir: Path, results: EvaluationResults) -> tuple[Path, P
     md_path = output_dir / f"{stem}.md"
     json_path.write_text(results.model_dump_json(indent=2), encoding="utf-8")
     lines = [
-        f"# Resultado da avaliação — suíte `{s.suite}`",
+        f"# Resultado da avaliação - suíte `{s.suite}`",
         "",
-        f"- Execução: `{s.run_id}` — início {s.started_at}, fim {s.finished_at}",
+        f"- Execução: `{s.run_id}` - início {s.started_at}, fim {s.finished_at}",
         f"- Testes executados: **{s.executed}** · aprovados: **{s.passed}** · reprovados: **{s.failed}**",
         f"- Taxa de aprovação: **{s.pass_rate}%** (meta {s.target:.0f}%: {'atingida' if s.target_met else 'NÃO atingida'})",
         f"- Parâmetros: `{json.dumps(s.params, ensure_ascii=False)}`",
@@ -216,16 +216,16 @@ def write_reports(output_dir: Path, results: EvaluationResults) -> tuple[Path, P
         "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in results.results:
-        cited = ", ".join(f"{x['filename']} p.{x['page'] or '—'}" for x in r.retrieved_sources if x["cited_in_answer"]) or "—"
+        cited = ", ".join(f"{x['filename']} p.{x['page'] or '-'}" for x in r.retrieved_sources if x["cited_in_answer"]) or "-"
         lines.append(
             f"| {r.case_id} | {r.category} | {r.question.replace('|', '/')} | {r.expected_behavior} | {r.status} | "
             f"{cited} | {'sim' if r.citations_valid else 'não'} | {'APROVADO' if r.passed else 'REPROVADO'} | "
-            f"{(r.failure or '—').replace('|', '/')} |"
+            f"{(r.failure or '-').replace('|', '/')} |"
         )
     lines += ["", "## Respostas obtidas", ""]
     for r in results.results:
-        obtained = (r.obtained_answer or "—").replace("\n", "\n> ")
-        lines += [f"### {r.case_id} — {r.question}", "", f"**Esperado:** {r.expected_answer}", "", f"> {obtained}", ""]
+        obtained = (r.obtained_answer or "-").replace("\n", "\n> ")
+        lines += [f"### {r.case_id} - {r.question}", "", f"**Esperado:** {r.expected_answer}", "", f"> {obtained}", ""]
     md_path.write_text("\n".join(lines), encoding="utf-8")
     return json_path, md_path
 

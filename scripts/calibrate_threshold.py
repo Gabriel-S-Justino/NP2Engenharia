@@ -81,7 +81,7 @@ def _calibrate(pipeline, data: dict, args) -> None:
 
     embed = pipeline.embedder
     lines = [
-        f"# Calibração do limiar — {embed.fingerprint}",
+        f"# Calibração do limiar - {embed.fingerprint}",
         "",
         f"- Data: {datetime.now(UTC).isoformat(timespec='seconds')}",
         f"- Conjunto: `{Path(args.set).name}` ({len(rows)} perguntas; acervo {'real' if args.real else 'sintético de teste'})",
@@ -96,7 +96,7 @@ def _calibrate(pipeline, data: dict, args) -> None:
     ]
     for r in sorted(rows, key=lambda x: -(x["best"] or -9)):
         lines.append(f"| {r['question']} | {'sim' if r['answerable'] else 'não'} | {r['best']:.4f} |" if r["best"] is not None
-                     else f"| {r['question']} | {'sim' if r['answerable'] else 'não'} | — |")
+                     else f"| {r['question']} | {'sim' if r['answerable'] else 'não'} | - |")
     # Verificação de ponta a ponta com o limiar sugerido (inclui a checagem de cobertura de termos).
     final_ok = 0
     lines += ["", f"## Comportamento final com limiar {suggestion}", "",

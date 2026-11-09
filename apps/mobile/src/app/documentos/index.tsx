@@ -234,7 +234,7 @@ export default function DocumentsScreen() {
           <AppText variant="helper">
             {last.status === 'failed'
               ? last.error_message ?? 'A indexação falhou.'
-              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} sem necessidade de preparo${last.stats.remaining ? `, ${last.stats.remaining} pendente(s) — use “Preparar documentos” para continuar` : ''}.`}
+              : `${last.stats.new} novo(s), ${last.stats.updated} atualizado(s), ${last.stats.unchanged} sem alteração, ${last.stats.failed} com falha, ${last.stats.removed} removido(s), ${last.stats.skipped} sem necessidade de preparo${last.stats.remaining ? `, ${last.stats.remaining} pendente(s) - use “Preparar documentos” para continuar` : ''}.`}
           </AppText>
         </Notice>
       ) : null}

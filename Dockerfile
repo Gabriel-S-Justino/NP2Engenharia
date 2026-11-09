@@ -1,4 +1,4 @@
-# Backend do Acervo IA (FastAPI + RAG). Imagem para hospedagem com DISCO PERSISTENTE (ex.: Render, Railway, Fly.io).
+# Backend do Lume (FastAPI + RAG). Imagem para hospedagem com DISCO PERSISTENTE (ex.: Render, Railway, Fly.io).
 # Build:  docker build -t acervo-ia-backend .
 # Run:    docker run -p 127.0.0.1:8000:8000 -v "$PWD/data:/var/data" acervo-ia-backend
 FROM python:3.13-slim AS base

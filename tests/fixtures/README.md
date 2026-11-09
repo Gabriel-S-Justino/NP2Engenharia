@@ -1,4 +1,4 @@
-# tests/fixtures/ — MATERIAL SINTÉTICO DE TESTE
+# tests/fixtures/ - MATERIAL SINTÉTICO DE TESTE
 
 > **Interface revisada em 09/11/2026.** As fixtures continuam restritas aos testes automatizados. A interface usa os mesmos dados e estados; os testes de UI foram ajustados apenas aos novos textos e à retirada de informações técnicas.
 

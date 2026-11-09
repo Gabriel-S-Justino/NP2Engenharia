@@ -1,7 +1,7 @@
 {
   "name": "acervo-ia",
   "private": true,
-  "description": "Acervo IA — consulta a leis de trânsito com RAG, citações verificáveis e recusa segura",
+  "description": "Lume - consulta a leis de trânsito com RAG, citações verificáveis e recusa segura",
   "scripts": {
     "setup": "node scripts/project.mjs setup",
     "dev": "node scripts/project.mjs dev",

@@ -6,7 +6,7 @@ import { typography, type ColorTokens, type TypographyVariant } from '@/theme/to
 type Props = TextProps & {
   variant?: TypographyVariant;
   color?: keyof ColorTokens;
-  /** Nível de título para leitores de tela (web: h1–h6). */
+  /** Nível de título para leitores de tela (web: h1-h6). */
   headingLevel?: 1 | 2 | 3 | 4;
 };
 

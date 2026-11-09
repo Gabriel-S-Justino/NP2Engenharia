@@ -5,7 +5,7 @@ Regras importantes:
 * O hash SHA-256 identifica alterações e duplicatas; execuções repetidas não duplicam vetores.
 * A falha em um documento é registrada e não interrompe os demais.
 * Fontes: arquivos em pastas (ex.: `Documentos/`) e originais guardados no banco (uploads e, com Postgres,
-  todo o acervo — necessário em serverless, onde não há disco persistente).
+  todo o acervo - necessário em serverless, onde não há disco persistente).
 * Em serverless, cada execução tem um orçamento de tempo; documentos restantes ficam pendentes e são
   processados na próxima chamada (fila persistente no banco). Uma trava no banco impede execuções simultâneas
   entre instâncias.

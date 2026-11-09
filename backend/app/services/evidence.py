@@ -4,7 +4,7 @@ Além do limiar de similaridade, medimos a **cobertura ponderada por IDF** dos t
 da pergunta nos trechos recuperados. Termos raros no acervo (ex.: "celular") pesam
 mais do que termos onipresentes (ex.: "trânsito"). Se o termo central da pergunta não
 aparece em nenhum trecho, a evidência é considerada insuficiente mesmo que haja
-trechos "parecidos" acima do limiar — esse é o caso típico de informação ausente.
+trechos "parecidos" acima do limiar - esse é o caso típico de informação ausente.
 
 Também há uma heurística simples de **divergência**: valores numéricos diferentes
 para a mesma unidade (dias, anos, pontos, km/h, R$, %) em documentos distintos, nos

@@ -40,9 +40,9 @@ recentes do CTB, licença incerta, PDF digitalizado com extração ruim, conteú
 
 ## Sugestões de busca (verificar antes de usar)
 
-- Lei nº 9.503/1997 (Código de Trânsito Brasileiro), texto compilado — Planalto.
+- Lei nº 9.503/1997 (Código de Trânsito Brasileiro), texto compilado - Planalto.
 - Resoluções do CONTRAN aplicáveis a condutores iniciantes.
-- Manual Brasileiro de Fiscalização de Trânsito — SENATRAN.
+- Manual Brasileiro de Fiscalização de Trânsito - SENATRAN.
 - Manuais de direção defensiva e cartilhas de DETRANs (conferir licença).
 
 Textos de leis, decretos e regulamentos não são protegidos por direito autoral no Brasil (Lei 9.610/1998,

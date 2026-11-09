@@ -17,7 +17,7 @@ para a web. Detalhes de arquitetura e justificativas: [PRODUCAO.md](PRODUCAO.md)
 ## 1. Pré-requisitos
 - Conta na Vercel com acesso ao repositório do GitHub.
 - Banco **Neon** criado pelo Marketplace da Vercel (Storage → Create → Neon). A integração define `DATABASE_URL`
-  (conexão *pooled*) no projeto. O plano gratuito do Neon informa 0,5 GB de armazenamento — suficiente para um
+  (conexão *pooled*) no projeto. O plano gratuito do Neon informa 0,5 GB de armazenamento - suficiente para um
   acervo acadêmico; confira limites e preços atuais no painel. A extensão **pgvector** é criada automaticamente
   pela migração (`CREATE EXTENSION IF NOT EXISTS vector`).
 
@@ -34,7 +34,7 @@ para a web. Detalhes de arquitetura e justificativas: [PRODUCAO.md](PRODUCAO.md)
 | Variável | Obrigatória | Valor |
 |---|---|---|
 | `DATABASE_URL` | sim | definida pela integração do Neon |
-| `ADMIN_TOKEN` | sim | valor longo e aleatório (ex.: `python -c "import secrets;print(secrets.token_urlsafe(32))"`) — protege upload, indexação, exclusão, avaliação e configurações |
+| `ADMIN_TOKEN` | sim | valor longo e aleatório (ex.: `python -c "import secrets;print(secrets.token_urlsafe(32))"`) - protege upload, indexação, exclusão, avaliação e configurações |
 | `CRON_SECRET` | recomendada | valor aleatório; a Vercel o envia ao chamar `/api/cron/ingestion` |
 | `LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL` | obrigatório | `gemini`, uma chave válida e um modelo disponível na sua conta. Sem chave, a inicialização é bloqueada; não há fallback demonstrativo. |
 | `EMBEDDING_PROVIDER` | não | padrão `fastembed` (semântico). `hashing` só para demonstração offline |
@@ -142,4 +142,4 @@ Apps nativos não dependem de CORS. Para builds de loja, use EAS com essa variá
 | Build excede limite da função | O pacote medido é ~221 MB; se o plano tiver limite menor, veja PRODUCAO.md → Alternativas. |
 
 Fontes consultadas sobre limites da plataforma (verifique a versão atual): documentação de funções e do runtime
-Python da Vercel e FAQ da integração Neon–Vercel.
+Python da Vercel e FAQ da integração Neon-Vercel.

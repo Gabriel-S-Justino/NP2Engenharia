@@ -7,14 +7,14 @@ Arquivo de exemplo: `.env.example` (sem segredos). O `.env` real é ignorado pel
 localmente, o arquivo `.env`.
 
 Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido pela integração/plataforma;
-**padrão** = o valor automático já serve; — = não se aplica.
+**padrão** = o valor automático já serve; - = não se aplica.
 
 | Variável | Finalidade | Padrão local | Na Vercel | Tipo |
 |---|---|---|---|---|
-| `DATABASE_URL` | Postgres com pgvector (dados, vetores, originais). Também aceita `POSTGRES_URL` | — (usa SQLite) | **auto** (integração Neon) | **SEGREDO** |
-| `ADMIN_TOKEN` | Token das operações administrativas (header `X-Admin-Token`) | — (livre em desenvolvimento) | **definir** (obrigatório em produção) | **SEGREDO** |
-| `CRON_SECRET` | Autoriza `/api/cron/ingestion` (a Vercel envia `Authorization: Bearer …`) | — | **definir** (recomendado) | **SEGREDO** |
-| `LLM_API_KEY` | Chave do provedor de LLM | — | obrigatória; também aceita `GEMINI_API_KEY` ou `GOOGLE_API_KEY` | **SEGREDO** |
+| `DATABASE_URL` | Postgres com pgvector (dados, vetores, originais). Também aceita `POSTGRES_URL` | - (usa SQLite) | **auto** (integração Neon) | **SEGREDO** |
+| `ADMIN_TOKEN` | Token das operações administrativas (header `X-Admin-Token`) | - (livre em desenvolvimento) | **definir** (obrigatório em produção) | **SEGREDO** |
+| `CRON_SECRET` | Autoriza `/api/cron/ingestion` (a Vercel envia `Authorization: Bearer …`) | - | **definir** (recomendado) | **SEGREDO** |
+| `LLM_API_KEY` | Chave do provedor de LLM | - | obrigatória; também aceita `GEMINI_API_KEY` ou `GOOGLE_API_KEY` | **SEGREDO** |
 | `LLM_PROVIDER` | `gemini` (aceita Google) ou `anthropic`; `demo` apenas em `APP_ENV=test` | gemini | gemini | servidor |
 | `LLM_MODEL` | Modelo de geração | gemini-flash-latest | padrão | servidor |
 | `LLM_TIMEOUT_SECONDS` / `LLM_MAX_OUTPUT_TOKENS` / `LLM_EFFORT` | Limites da geração | 60 / 2048 / low | padrão | servidor |
@@ -28,7 +28,7 @@ Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido
 | `EMBEDDING_PROVIDER` | `fastembed` (semântico, local) ou `hashing` (lexical, testes) | fastembed | padrão | servidor |
 | `EMBEDDING_MODEL` | Modelo do fastembed | paraphrase-multilingual-MiniLM-L12-v2 | padrão | servidor |
 | `EMBEDDING_CACHE_DIR` | Cache do modelo baixado | cache do fastembed | **auto** = `/tmp/fastembed-cache` | servidor |
-| `HASHING_DIM` | Dimensão do provedor lexical | 2048 | — | servidor |
+| `HASHING_DIM` | Dimensão do provedor lexical | 2048 | - | servidor |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` / `MIN_CHUNK_CHARS` | Chunking (caracteres) | 800 / 120 / 60 | padrão (ou tela Configurações) | servidor |
 | `TOP_K` | Trechos recuperados | 5 | padrão | servidor |
 | `SIMILARITY_THRESHOLD` | Limiar de similaridade | por provedor (0,15 hashing; 0,35 fastembed) | **definir** após calibrar | servidor |
@@ -41,7 +41,7 @@ Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido
 | `AUTO_INGEST_ON_STARTUP` | Indexar ao iniciar | false | **auto** = desligado (use o cron) | servidor |
 | `DOCUMENTS_DIR` / `DATA_DIR` | Pasta dos documentos / dados locais | `Documentos` / `data` | padrão / **auto** = `/tmp/acervo-data` | servidor |
 | `CORS_ORIGINS` | Origens web autorizadas (outro domínio) | localhost:8081… | desnecessário (mesma origem) | servidor |
-| `API_HOST` / `API_PORT` / `PORT` | Servidor local / contêiner | 127.0.0.1 / 8000 | — | servidor |
+| `API_HOST` / `API_PORT` / `PORT` | Servidor local / contêiner | 127.0.0.1 / 8000 | - | servidor |
 | `LOG_LEVEL` | Nível de log | INFO | padrão | servidor |
 | `EXPO_PUBLIC_API_URL` | URL do backend no app | vazio (web publicada = mesma origem; Expo web dev = 127.0.0.1:8000; Android = 10.0.2.2:8000) | **não definir** para a web | **PÚBLICA** (vai no bundle) |
 

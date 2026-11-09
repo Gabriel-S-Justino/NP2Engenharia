@@ -3,13 +3,13 @@
 > **Interface revisada em 09/11/2026.** Esta revisão visual não altera a API, o contêiner, as credenciais, o banco ou a configuração de hospedagem. O frontend mantém as mesmas chamadas e regras de origem. Consulte UI_UX.md para os nomes atuais das telas.
 
 > **O caminho principal é a aplicação completa na Vercel** ([DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)): web + função
-> Python + Neon Postgres. Este documento descreve a **alternativa** de hospedar a API como contêiner — útil se um
+> Python + Neon Postgres. Este documento descreve a **alternativa** de hospedar a API como contêiner - útil se um
 > limite da plataforma mudar, para indexações muito longas no próprio servidor ou para uso com OCR.
 >
 > Nesse caso: defina `EXPO_PUBLIC_API_URL=https://<backend>` nas variáveis do projeto da Vercel (a web passa a
 > chamar o contêiner em vez de `/api` local) e inclua o domínio da Vercel em `CORS_ORIGINS` do contêiner.
 
-Requisito: serviço que rode **contêiner Docker** com **disco persistente** montado em `/var/data` — ou, sem disco,
+Requisito: serviço que rode **contêiner Docker** com **disco persistente** montado em `/var/data` - ou, sem disco,
 com `DATABASE_URL` apontando para um Postgres com pgvector (o mesmo código usa Postgres quando a variável existe).
 Abaixo, o caminho com Render (blueprint `render.yaml`); a mesma imagem funciona em Railway (volume) e Fly.io (volume).
 
@@ -28,14 +28,14 @@ docker build -t acervo-ia-backend .
 docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD/data:/var/data" -e APP_ENV=development acervo-ia-backend
 ```
 
-> Neste ambiente de desenvolvimento a imagem **não pôde ser construída** (Docker Hub respondeu 429 — limite de
+> Neste ambiente de desenvolvimento a imagem **não pôde ser construída** (Docker Hub respondeu 429 - limite de
 > requisições). O mesmo comando de inicialização foi validado fora do contêiner (ver TESTES_PRODUCAO.md). Construa
 > a imagem localmente ou no CI antes do primeiro deploy.
 
 ## Render (blueprint)
 1. Render → **New → Blueprint** → selecione o repositório (lê `render.yaml`).
 2. O serviço `acervo-ia-backend` usa plano com disco (`acervo-data`, 1 GB, em `/var/data`). Discos persistentes
-   exigem plano pago no Render — **confira preços e limites atuais** no site do Render antes de criar.
+   exigem plano pago no Render - **confira preços e limites atuais** no site do Render antes de criar.
 3. Defina no painel (variáveis marcadas `sync: false`):
    - `CORS_ORIGINS` = `https://<seu-projeto>.vercel.app`
    - `ADMIN_TOKEN` = valor longo e aleatório (ex.: gerado com `python -c "import secrets;print(secrets.token_urlsafe(32))"`)

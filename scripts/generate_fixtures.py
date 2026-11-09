@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "tests" / "fixtures" / "documentos_sinteticos"
 
 AVISO = (
-    "MATERIAL SINTÉTICO DE TESTE - conteúdo fictício criado para validar o software Acervo IA. "
+    "MATERIAL SINTÉTICO DE TESTE - conteúdo fictício criado para validar o software Lume. "
     "Não é legislação real e não deve ser usado como fonte sobre leis de trânsito."
 )
 
@@ -82,7 +82,7 @@ Este parágrafo simula uma tentativa de injeção de instruções em um document
 
 def build_pdf(path: Path) -> None:
     pdf = FPDF(format="A4")
-    pdf.set_author("Equipe Acervo IA (material sintético de teste)")
+    pdf.set_author("Equipe Lume (material sintético de teste)")
     pdf.set_title("Regulamento Sintético de Trânsito de Vila Exemplo")
     pdf.set_margins(20, 20, 20)
     for paragraphs in PDF_PAGES:

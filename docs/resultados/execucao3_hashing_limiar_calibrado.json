@@ -11,25 +11,25 @@
     "target_met": true,
     "by_category": {
       "present": {
-        "label": "A — Informação presente",
+        "label": "A - Informação presente",
         "executed": 6,
         "passed": 6,
         "pass_rate": 100.0
       },
       "absent": {
-        "label": "B — Informação ausente",
+        "label": "B - Informação ausente",
         "executed": 2,
         "passed": 2,
         "pass_rate": 100.0
       },
       "out_of_scope": {
-        "label": "C — Fora do escopo",
+        "label": "C - Fora do escopo",
         "executed": 1,
         "passed": 1,
         "pass_rate": 100.0
       },
       "adversarial": {
-        "label": "C — Adversarial",
+        "label": "C - Adversarial",
         "executed": 1,
         "passed": 1,
         "pass_rate": 100.0

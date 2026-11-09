@@ -1,4 +1,4 @@
-"""Aplicação FastAPI do Acervo IA.
+"""Aplicação FastAPI do Lume.
 
 Execução local:  uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 (a partir de backend/)
 Documentação:    http://127.0.0.1:8000/api/docs
@@ -41,7 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             container.shutdown()
 
     app = FastAPI(
-        title="Acervo IA — API",
+        title="Lume - API",
         version=__version__,
         description=(
             "API do assistente de consulta documental com RAG (Retrieval-Augmented Generation). "
@@ -83,7 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:
-        return {"name": "Acervo IA API", "version": __version__, "docs": "/api/docs", "health": "/api/health"}
+        return {"name": "Lume API", "version": __version__, "docs": "/api/docs", "health": "/api/health"}
 
     return app
 

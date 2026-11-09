@@ -9,7 +9,7 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 
 | Critério | Peso | Evidência | Teste/verificação | Estado |
 |---|---|---|---|---|
-| Problema, público-alvo e adequação do RAG | 0,75 | README; RELATORIO §2–5 (inclui quando busca convencional basta) | Revisão documental | **Atendido** (a equipe deve revisar o texto) |
+| Problema, público-alvo e adequação do RAG | 0,75 | README; RELATORIO §2-5 (inclui quando busca convencional basta) | Revisão documental | **Atendido** (a equipe deve revisar o texto) |
 | Funcionamento técnico do pipeline RAG | 1,50 | `backend/app/services/*`; ARQUITETURA.md | 82 testes backend (incl. Postgres/pgvector); E2E 11/11 (local e Vercel simulada); matriz 10/10 | **Atendido** com documentos sintéticos e embeddings lexicais; **Parcial** quanto a embeddings semânticos e LLM real (bloqueados neste ambiente) |
 | Fontes, citações e segurança | 1,00 | `citations.py`, `safety.py`, SEGURANCA.md, FONTES.md | testes de citação inventada, injeção, segredos, uploads | **Parcial**: citações e segurança atendidas; **fontes reais pendentes da equipe** |
 | Testes, métricas e análise de falhas | 0,75 | MATRIZ_TESTES.md; `docs/resultados/` | 4 execuções reais (80% → 100%) com causa e ajuste | **Atendido** para a suíte sintética; suíte real pendente |
@@ -20,12 +20,12 @@ externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **N�
 
 | Requisito | Evidência | Estado |
 |---|---|---|
-| Problema, público e adequação do RAG justificados | RELATORIO §2–3 | Atendido |
-| Base documental ≥ 10 documentos ou 25 páginas, validada pela equipe | `Documentos/` (vazio), `scripts/inventario_documentos.py`, checklist em `Documentos/README.md` | **Não atendido — depende da equipe** |
+| Problema, público e adequação do RAG justificados | RELATORIO §2-3 | Atendido |
+| Base documental ≥ 10 documentos ou 25 páginas, validada pela equipe | `Documentos/` (vazio), `scripts/inventario_documentos.py`, checklist em `Documentos/README.md` | **Não atendido - depende da equipe** |
 | Metadados (título, URL, página, seção, assunto, licença; autoria, data, versão) | `manifest.json`, `SourceMetadata`, tela Fontes ("Não informado" quando ausente) | Atendido (software); preenchimento pendente |
 | Registro de lacunas e fontes frágeis | FONTES.md (seções prontas) | Parcial |
 | Pipeline observável (documentos → … → recusa segura) | painel de evidências com candidatos e motivos; `/api/ingestion/status`; logs JSON | Atendido |
-| Relatório explicita top-k, filtros, limiar, embeddings e geração com justificativas | RELATORIO §8–9 | Atendido (limiar do fastembed a recalibrar) |
+| Relatório explicita top-k, filtros, limiar, embeddings e geração com justificativas | RELATORIO §8-9 | Atendido (limiar do fastembed a recalibrar) |
 | Matriz ≥ 10 perguntas, exatamente 6/2/2 | `matriz_fixtures.json`; `matriz_acervo_real.json` (modelo) | Atendido (sintética); real pendente |
 | Meta ≥ 80% calculada sobre testes executados | `evaluation.summarize`; `test_evaluation_run_and_results` | Atendido |
 | Causa, ajuste e nova execução das falhas | MATRIZ_TESTES §3; ajustes registráveis pela interface | Atendido |

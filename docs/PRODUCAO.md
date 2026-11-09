@@ -35,7 +35,7 @@ flowchart LR
 | Upload | Corpo de requisição limitado a 4,5 MB | `MAX_UPLOAD_SIZE_MB=4` na Vercel; arquivos maiores pela CLI direto no banco |
 | Ciclo de vida da aplicação | Lifespan não é garantido em todos os modos | Contêiner criado sob demanda na primeira requisição |
 | Caminho reescrito | `/api/*` é reescrito para `/api/index?path=…` | Adaptador ASGI restaura o caminho original (`app/core/vercel.py`) |
-| CORS | — | Web e API na mesma origem; apps nativos não usam CORS |
+| CORS | - | Web e API na mesma origem; apps nativos não usam CORS |
 
 O modo local (SQLite + FAISS + execução em segundo plano) e a alternativa com contêiner Docker e disco persistente
 ([DEPLOY_BACKEND.md](DEPLOY_BACKEND.md)) continuam disponíveis; o código seleciona o modo pelas variáveis.
@@ -79,9 +79,9 @@ consistência índice ↔ banco), `/api/stats` (latências e métricas de uso), 
 - **Indexações muito longas:** indexar pela CLI na máquina da equipe (opção B do DEPLOY_VERCEL.md).
 
 ## Estados da entrega
-- **Implementado e validado localmente:** sim — `vercel build` oficial concluído; a função gerada foi executada pelo
+- **Implementado e validado localmente:** sim - `vercel build` oficial concluído; a função gerada foi executada pelo
   handler do runtime Python da Vercel contra Postgres + pgvector; simulação local web + API na mesma origem com
   E2E 11/11 (ver [TESTES_PRODUCAO.md](TESTES_PRODUCAO.md)).
 - **Preparado para deploy na Vercel:** sim.
-- **Preview publicado e validado:** não — requer a conta Vercel/Neon da equipe.
-- **Produção publicada:** não — requer autorização explícita do responsável.
+- **Preview publicado e validado:** não - requer a conta Vercel/Neon da equipe.
+- **Produção publicada:** não - requer autorização explícita do responsável.

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
  * Endereço do backend.
  *
  * EXPO_PUBLIC_API_URL (variável PÚBLICA: entra no bundle; nunca coloque segredos) tem prioridade. Sem ela:
- * - Web publicada (ex.: Vercel): MESMA ORIGEM — o app chama `/api/...` no próprio domínio.
+ * - Web publicada (ex.: Vercel): MESMA ORIGEM - o app chama `/api/...` no próprio domínio.
  * - Web em desenvolvimento (expo start em localhost:8081 ou :19006): http://127.0.0.1:8000
  * - Emulador Android: http://10.0.2.2:8000 (o "localhost" do emulador é o próprio emulador)
  * - iOS (simulador): http://127.0.0.1:8000

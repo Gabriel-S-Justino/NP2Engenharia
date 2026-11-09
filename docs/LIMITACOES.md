@@ -28,7 +28,7 @@
 - O LLM real **não foi executado** (sem credencial); o adaptador foi testado com cliente simulado.
 
 ## Avaliação
-- A matriz executada tem 10 casos sobre 3 documentos fictícios — valida o software, não a qualidade com o acervo real.
+- A matriz executada tem 10 casos sobre 3 documentos fictícios - valida o software, não a qualidade com o acervo real.
 - A matriz do acervo real depende de a equipe preencher respostas esperadas a partir das fontes.
 
 ## Provedores externos, custos e privacidade
@@ -43,7 +43,7 @@
   levar dezenas de segundos ("cold start"). Não medido neste ambiente.
 - Cada chamada de indexação tem orçamento de ~240 s; acervos grandes são processados em vários lotes (automático na
   interface e pelo cron diário). Um único PDF que demore mais que o limite da função (300 s) não pode ser indexado
-  pela Vercel — use a CLI.
+  pela Vercel - use a CLI.
 - OCR não está disponível na função (sem Tesseract): PDFs digitalizados devem ser tratados localmente.
 - Limite de requisições e estado da avaliação "em andamento" são por instância (memória).
 - Plano gratuito do Neon informa 0,5 GB de armazenamento (originais + trechos + vetores); confira limites atuais.

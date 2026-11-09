@@ -23,7 +23,7 @@ from app.services.evaluation import write_reports
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Matriz de avaliação do Acervo IA")
+    parser = argparse.ArgumentParser(description="Matriz de avaliação do Lume")
     parser.add_argument("--suite", default="fixtures")
     parser.add_argument("--copy-to", default=None, help="Copia os relatórios gerados para esta pasta")
     args = parser.parse_args()

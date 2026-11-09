@@ -1,7 +1,7 @@
 [project]
 name = "acervo-ia-backend"
 version = "1.0.0"
-description = "Backend FastAPI do Acervo IA (RAG para consulta documental)"
+description = "Backend FastAPI do Lume (RAG para consulta documental)"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]

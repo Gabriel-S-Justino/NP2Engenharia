@@ -1,4 +1,4 @@
-# Revisão da interface — 09/11/2026
+# Revisão da interface - 09/11/2026
 
 ## Escopo
 

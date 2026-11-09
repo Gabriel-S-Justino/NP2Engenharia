@@ -1,4 +1,4 @@
-# Documentos/ — acervo real da equipe
+# Documentos/ - acervo real da equipe
 
 > **Interface revisada em 09/11/2026.** No aplicativo, esta coleção aparece como Sua biblioteca. Enviar arquivo e Preparar documentos usam o mesmo fluxo anterior; os arquivos e o manifesto não foram modificados pela revisão visual.
 
@@ -36,7 +36,7 @@ equipe adicionar e validar os arquivos.
 
 ## Sugestões de fontes (a equipe deve verificar disponibilidade, versão e licença)
 
-- Código de Trânsito Brasileiro — Lei nº 9.503/1997, texto compilado (Planalto).
+- Código de Trânsito Brasileiro - Lei nº 9.503/1997, texto compilado (Planalto).
 - Resoluções do CONTRAN pertinentes ao público iniciante (habilitação, cadeirinha, equipamentos).
 - Manual Brasileiro de Fiscalização de Trânsito (SENATRAN).
 - Cartilhas educativas de DETRANs estaduais (verificar licença de uso).
@@ -46,7 +46,7 @@ equipe adicionar e validar os arquivos.
 
 - [ ] Fonte oficial ou reconhecida (órgão público, instituição de ensino)?
 - [ ] Data/versão registrada? Está atualizado em relação à legislação vigente?
-- [ ] Licença permite uso acadêmico? (Textos de leis são de domínio público — Lei 9.610/1998, art. 8º, IV.)
+- [ ] Licença permite uso acadêmico? (Textos de leis são de domínio público - Lei 9.610/1998, art. 8º, IV.)
 - [ ] Texto extraível (não é imagem)? Verificado no inventário.
 - [ ] Conteúdo útil para as perguntas do público-alvo (motoristas iniciantes)?
 - [ ] Metadados preenchidos em `manifest.json`?

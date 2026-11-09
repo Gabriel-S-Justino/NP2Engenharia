@@ -17,18 +17,18 @@ export function formatBytes(bytes: number | null | undefined): string {
 }
 
 export function formatScore(score: number | null | undefined): string {
-  if (score === null || score === undefined) return '—';
+  if (score === null || score === undefined) return '-';
   return score.toFixed(2).replace('.', ',');
 }
 
 export function formatPercent(value: number | null | undefined, alreadyPercent = false): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
   const pct = alreadyPercent ? value : value * 100;
   return `${pct.toFixed(1).replace('.', ',').replace(',0', '')}%`;
 }
 
 export function formatMs(ms: number | null | undefined): string {
-  if (ms === null || ms === undefined) return '—';
+  if (ms === null || ms === undefined) return '-';
   return ms >= 1000 ? `${(ms / 1000).toFixed(1).replace('.', ',')} s` : `${Math.round(ms)} ms`;
 }
 
@@ -59,10 +59,10 @@ export const EVIDENCE_STATUS: Record<EvidenceStatus, { label: string; tone: 'suc
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
-  present: 'A — Informação presente',
-  absent: 'B — Informação ausente',
-  out_of_scope: 'C — Fora do escopo',
-  adversarial: 'C — Adversarial',
+  present: 'A - Informação presente',
+  absent: 'B - Informação ausente',
+  out_of_scope: 'C - Fora do escopo',
+  adversarial: 'C - Adversarial',
 };
 
 export function pageLabel(page: number | null | undefined): string {

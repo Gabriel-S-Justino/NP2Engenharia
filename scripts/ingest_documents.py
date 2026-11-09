@@ -17,7 +17,7 @@ from app.core.container import Container
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Indexação do acervo Acervo IA")
+    parser = argparse.ArgumentParser(description="Indexação do acervo Lume")
     parser.add_argument("--reindex", action="store_true", help="Reprocessa todos os documentos")
     args = parser.parse_args()
     settings = get_settings()
@@ -37,8 +37,8 @@ def main() -> int:
     print(json.dumps(run.model_dump(), indent=2, ensure_ascii=False))
     for doc in pipeline.documents.list(page=1, page_size=500)[0]:
         flag = {"processed": "OK ", "failed": "ERRO", "excluded": "IGN"}.get(doc.status, doc.status)
-        detail = f" — {doc.error_message}" if doc.error_message else ""
-        print(f"[{flag}] {doc.relative_path} ({doc.chunk_count} trechos, {doc.page_count or '—'} pág.){detail}")
+        detail = f" - {doc.error_message}" if doc.error_message else ""
+        print(f"[{flag}] {doc.relative_path} ({doc.chunk_count} trechos, {doc.page_count or '-'} pág.){detail}")
     container.shutdown()
     return 0 if run and run.status == "completed" and not run.stats.failed and not run.stats.remaining else 1
 

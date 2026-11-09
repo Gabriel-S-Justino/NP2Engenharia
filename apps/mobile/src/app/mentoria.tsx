@@ -113,7 +113,7 @@ export default function MentorScreen() {
           {e.test_executed ? <AppText variant="helper">Teste: {e.test_executed}</AppText> : null}
           {e.result_before || e.result_after ? (
             <AppText variant="helper">
-              Resultado: {e.result_before ?? '—'} → {e.result_after ?? '—'}
+              Resultado: {e.result_before ?? '-'} → {e.result_after ?? '-'}
             </AppText>
           ) : null}
         </Card>

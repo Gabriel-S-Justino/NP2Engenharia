@@ -5,7 +5,7 @@
 Ambiente desta verificação: contêiner Linux de desenvolvimento, Python 3.13 (testes) e 3.12 (função gerada pelo
 `vercel build`), Node 22, PostgreSQL 16 + pgvector 0.6 local, Chromium do Playwright. **Sem acesso** a
 Hugging Face, Docker Hub (429), vercel.com/docs.expo.dev (documentação) e sem contas Vercel/Neon.
-Datas: 29–30/10/2026. Legenda: ✅ aprovado · ⏸ não executado · 🔒 bloqueado por credencial/serviço.
+Datas: 29-30/10/2026. Legenda: ✅ aprovado · ⏸ não executado · 🔒 bloqueado por credencial/serviço.
 
 ## Pré-deploy
 
@@ -35,7 +35,7 @@ Datas: 29–30/10/2026. Legenda: ✅ aprovado · ⏸ não executado · 🔒 bloq
 | Typecheck, lint | ✅ | `npm run typecheck`, `npm run lint` |
 | Testes (componentes, cliente HTTP, URL da API, validação, contraste, chat) | ✅ 59/59 | `npm run test:ci` |
 | Build web de produção (mesma origem) | ✅ | `npm run build:web` |
-| E2E modo local (SQLite) | ✅ 11/11 | `tests/e2e/web_smoke.mjs` — desktop, tablet, celular, teclado |
+| E2E modo local (SQLite) | ✅ 11/11 | `tests/e2e/web_smoke.mjs` - desktop, tablet, celular, teclado |
 | E2E modo Vercel simulado (Postgres) | ✅ 11/11 | idem, `WEB_URL=http://127.0.0.1:3000` |
 | Segredos no bundle | ✅ | nenhum valor de chave em `dist/` (CI verifica padrão `sk-ant-…`) |
 

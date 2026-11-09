@@ -1,6 +1,6 @@
-# UI/UX — Escola de trânsito
+# UI/UX - Lume, Escola de trânsito
 
-Atualização de apresentação em 09/11/2026. O Acervo IA aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
+Atualização de apresentação em 09/11/2026. O Lume aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
 
 ## Identidade e público
 
@@ -25,7 +25,7 @@ No desktop, as opções principais são identificadas como Aprender e consultar;
 
 ## Informação útil na consulta
 
-Permanecem visíveis: pergunta, resposta, origem do trecho, página, acesso à fonte, ausência de informação, divergências, citações inválidas e falhas. Dados ausentes continuam como Não informado ou —.
+Permanecem visíveis: pergunta, resposta, origem do trecho, página, acesso à fonte, ausência de informação, divergências, citações inválidas e falhas. Dados ausentes continuam como Não informado ou -.
 
 Saem da apresentação de consulta: scores de similaridade, top-k, limiar, candidatos descartados, métricas de latência, nome do modelo, banco, fingerprints, identificadores internos, offsets de caracteres e caminhos de desenvolvimento. A API preserva esses campos.
 
@@ -63,3 +63,10 @@ Os pares de contraste são verificados nos temas claro e escuro, incluindo texto
 ## Documentação e evidências
 
 Design detalhado em [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); operações em [FLUXOS_UX.md](FLUXOS_UX.md); contrato preservado em [CONTRATO_FRONTEND.md](CONTRATO_FRONTEND.md). Relatórios e capturas anteriores são registros históricos, não prova da aparência atual. A validação desta revisão está em [REVISAO_UI_2026-11-09.md](REVISAO_UI_2026-11-09.md).
+
+
+## Nome e escrita
+
+O nome público do aplicativo é Lume. A interface, os metadados visíveis da aplicação, a identificação da API e os textos do projeto usam essa marca. Textos mantidos pelo aplicativo não usam travessões; usam pontuação simples e hífen quando necessário.
+
+O domínio de produção atual, os identificadores de pacote e de instalação e o prefixo de armazenamento local permanecem iguais para preservar links, instalação, preferências, token e histórico existentes. Esses identificadores técnicos não são o nome apresentado ao usuário. Documentos enviados pelos usuários e capturas históricas não são reescritos.

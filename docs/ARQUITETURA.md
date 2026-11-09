@@ -1,4 +1,4 @@
-# Arquitetura do Acervo IA
+# Arquitetura do Lume
 
 > **Interface revisada em 09/11/2026.** A camada visual usa o tema Escola de trânsito e componentes decorativos sem estado de domínio. As mesmas rotas, hooks, chamadas HTTP, schemas e regras de acesso permanecem em uso. Scores, IDs e parâmetros de infraestrutura continuam na API, mas não ocupam as telas de consulta.
 
@@ -125,13 +125,13 @@ texto salvo. Um índice gerado com outro modelo de embeddings **não é reutiliz
 
 | Decisão | Escolha | Alternativas consideradas | Justificativa |
 |---|---|---|---|
-| Banco vetorial | Local: FAISS `IndexIDMap2(IndexFlatIP)`; Vercel: **pgvector** | Chroma | FAISS: instalação por pip, busca exata, remoção por ID, persistência segura. Na Vercel não há disco persistente, então o índice fica no Postgres (pgvector) junto dos metadados — consistência por chave estrangeira. A interface `VectorStore` torna a troca transparente. |
+| Banco vetorial | Local: FAISS `IndexIDMap2(IndexFlatIP)`; Vercel: **pgvector** | Chroma | FAISS: instalação por pip, busca exata, remoção por ID, persistência segura. Na Vercel não há disco persistente, então o índice fica no Postgres (pgvector) junto dos metadados - consistência por chave estrangeira. A interface `VectorStore` torna a troca transparente. |
 | Métrica | Cosseno (IP sobre vetores L2-normalizados) | L2 | Padrão para sentence embeddings; valor interpretável de −1 a 1 |
 | Embeddings | `paraphrase-multilingual-MiniLM-L12-v2` via fastembed (ONNX) | sentence-transformers (PyTorch), `multilingual-e5`, APIs remotas | Multilíngue (PT-BR), local, sem chave, ~120 MB, sem PyTorch (imagem menor). E5 é suportado pelo mesmo provedor (prefixos tratados). |
 | Embeddings de teste | Hashing lexical | Mocks | Determinístico e offline; permite testar o pipeline real sem rede. Identificado como **não semântico** na UI. |
 | Chunking | 800 caracteres, sobreposição 120, por página, quebra em títulos | Tokens, janelas fixas | Caractere é independente de tokenizador e fácil de explicar; por página garante citação de página correta; títulos evitam misturar seções (ver falha A6 em MATRIZ_TESTES) |
 | LLM | Claude (`claude-opus-5-5`) via SDK oficial, esforço `low`, fallback do provedor | Modelos locais | Qualidade em português; a interface `Generator` permite um modelo local futuro |
-| Banco relacional | SQLite (local) / **Postgres Neon** (Vercel) | — | SQLite dispensa servidor no desenvolvimento; Neon é a integração Postgres do Marketplace da Vercel, com pgvector |
+| Banco relacional | SQLite (local) / **Postgres Neon** (Vercel) | - | SQLite dispensa servidor no desenvolvimento; Neon é a integração Postgres do Marketplace da Vercel, com pgvector |
 | Frontend | Expo + Expo Router + RN Web, design system próprio | React Native Paper, Tamagui | Uma base para web/Android/iOS; componentes próprios mantêm tokens e acessibilidade sob controle e são fáceis de explicar |
 | Hospedagem | **Tudo na Vercel**: web estática + função Python em `/api` + Neon | Backend em contêiner (Render/Railway/Fly) | Um único projeto e domínio; as restrições serverless (disco efêmero, duração, corpo de 4,5 MB, várias instâncias) foram resolvidas com Postgres/pgvector, originais no banco, ingestão em lotes com fila e trava, modelo sob demanda em `/tmp` (ver PRODUCAO.md). O contêiner continua como alternativa documentada |
 

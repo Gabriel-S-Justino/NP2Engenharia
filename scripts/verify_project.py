@@ -87,13 +87,13 @@ def main() -> int:
                                {"EXPO_OFFLINE": "1", "EXPO_PUBLIC_API_URL": ""}))
 
     ok = all(r[1] for r in results)
-    lines = [f"# Verificação do projeto — {datetime.now(UTC).isoformat(timespec='seconds')}", "",
+    lines = [f"# Verificação do projeto - {datetime.now(UTC).isoformat(timespec='seconds')}", "",
              "| Verificação | Resultado | Detalhe |", "|---|---|---|"]
     lines += [f"| {n} | {'aprovado' if passed else 'FALHOU'} | {detail.replace('|', '/')} |" for n, passed, detail in results]
     out = ROOT / "docs" / "resultados" / "verificacao_projeto.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"\nResumo salvo em {out.relative_to(ROOT)} — {'TUDO APROVADO' if ok else 'HÁ FALHAS'}")
+    print(f"\nResumo salvo em {out.relative_to(ROOT)} - {'TUDO APROVADO' if ok else 'HÁ FALHAS'}")
     return 0 if ok else 1
 
 

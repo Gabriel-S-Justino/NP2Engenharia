@@ -57,7 +57,7 @@ def main() -> int:
         f"- Páginas (ou equivalentes) com texto extraível: **{total_pages}**",
         f"- Caracteres extraídos: {total_chars}",
         f"- Critério automático (≥{MIN_DOCUMENTS} documentos OU ≥{MIN_PAGES} páginas): "
-        f"**{'ATENDIDO' if docs_ok or pages_ok else 'NÃO ATENDIDO'}** — a utilidade do conteúdo depende da validação da equipe.",
+        f"**{'ATENDIDO' if docs_ok or pages_ok else 'NÃO ATENDIDO'}** - a utilidade do conteúdo depende da validação da equipe.",
         "",
         "| Arquivo | Páginas c/ texto | Caracteres | Metadados preenchidos | Leitura |",
         "|---|---|---|---|---|",
@@ -65,7 +65,7 @@ def main() -> int:
     for path, pages, chars, filled, status in rows:
         lines.append(f"| {path} | {pages} | {chars} | {filled}/{len(METADATA_FIELDS)} | {status} |")
     if not rows:
-        lines.append("| (pasta vazia — adicione os documentos reais da equipe) | 0 | 0 | — | — |")
+        lines.append("| (pasta vazia - adicione os documentos reais da equipe) | 0 | 0 | - | - |")
     report = "\n".join(lines)
     print(report)
     if args.markdown:

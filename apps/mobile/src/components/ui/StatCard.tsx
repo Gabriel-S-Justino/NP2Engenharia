@@ -17,10 +17,10 @@ type Props = {
   loading?: boolean;
 };
 
-/** Indicador numérico. Valores ausentes aparecem como "—" (indisponível), nunca como zero inventado. */
+/** Indicador numérico. Valores ausentes aparecem como "-" (indisponível), nunca como zero inventado. */
 export function StatCard({ label, value, hint, icon, loading }: Props) {
   const { colors } = useTheme();
-  const display = value === null || value === undefined ? '—' : String(value);
+  const display = value === null || value === undefined ? '-' : String(value);
   return (
     <Card style={styles.card}>
       <View style={styles.row}>
@@ -34,7 +34,7 @@ export function StatCard({ label, value, hint, icon, loading }: Props) {
       {loading ? (
         <Skeleton height={30} width="50%" />
       ) : (
-        <AppText variant="display" accessibilityLabel={`${label}: ${display === '—' ? 'indisponível' : display}`}>
+        <AppText variant="display" accessibilityLabel={`${label}: ${display === '-' ? 'indisponível' : display}`}>
           {display}
         </AppText>
       )}

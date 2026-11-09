@@ -1,6 +1,6 @@
 {
   "id": "acervo_real",
-  "title": "Matriz do acervo real — leis de trânsito (A PREENCHER PELA EQUIPE)",
+  "title": "Matriz do acervo real - leis de trânsito (A PREENCHER PELA EQUIPE)",
   "description": "Matriz de 10 casos (6 presentes, 2 ausentes, 2 fora do escopo/adversariais) sobre os documentos REAIS de Documentos/. As perguntas abaixo são sugestões. Antes de executar: (1) confirme que cada pergunta do grupo A é respondida por um documento do acervo; (2) copie a resposta esperada e o trecho de evidência diretamente da fonte; (3) preencha expected_sources com o nome do arquivo; (4) confirme que as perguntas do grupo B NÃO são respondidas pelo acervo; (5) altere \"ready\" para true. Não preencha respostas de memória.",
   "synthetic": false,
   "ready": false,

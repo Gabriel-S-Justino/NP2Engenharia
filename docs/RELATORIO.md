@@ -1,9 +1,9 @@
-# Relatório técnico — Acervo IA
+# Relatório técnico - Lume
 
 > **Interface revisada em 09/11/2026.** A interface atual segue o tema Escola de trânsito: verde de lousa, amarelo de sinalização e fundo de papel. A revisão é somente de apresentação; métricas e resultados anteriores abaixo são históricos, não uma nova medição do RAG.
 
 **Disciplina:** Engenharia de Inteligência Artificial
-**Equipe:** _[nomes dos cinco integrantes — a preencher pela equipe]_
+**Equipe:** _[nomes dos cinco integrantes - a preencher pela equipe]_
 **Data desta versão:** 29/10/2026
 
 > Os campos marcados como **[a preencher]** dependem de dados que só a equipe pode fornecer (documentos reais,
@@ -12,7 +12,7 @@
 
 ## 1. Introdução
 
-O Acervo IA é um assistente de consulta documental sobre leis de trânsito. Ele combina recuperação semântica de
+O Lume é um assistente de consulta documental sobre leis de trânsito. Ele combina recuperação semântica de
 trechos (busca vetorial) com geração de texto, e só apresenta respostas sustentadas por trechos dos documentos
 selecionados pela equipe, sempre com a fonte (documento, página, seção e trecho). Quando não há evidência, o
 sistema informa isso em vez de responder.
@@ -66,7 +66,7 @@ nenhuma pretensão de aconselhamento jurídico.
 
 ## 7. Base documental
 
-**[a preencher pela equipe]** — o requisito é de no mínimo 10 documentos ou 25 páginas úteis, selecionados e
+**[a preencher pela equipe]** - o requisito é de no mínimo 10 documentos ou 25 páginas úteis, selecionados e
 validados pela equipe, registrados em [FONTES.md](FONTES.md) e `Documentos/manifest.json`, com o inventário gerado
 por `scripts/inventario_documentos.py`. Até esta versão **nenhum documento real foi fornecido**; todos os
 resultados abaixo referem-se aos documentos sintéticos (3 arquivos fictícios, 7 páginas).
@@ -88,7 +88,7 @@ estático + função Python) com **Postgres Neon + pgvector**, originais guardad
 | Top-k | 5 | contexto suficiente sem diluir; ajustável na interface |
 | Métrica | similaridade de cosseno | vetores normalizados; −1 a 1 |
 | Limiar (`hashing`) | 0,15 | calibrado: separa 0,105 (não respondíveis) de 0,176 (respondíveis) |
-| Limiar (`fastembed`) | 0,35 (inicial) | **não calibrado** — recalibrar com o acervo real |
+| Limiar (`fastembed`) | 0,35 (inicial) | **não calibrado** - recalibrar com o acervo real |
 | Cobertura mínima de termos | 0,5 (modo demo) | ponderada por IDF; termos interrogativos ignorados |
 | Filtros | documento, tipo de arquivo, assunto | via `filters` em `POST /api/chat` |
 | Modelo de embeddings | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (fastembed/ONNX) | multilíngue, local, sem chave |
@@ -136,7 +136,7 @@ limites, retenção do histórico e aviso sobre envio de trechos a provedor exte
 
 - Pipeline completo funcionando de ponta a ponta na web (build de produção) com backend real.
 - Matriz sintética: 100% na execução final, após duas correções motivadas por falhas reais (80% na 1ª execução).
-- Resultados com o acervo real, embeddings semânticos e LLM: **[a preencher — dependem da equipe e de
+- Resultados com o acervo real, embeddings semânticos e LLM: **[a preencher - dependem da equipe e de
   credenciais]**.
 
 ## 13. Limitações
@@ -146,8 +146,8 @@ ambiente; matriz pequena; heurísticas (injeção, divergência, cobertura) pode
 
 ## 14. Conclusão
 
-O projeto entrega uma aplicação RAG observável e testável, cujo comportamento central — responder com fontes e
-recusar sem evidência — foi verificado automaticamente. O valor educativo real depende agora da curadoria do
+O projeto entrega uma aplicação RAG observável e testável, cujo comportamento central - responder com fontes e
+recusar sem evidência - foi verificado automaticamente. O valor educativo real depende agora da curadoria do
 acervo pela equipe, da calibração com o modelo semântico e da validação humana das respostas. **[a complementar
 pela equipe após a avaliação com o acervo real]**
 

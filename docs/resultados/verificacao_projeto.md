@@ -1,4 +1,4 @@
-# Verificação do projeto — 2026-10-30T00:46:11+00:00
+# Verificação do projeto - 2026-10-30T00:46:11+00:00
 
 > Registro histórico preservado. Os rótulos e as capturas desta execução podem corresponder à interface anterior. A revisão Escola de trânsito de 09/11/2026 está documentada em [UI/UX](../UI_UX.md) e não reexecuta nem altera os resultados abaixo.
 

@@ -8,7 +8,7 @@ export default function NotFound() {
       <EmptyState
         icon="compass-outline"
         title="Parece que saímos da rota"
-        message="O endereço acessado não existe no Acervo IA."
+        message="O endereço acessado não existe no Lume."
         action={<Button label="Ir para o início" onPress={() => router.replace('/')} />}
       />
     </PageContainer>
