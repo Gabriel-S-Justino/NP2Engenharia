@@ -87,6 +87,34 @@ def test_provider_errors_are_safe(monkeypatch, status):
     assert "test-key" not in str(exc.value)
 
 
+@pytest.mark.parametrize("status,provider_status,reason,expected", [
+    (400, "INVALID_ARGUMENT", "API_KEY_INVALID", "inválida ou expirou"),
+    (400, "FAILED_PRECONDITION", None, "requisitos"),
+    (403, "PERMISSION_DENIED", "API_KEY_SERVICE_BLOCKED", "restrições"),
+    (429, "RESOURCE_EXHAUSTED", None, "cota"),
+    (503, "UNAVAILABLE", None, "falha temporária"),
+])
+def test_google_error_codes_produce_actionable_safe_diagnostics(monkeypatch, caplog, status, provider_status, reason, expected):
+    data = {"error": {"status": provider_status, "message": "test-key private prompt",
+                      "details": [{"reason": reason, "metadata": {"key": "test-key"}}]}}
+    install_response(monkeypatch, data, status)
+    with pytest.raises(GenerationUnavailableError) as exc:
+        build_generator(settings()).generate("Prazo?", [SOURCE], None)
+    assert expected in str(exc.value) and f"HTTP {status}" in str(exc.value)
+    assert "test-key" not in str(exc.value) and "private prompt" not in str(exc.value)
+    record = next(r for r in caplog.records if r.message == "gemini_status_error")
+    assert record.provider_status == provider_status and record.provider_reason == reason
+    assert "test-key" not in str(record.__dict__)
+
+
+def test_unrecognized_provider_fields_are_not_logged_or_exposed(monkeypatch, caplog):
+    install_response(monkeypatch, {"error": {"status": "private-key", "details": [{"reason": "private-key"}]}}, 400)
+    with pytest.raises(GenerationUnavailableError) as exc:
+        build_generator(settings()).generate("Prazo?", [SOURCE], None)
+    assert "private-key" not in str(exc.value)
+    assert all("private-key" not in str(r.__dict__) for r in caplog.records)
+
+
 @pytest.mark.parametrize("error", [httpx.ReadTimeout, httpx.ConnectError])
 def test_network_errors_are_mapped(monkeypatch, error):
     def fail(*args, **kwargs):

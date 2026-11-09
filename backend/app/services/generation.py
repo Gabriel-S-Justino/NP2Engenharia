@@ -226,12 +226,57 @@ class GeminiGenerator(Generator):
     mode = "llm"
 
     def __init__(self, *, api_key: str, model: str, timeout: float, max_tokens: int):
-        self._api_key = api_key
+        self._api_key = api_key.strip()
         self.model = model.removeprefix("models/").strip()
         if not re.fullmatch(r"gemini-[A-Za-z0-9._-]+", self.model):
             raise GenerationUnavailableError("LLM_MODEL deve ser um identificador Gemini, como gemini-flash-latest.")
         self.timeout = timeout
         self.max_tokens = max_tokens
+
+    @staticmethod
+    def _provider_error(response: httpx.Response) -> GenerationUnavailableError:
+        """Interpreta apenas códigos conhecidos. Nunca expõe corpo, chave ou metadados do Google."""
+        statuses = {
+            "INVALID_ARGUMENT", "FAILED_PRECONDITION", "UNAUTHENTICATED", "PERMISSION_DENIED",
+            "NOT_FOUND", "RESOURCE_EXHAUSTED", "INTERNAL", "UNAVAILABLE", "DEADLINE_EXCEEDED",
+        }
+        reasons = {
+            "API_KEY_INVALID", "API_KEY_EXPIRED", "API_KEY_SERVICE_BLOCKED", "SERVICE_DISABLED",
+            "BILLING_DISABLED", "API_KEY_HTTP_REFERRER_BLOCKED", "API_KEY_IP_ADDRESS_BLOCKED",
+            "CONSUMER_INVALID", "RATE_LIMIT_EXCEEDED",
+        }
+        status, reason = "UNKNOWN", None
+        try:
+            error = response.json().get("error") or {}
+            if error.get("status") in statuses:
+                status = error["status"]
+            reason = next((d.get("reason") for d in error.get("details", [])
+                           if isinstance(d, dict) and d.get("reason") in reasons), None)
+        except (ValueError, AttributeError, TypeError):
+            pass
+        code = response.status_code
+        logger.warning("gemini_status_error", extra={"status": code, "provider_status": status,
+                                                     "provider_reason": reason})
+        detail = f"HTTP {code}" + (f" / {status}" if status != "UNKNOWN" else "")
+        if reason:
+            detail += f" / {reason}"
+        if reason in {"API_KEY_INVALID", "API_KEY_EXPIRED"}:
+            message = "A chave do Gemini é inválida ou expirou. Atualize LLM_API_KEY na Vercel e faça redeploy."
+        elif reason in {"API_KEY_SERVICE_BLOCKED", "SERVICE_DISABLED", "API_KEY_HTTP_REFERRER_BLOCKED", "API_KEY_IP_ADDRESS_BLOCKED"}:
+            message = "A chave está bloqueada para esta chamada. Confira a ativação da Gemini API e as restrições da chave no projeto Google."
+        elif status == "FAILED_PRECONDITION" or reason == "BILLING_DISABLED":
+            message = "A conta Google não atende aos requisitos desta chamada. Confira disponibilidade regional e configuração de faturamento no AI Studio."
+        elif code in (401, 403):
+            message = "Credencial do Gemini inválida ou sem permissão no servidor."
+        elif code == 429:
+            message = "Limite de uso do Gemini atingido. Confira a cota no AI Studio e tente novamente mais tarde."
+        elif code == 404:
+            message = "Modelo Gemini não encontrado. Confira LLM_MODEL no servidor."
+        elif code >= 500:
+            message = "O Gemini apresentou uma falha temporária. Tente novamente mais tarde."
+        else:
+            message = "O Gemini rejeitou a requisição. Confira a chave, o modelo e os parâmetros configurados no servidor."
+        return GenerationUnavailableError(f"{message} ({detail})")
 
     def generate(self, question: str, sources: list[EvidenceSource], stats: TermStatistics) -> GenerationOutput:
         started = time.perf_counter()
@@ -255,15 +300,8 @@ class GeminiGenerator(Generator):
             raise GenerationUnavailableError("O Gemini não respondeu dentro do tempo limite.") from exc
         except httpx.RequestError as exc:
             raise GenerationUnavailableError("Não foi possível conectar ao Gemini.") from exc
-        if response.status_code in (401, 403):
-            raise GenerationUnavailableError("Credencial do Gemini inválida ou sem permissão no servidor.")
-        if response.status_code == 429:
-            raise GenerationUnavailableError("Limite de uso do Gemini atingido. Tente novamente em instantes.")
-        if response.status_code == 404:
-            raise GenerationUnavailableError("Modelo Gemini não encontrado. Confira LLM_MODEL no servidor.")
         if not response.is_success:
-            logger.warning("gemini_status_error", extra={"status": response.status_code})
-            raise GenerationUnavailableError("O Gemini retornou um erro. Confira a configuração do provedor no servidor.")
+            raise self._provider_error(response)
         try:
             data = response.json()
             candidates = data.get("candidates") or []
