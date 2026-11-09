@@ -30,7 +30,7 @@ function EvidencePanel({ response, onOpenSource }: { response: ChatResponse; onO
   );
 }
 
-export default function ChatScreen() {
+function ChatConversation() {
   const { colors } = useTheme();
   const { isDesktop } = useBreakpoint();
   const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation, newConversation } = useAppState();
@@ -47,12 +47,6 @@ export default function ChatScreen() {
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     return () => clearTimeout(timer);
   }, [entries.length, sending, conversationId]);
-
-  useEffect(() => {
-    setPanel(null);
-    setQuestion('');
-    setInputError(null);
-  }, [conversationId]);
 
   const noDocuments = stats.data !== null && stats.data.documents_processed === 0;
 
@@ -211,6 +205,11 @@ export default function ChatScreen() {
       />
     </KeyboardAvoidingView>
   );
+}
+
+export default function ChatScreen() {
+  const { conversationId } = useAppState();
+  return <ChatConversation key={conversationId ?? 'loading'} />;
 }
 
 const styles = StyleSheet.create({
