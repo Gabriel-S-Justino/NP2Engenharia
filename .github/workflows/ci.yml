@@ -13,6 +13,9 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      LLM_PROVIDER: demo
     defaults:
       run:
         working-directory: backend
@@ -34,7 +37,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements-dev.txt
-      - run: ruff check app tests ../scripts ../api
+      - run: ruff check --config pyproject.toml app tests ../scripts ../api
       - name: Testes (SQLite + Postgres/pgvector da configuração da Vercel)
         env:
           TEST_DATABASE_URL: postgresql://acervo:acervo@localhost:5432/acervo_test

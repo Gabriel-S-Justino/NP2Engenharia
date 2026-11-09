@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -146,7 +148,7 @@ def test_settings_view_and_validated_updates(indexed_client):
     assert indexed_client.get("/api/settings").json()["requires_reindex"] is False
 
 
-def test_evaluation_run_and_results(client):
+def test_evaluation_run_and_results(client, tmp_path):
     assert client.get("/api/evaluations/results").status_code == 404
     suites = client.get("/api/evaluations").json()["suites"]
     assert {"fixtures", "acervo_real"} <= {s["id"] for s in suites}
@@ -169,7 +171,14 @@ def test_evaluation_run_and_results(client):
     assert next(r for r in again["results"] if r["case_id"] == "A1")["adjustment"] == "Teste de registro de ajuste."
     # O acervo principal não foi contaminado pelas fixtures da avaliação.
     assert client.get("/api/stats").json()["documents_total"] == 0
-    not_ready = client.post("/api/evaluations/run", json={"suite": "acervo_real"})
+    # A prontidão do acervo real muda com a entrega. Teste o bloqueio com uma
+    # suíte temporária explicitamente não pronta, sem depender desse estado.
+    pending = tmp_path / "evaluation_pending"
+    pending.mkdir()
+    suite = dict(id="pendente", title="Pendente", description="Teste", synthetic=False, ready=False, cases=[])
+    (pending / "matriz_pendente.json").write_text(json.dumps(suite), encoding="utf-8")
+    client.app.state.container.evaluations.suites_dir = pending
+    not_ready = client.post("/api/evaluations/run", json={"suite": "pendente"})
     assert not_ready.status_code == 409
 
 
@@ -197,7 +206,8 @@ def test_admin_token_protects_mutations(tmp_path):
 
 
 def test_production_without_admin_token_blocks_mutations(tmp_path):
-    settings = make_settings(tmp_path, app_env="production", cors_origins="https://acervo.example.app")
+    settings = make_settings(tmp_path, app_env="production", cors_origins="https://acervo.example.app",
+                             llm_provider="anthropic", llm_api_key="test-only-not-a-real-key")
     with TestClient(create_app(settings)) as c:
         response = c.post("/api/ingestion/scan")
         assert response.status_code == 403 and response.json()["error"]["code"] == "admin_desabilitado"

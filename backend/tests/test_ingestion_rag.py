@@ -37,6 +37,18 @@ def scan(c: Container, kind: str = "scan", **kwargs):
     return c.pipeline.ingestion_runs.last()
 
 
+def test_calibration_threshold_does_not_change_shared_settings(container):
+    p = container.pipeline
+    scan(container)
+    p.set_overrides({"similarity_threshold": 0.25})
+    before = p.db.get_kv("settings_overrides")
+    question = "Por quanto tempo vale a Permissão de Aprendiz em Vila Exemplo?"
+    response = p.answer(question, similarity_threshold=-1.0, persist=False)
+    assert response.retrieval.similarity_threshold == -1.0
+    assert p.db.get_kv("settings_overrides") == before
+    assert p.answer(question, persist=False).retrieval.similarity_threshold == 0.25
+
+
 def test_scan_indexes_and_is_idempotent(container):
     p = container.pipeline
     originals = {f.name: sha(f) for f in container.settings.documents_dir.iterdir()}

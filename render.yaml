@@ -22,7 +22,7 @@ services:
       - key: ADMIN_TOKEN
         sync: false
       - key: LLM_PROVIDER
-        value: demo          # altere para anthropic após configurar LLM_API_KEY
+        value: anthropic
       - key: LLM_API_KEY
         sync: false
       - key: LLM_MODEL

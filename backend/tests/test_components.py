@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import Settings
+from app.core.config import REPO_ROOT, Settings
 from app.services import citations as cit
 from app.services.chunking import chunk_pages, detect_heading
 from app.services.document_loader import DocumentReadError, PageText, load_document
@@ -20,6 +20,11 @@ from tests.conftest import FIXTURES
 
 
 # --- Leitura de documentos ------------------------------------------------------
+def test_relative_embedding_cache_is_independent_of_working_directory():
+    settings = Settings(_env_file=None, embedding_provider="hashing", embedding_cache_dir="data/models")
+    assert settings.embedding_cache_dir == REPO_ROOT / "data/models"
+
+
 def test_pdf_extraction_preserves_pages():
     doc = load_document(FIXTURES / "regulamento_sintetico_vila_exemplo.pdf")
     assert doc.file_type == "pdf"
@@ -254,3 +259,15 @@ def test_config_rejects_wildcard_cors_in_production():
 def test_config_rejects_out_of_range_top_k():
     with pytest.raises(ValidationError):
         Settings(_env_file=None, top_k=0)
+
+
+@pytest.mark.parametrize("environment", ["development", "production"])
+def test_demo_is_rejected_outside_automated_tests(environment):
+    with pytest.raises(ValidationError, match="exclusivo dos testes"):
+        Settings(_env_file=None, app_env=environment, llm_provider="demo")
+
+
+def test_application_defaults_to_real_llm(monkeypatch):
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    settings = Settings(_env_file=None, app_env="production", llm_api_key="test-only-not-a-real-key")
+    assert settings.llm_provider == "anthropic"

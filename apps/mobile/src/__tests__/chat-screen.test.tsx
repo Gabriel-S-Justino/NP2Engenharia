@@ -43,10 +43,16 @@ function renderChat() {
 }
 
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.clearAllMocks();
   mocked.health.mockResolvedValue({ status: 'ok', issues: [] } as never);
   mocked.stats.mockResolvedValue({ documents_processed: 3 } as never);
   mocked.chatHistory.mockResolvedValue({ conversation_id: 'c', items: [] });
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
 });
 
 it('valida pergunta vazia sem chamar o backend', async () => {

@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path | None = None
     hashing_dim: int = Field(default=2048, ge=128, le=16384)
 
-    llm_provider: LLMProviderName = "demo"
+    llm_provider: LLMProviderName = "anthropic"
     llm_model: str = "claude-opus-5-5"
     llm_api_key: SecretStr | None = None
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
@@ -95,7 +95,7 @@ class Settings(BaseSettings):
     ocr_enabled: bool = False
     history_retention_days: int = Field(default=30, ge=0, le=3650)
 
-    @field_validator("documents_dir", "data_dir", "fixtures_dir", "evaluation_dir", mode="before")
+    @field_validator("documents_dir", "data_dir", "fixtures_dir", "evaluation_dir", "embedding_cache_dir", mode="before")
     @classmethod
     def _resolve_path(cls, value: object) -> object:
         if isinstance(value, str) and value and not Path(value).is_absolute():
@@ -136,6 +136,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _check_coherence(self) -> Settings:
+        if self.llm_provider == "demo" and self.app_env != "test":
+            raise ValueError("LLM_PROVIDER=demo é exclusivo dos testes automatizados (APP_ENV=test). Configure anthropic e LLM_API_KEY.")
         if self.similarity_threshold is None:
             self.similarity_threshold = DEFAULT_THRESHOLDS[self.embedding_provider]
         if self.chunk_overlap >= self.chunk_size:
@@ -147,7 +149,7 @@ class Settings(BaseSettings):
         if self.llm_provider == "anthropic" and self.llm_api_key is None:
             raise ValueError(
                 "LLM_PROVIDER=anthropic exige LLM_API_KEY configurada no servidor. "
-                "Use LLM_PROVIDER=demo para o modo de demonstração sem credenciais."
+                "Configure a chave do provedor antes de iniciar a aplicação."
             )
         if self.app_env == "production" and "*" in self.cors_list:
             raise ValueError("CORS_ORIGINS não pode conter '*' em produção.")

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -36,7 +37,11 @@ REQUIRED = [
 
 def run(name: str, cmd: list[str], cwd: Path, env: dict | None = None) -> tuple[str, bool, str]:
     start = time.time()
-    proc = subprocess.run(cmd, cwd=cwd, env={**os.environ, **(env or {})}, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, env={**os.environ, **(env or {})}, capture_output=True,
+                              text=True, encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return name, False, f"Não foi possível iniciar o comando: {exc.strerror}"
     tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
     print(f"[{'OK ' if proc.returncode == 0 else 'FALHA'}] {name} ({time.time() - start:.0f}s)")
     return name, proc.returncode == 0, " / ".join(tail)[:400]
@@ -47,6 +52,11 @@ def main() -> int:
     parser.add_argument("--skip-frontend", action="store_true")
     parser.add_argument("--skip-build", action="store_true")
     args = parser.parse_args()
+    # Mantém temporários em uma pasta gravável do projeto, inclusive no Windows.
+    temp_root = ROOT / "data" / "tmp"
+    temp_root.mkdir(parents=True, exist_ok=True)
+    os.environ.update(TEMP=str(temp_root), TMP=str(temp_root), PYTHONUTF8="1")
+    tempfile.tempdir = str(temp_root)
     results = []
     missing = [p for p in REQUIRED if not (ROOT / p).exists()]
     results.append(("Arquivos obrigatórios presentes", not missing, f"faltando: {missing}" if missing else f"{len(REQUIRED)} arquivos"))
@@ -54,23 +64,26 @@ def main() -> int:
     secrets_found = [p for p in ROOT.glob(".env") if p.exists()]
     results.append(("Nenhum .env versionado", not subprocess.run(["git", "ls-files", ".env"], cwd=ROOT, capture_output=True, text=True).stdout.strip(),
                     f".env local presente: {bool(secrets_found)} (ignorado pelo git)"))
-    results.append(run("Backend: ruff", [str(PY), "-m", "ruff", "check", "app", "tests", "../scripts", "../api"], ROOT / "backend"))
+    results.append(run("Backend: ruff", [str(PY), "-m", "ruff", "check", "--config", "pyproject.toml", "app", "tests", "../scripts", "../api"], ROOT / "backend"))
     pg = " + Postgres/pgvector" if os.environ.get("TEST_DATABASE_URL") else " (Postgres ignorado: defina TEST_DATABASE_URL)"
-    results.append(run(f"Backend: pytest{pg}", [str(PY), "-m", "pytest", "-q"], ROOT / "backend"))
+    results.append(run(f"Backend: pytest{pg}", [str(PY), "-m", "pytest", "-o", "addopts=", "-q"], ROOT / "backend",
+                       {"APP_ENV": "test", "LLM_PROVIDER": "demo"}))
     results.append(run("Função Vercel: api/index.py importa em modo serverless",
                        [str(PY), "-c", "import runpy; runpy.run_path('api/index.py')"], ROOT,
-                       {"VERCEL": "1", "EMBEDDING_PROVIDER": "hashing", "ALLOW_EPHEMERAL_STORAGE": "true"}))
+                        {"VERCEL": "1", "APP_ENV": "test", "LLM_PROVIDER": "demo", "EMBEDDING_PROVIDER": "hashing", "ALLOW_EPHEMERAL_STORAGE": "true"}))
     with tempfile.TemporaryDirectory() as tmp:
         results.append(run("Matriz de avaliação (fixtures, hashing, demo)", [str(PY), "scripts/run_evaluation.py"], ROOT,
-                           {"EMBEDDING_PROVIDER": "hashing", "LLM_PROVIDER": "demo", "DATA_DIR": tmp}))
+                           {"APP_ENV": "test", "EMBEDDING_PROVIDER": "hashing", "LLM_PROVIDER": "demo", "DATA_DIR": tmp}))
     if not args.skip_frontend:
         mobile = ROOT / "apps" / "mobile"
-        npm = "npm.cmd" if os.name == "nt" else "npm"
-        results.append(run("Frontend: typecheck", [npm, "run", "typecheck"], mobile))
-        results.append(run("Frontend: lint", [npm, "run", "lint"], mobile, {"EXPO_OFFLINE": "1"}))
-        results.append(run("Frontend: testes", [npm, "run", "test:ci"], mobile))
+        npm_path = shutil.which("npm.cmd" if os.name == "nt" else "npm")
+        local_npm = ROOT / "data/tooling/npm/package/bin/npm-cli.js"
+        npm = [npm_path] if npm_path else [shutil.which("node") or "node", str(local_npm)]
+        results.append(run("Frontend: typecheck", [*npm, "run", "typecheck"], mobile))
+        results.append(run("Frontend: lint", [*npm, "run", "lint"], mobile, {"EXPO_OFFLINE": "1"}))
+        results.append(run("Frontend: testes", [*npm, "run", "test:ci", "--", "--runInBand"], mobile))
         if not args.skip_build:
-            results.append(run("Frontend: build web (mesma origem)", [npm, "run", "build:web"], mobile,
+            results.append(run("Frontend: build web (mesma origem)", [*npm, "run", "build:web"], mobile,
                                {"EXPO_OFFLINE": "1", "EXPO_PUBLIC_API_URL": ""}))
 
     ok = all(r[1] for r in results)

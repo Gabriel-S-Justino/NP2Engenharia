@@ -13,7 +13,7 @@ Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido
 | `ADMIN_TOKEN` | Token das operações administrativas (header `X-Admin-Token`) | — (livre em desenvolvimento) | **definir** (obrigatório em produção) | **SEGREDO** |
 | `CRON_SECRET` | Autoriza `/api/cron/ingestion` (a Vercel envia `Authorization: Bearer …`) | — | **definir** (recomendado) | **SEGREDO** |
 | `LLM_API_KEY` | Chave do provedor de LLM | — | definir se `LLM_PROVIDER=anthropic` | **SEGREDO** |
-| `LLM_PROVIDER` | `demo` (extrativo, sem LLM) ou `anthropic` | demo | definir para usar LLM | servidor |
+| `LLM_PROVIDER` | `anthropic`; `demo` restrito aos testes com `APP_ENV=test` | anthropic | anthropic | servidor |
 | `LLM_MODEL` | Modelo de geração | claude-opus-5-5 | padrão | servidor |
 | `LLM_TIMEOUT_SECONDS` / `LLM_MAX_OUTPUT_TOKENS` / `LLM_EFFORT` | Limites da geração | 60 / 2048 / low | padrão | servidor |
 | `SERVERLESS` | Modo serverless (síncrono, em lotes, carga sob demanda) | detecta `VERCEL=1` | **auto** | servidor |

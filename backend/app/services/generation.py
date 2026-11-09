@@ -13,6 +13,7 @@ Novos provedores (ex.: modelo local) implementam a interface `Generator`.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -100,7 +101,13 @@ class ExtractiveDemoGenerator(Generator):
         q_terms = list(dict.fromkeys(content_terms(question)))
         scored: list[tuple[float, int, str, str]] = []
         for order, source in enumerate(sources):
-            for sentence in split_sentences(source.text):
+            # Em artigos, alíneas e penalidades dependem do enunciado anterior.
+            # Pontuar frases isoladas pode citar apenas a regra introdutória e
+            # omitir justamente o valor ou a exceção. Preserve o trecho legal
+            # recuperado inteiro, sem síntese, mantendo sua página/citação.
+            legal = bool(re.match(r"^Art(?:igo|\.)\s*\d", source.section or "", re.IGNORECASE))
+            passages = [" ".join(source.text.split())] if legal and not looks_like_injection(source.text) else split_sentences(source.text)
+            for sentence in passages:
                 if looks_like_injection(sentence):
                     continue  # frases com formato de instrução nunca entram na resposta
                 if is_heading_line(sentence):

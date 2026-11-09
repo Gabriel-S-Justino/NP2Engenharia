@@ -40,7 +40,7 @@ def main() -> int:
         detail = f" — {doc.error_message}" if doc.error_message else ""
         print(f"[{flag}] {doc.relative_path} ({doc.chunk_count} trechos, {doc.page_count or '—'} pág.){detail}")
     container.shutdown()
-    return 0 if run and run.status == "completed" else 1
+    return 0 if run and run.status == "completed" and not run.stats.failed and not run.stats.remaining else 1
 
 
 if __name__ == "__main__":

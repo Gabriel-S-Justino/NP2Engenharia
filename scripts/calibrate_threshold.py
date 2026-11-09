@@ -45,26 +45,19 @@ def main() -> int:
     pipeline.startup()
     pipeline.ensure_ready()
     pipeline.ingestion.start("scan", wait=True)
-    # Os limiares de teste são temporários: os parâmetros originais são restaurados ao final, mesmo com
-    # DATABASE_URL de produção (a calibração nunca altera o limiar em uso; a equipe decide e configura).
-    original_overrides = pipeline.db.get_kv("settings_overrides")
+    # Os limiares de teste são parâmetros por chamada: nenhuma instância da API
+    # observa valores experimentais gravados no banco durante a calibração.
     try:
         _calibrate(pipeline, data, args)
     finally:
-        if original_overrides is None:
-            pipeline.db.delete_kv("settings_overrides")
-        else:
-            pipeline.db.set_kv("settings_overrides", original_overrides)
         pipeline.close()
     return 0
 
 
 def _calibrate(pipeline, data: dict, args) -> None:
-    pipeline.set_overrides({"similarity_threshold": -1.0})
-
     rows = []
     for item in data["questions"]:
-        response = pipeline.answer(item["question"], persist=False)
+        response = pipeline.answer(item["question"], persist=False, similarity_threshold=-1.0)
         best = response.retrieval.best_score if response.retrieval else None
         rows.append({"question": item["question"], "answerable": item["answerable"], "best": best})
 
@@ -105,12 +98,11 @@ def _calibrate(pipeline, data: dict, args) -> None:
         lines.append(f"| {r['question']} | {'sim' if r['answerable'] else 'não'} | {r['best']:.4f} |" if r["best"] is not None
                      else f"| {r['question']} | {'sim' if r['answerable'] else 'não'} | — |")
     # Verificação de ponta a ponta com o limiar sugerido (inclui a checagem de cobertura de termos).
-    pipeline.set_overrides({"similarity_threshold": suggestion})
     final_ok = 0
     lines += ["", f"## Comportamento final com limiar {suggestion}", "",
               "| Pergunta | Esperado | Status obtido | Correto? |", "|---|---|---|---|"]
     for r in rows:
-        status = pipeline.answer(r["question"], persist=False).status
+        status = pipeline.answer(r["question"], persist=False, similarity_threshold=suggestion).status
         ok = (status == "answered") == r["answerable"]
         final_ok += ok
         lines.append(f"| {r['question']} | {'responder' if r['answerable'] else 'recusar'} | {status} | {'sim' if ok else 'NÃO'} |")
@@ -121,6 +113,16 @@ def _calibrate(pipeline, data: dict, args) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"calibracao_{embed.name}{'_real' if args.real else '_fixtures'}.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out.with_suffix(".json").write_text(json.dumps({
+        "embedding_fingerprint": embed.fingerprint,
+        "semantic": embed.semantic,
+        "suggested_threshold": suggestion,
+        "separable": separable,
+        "calibration_accuracy": accuracy,
+        "end_to_end_correct": final_ok,
+        "questions": len(rows),
+        "scores": rows,
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("\n".join(lines))
     print(f"\nRelatório salvo em {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")
 

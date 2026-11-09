@@ -1,20 +1,23 @@
 # Instala as dependências no Windows PowerShell. Uso: .\scripts\setup.ps1
+param([string]$PythonExecutable)
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\windows-common.ps1"
 $Root = Resolve-Path "$PSScriptRoot\.."
 Set-Location $Root
 
 Write-Host "==> Backend: ambiente virtual em backend\.venv"
-python -m venv backend\.venv
-backend\.venv\Scripts\python.exe -m pip install --upgrade pip
-backend\.venv\Scripts\pip.exe install -r backend\requirements-dev.txt
+$python = Get-ProjectPython $PythonExecutable
+if (-not (Test-Path backend\.venv\Scripts\python.exe)) {
+  Invoke-ProjectPython $python @('-m', 'venv', 'backend\.venv')
+}
+$python = (Resolve-Path backend\.venv\Scripts\python.exe).Path
+Invoke-ProjectPython $python @('-m', 'pip', 'install', '--cache-dir', "$Root\data\pip-cache", '-r', 'backend\requirements-dev.txt')
 
 Write-Host "==> Frontend: dependências em apps\mobile"
 Push-Location apps\mobile
-npm ci
-Pop-Location
+try { Invoke-ProjectNpm ci --cache "$Root\data\npm-cache" }
+finally { Pop-Location }
 
-if (-not (Test-Path .env)) {
-  Copy-Item .env.example .env
-  Write-Host "==> .env criado a partir de .env.example (revise os valores)."
-}
+Invoke-ProjectPython $python @('scripts/configure_local.py')
+Write-Host "Adicione seus documentos manualmente em Documentos/ e configure LLM_API_KEY no .env."
 Write-Host "Pronto. Inicie com .\scripts\dev.ps1"

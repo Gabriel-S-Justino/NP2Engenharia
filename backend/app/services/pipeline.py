@@ -295,12 +295,13 @@ class RagPipeline:
         conversation_id: str | None = None,
         filters: ChatFilters | None = None,
         top_k: int | None = None,
+        similarity_threshold: float | None = None,
         persist: bool = True,
     ) -> ChatResponse:
         started = time.perf_counter()
         params = self.effective_params()
         top_k = top_k or int(params["top_k"])
-        threshold = float(params["similarity_threshold"])
+        threshold = float(params["similarity_threshold"] if similarity_threshold is None else similarity_threshold)
         conversation_id = conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
         generation_info = GenerationInfo(
             provider=self.generator.provider, model=self.generator.model,

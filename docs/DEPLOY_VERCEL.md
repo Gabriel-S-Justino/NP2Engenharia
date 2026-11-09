@@ -34,7 +34,7 @@ para a web. Detalhes de arquitetura e justificativas: [PRODUCAO.md](PRODUCAO.md)
 | `DATABASE_URL` | sim | definida pela integração do Neon |
 | `ADMIN_TOKEN` | sim | valor longo e aleatório (ex.: `python -c "import secrets;print(secrets.token_urlsafe(32))"`) — protege upload, indexação, exclusão, avaliação e configurações |
 | `CRON_SECRET` | recomendada | valor aleatório; a Vercel o envia ao chamar `/api/cron/ingestion` |
-| `LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL` | opcional | `anthropic`, a chave e `claude-opus-5-5`. Sem eles, roda o modo demonstração (extrativo, sem LLM) |
+| `LLM_PROVIDER` / `LLM_API_KEY` / `LLM_MODEL` | obrigatório | `anthropic`, uma chave válida e um modelo disponível na sua conta. Sem chave, a inicialização é bloqueada; não há fallback demonstrativo. |
 | `EMBEDDING_PROVIDER` | não | padrão `fastembed` (semântico). `hashing` só para demonstração offline |
 | `SIMILARITY_THRESHOLD` | recomendada | valor calibrado com o acervo real (ver RELATORIO §8) |
 

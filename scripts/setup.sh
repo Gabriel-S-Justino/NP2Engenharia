@@ -12,8 +12,6 @@ backend/.venv/bin/pip install -r backend/requirements-dev.txt
 echo "==> Frontend: dependências em apps/mobile"
 (cd apps/mobile && npm ci)
 
-if [ ! -f .env ]; then
-  cp .env.example .env
-  echo "==> .env criado a partir de .env.example (revise os valores)."
-fi
+backend/.venv/bin/python scripts/configure_local.py
+echo "Adicione seus documentos manualmente em Documentos/ e configure LLM_API_KEY no .env."
 echo "Pronto. Inicie com ./scripts/dev.sh"
