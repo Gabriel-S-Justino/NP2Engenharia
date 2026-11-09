@@ -56,3 +56,8 @@
 - Limite de requisições é em memória **por instância** (na Vercel, várias instâncias somam limites); atrás de proxy usa `X-Forwarded-For`, que pode ser forjado
   se o backend for exposto sem o proxy da plataforma.
 - O token administrativo fica salvo no dispositivo do administrador (AsyncStorage/localStorage).
+
+
+## Catálogo de conversas no dispositivo
+
+O histórico de chats mantém localmente apenas IDs, títulos e datas; as respostas e fontes permanecem no servidor. Não há listagem pública de conversas de outros usuários. O catálogo é visível a quem usa o mesmo perfil do navegador e não sincroniza entre dispositivos. A retenção já configurada permanece válida. Excluir um chat só remove o item local depois da confirmação de remoção no servidor. [Contrato e limitações](HISTORICO_CHATS.md).

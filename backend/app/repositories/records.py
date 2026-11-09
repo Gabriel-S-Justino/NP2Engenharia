@@ -98,10 +98,10 @@ class ChatRepository:
             ),
         )
 
-    def history(self, conversation_id: str, limit: int = 100) -> list[ChatResponse]:
+    def history(self, conversation_id: str, limit: int = 100, offset: int = 0) -> list[ChatResponse]:
         rows = self.db.query(
-            "SELECT payload_json FROM chat_interactions WHERE conversation_id = ? ORDER BY created_at ASC, id ASC LIMIT ?",
-            (conversation_id, limit),
+            "SELECT payload_json FROM chat_interactions WHERE conversation_id = ? ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?",
+            (conversation_id, limit, offset),
         )
         return [ChatResponse.model_validate_json(r["payload_json"]) for r in rows]
 

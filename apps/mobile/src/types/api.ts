@@ -189,7 +189,7 @@ export type ChatResponse = {
   created_at: string;
 };
 
-export type ChatHistory = { conversation_id: string; items: ChatResponse[] };
+export type ChatHistory = { conversation_id: string; items: ChatResponse[]; has_more?: boolean };
 
 export type EvaluationCategoryStats = {
   label: string;

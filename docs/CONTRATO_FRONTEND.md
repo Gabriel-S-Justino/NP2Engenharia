@@ -103,3 +103,8 @@ Os status processed/pending/processing/failed/excluded são apresentados como Pr
 A função userFacingText em utils/presentation.ts atua apenas na string renderizada; não altera respostas persistidas, regras de recusa, flags de segurança ou tratamento de erro. Campos de token e ajustes mantêm os mesmos nomes internos, validações e chamadas HTTP.
 
 UploadResult já contém document, message e a execução opcional ingestion, usada pelo fluxo existente de continuação de lotes. Esta revisão não muda esse contrato.
+
+
+## Paginação do histórico
+
+GET /api/chat/history/{conversation_id} aceita limit (1 a 100, padrão 100) e offset (a partir de 0). A resposta preserva conversation_id e items e acrescenta has_more. O frontend carrega as páginas antes de selecionar a conversa. O catálogo versionado de IDs e títulos fica no dispositivo; não existe listagem global de chats. Os demais contratos de chat são preservados. [Detalhes](HISTORICO_CHATS.md).

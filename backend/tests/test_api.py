@@ -234,3 +234,29 @@ def test_errors_do_not_leak_internals(client):
     assert "Traceback" not in body and "/home/" not in body
     big = client.post("/api/chat", content=b"x", headers={"content-length": str(500 * 1024 * 1024), "content-type": "application/json"})
     assert big.status_code == 413
+
+
+def test_chat_history_pagination_is_stable_and_scoped(indexed_client):
+    payload = indexed_client.post("/api/chat", json={
+        "question": "Qual é a velocidade máxima nas vias escolares de Vila Exemplo?",
+        "conversation_id": "history_pages",
+    }).json()
+    from app.schemas.models import ChatResponse
+
+    original = ChatResponse.model_validate(payload)
+    repo = indexed_client.app.state.container.pipeline.chat
+    for number in range(1, 5):
+        repo.save(original.model_copy(update={"interaction_id": f"history_item_{number}"}))
+    repo.save(original.model_copy(update={"interaction_id": "other_chat_item", "conversation_id": "other_chat"}))
+
+    first = indexed_client.get("/api/chat/history/history_pages?limit=2").json()
+    second = indexed_client.get("/api/chat/history/history_pages?limit=2&offset=2").json()
+    third = indexed_client.get("/api/chat/history/history_pages?limit=2&offset=4").json()
+    combined = first["items"] + second["items"] + third["items"]
+    assert first["has_more"] is True and second["has_more"] is True and third["has_more"] is False
+    assert len(combined) == 5
+    assert len({item["interaction_id"] for item in combined}) == 5
+    assert all(item["conversation_id"] == "history_pages" for item in combined)
+    assert combined[0]["citations"] == original.model_dump(mode="json")["citations"]
+    assert indexed_client.get("/api/chat/history/history_pages?offset=-1").status_code == 422
+    assert indexed_client.get("/api/chat/history/history_pages?limit=101").status_code == 422

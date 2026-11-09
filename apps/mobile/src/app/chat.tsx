@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type ScrollViewInstance, type TextInputKeyPressEvent } from 'react-native';
 
+import { ChatHistoryPanel } from '@/components/ChatHistoryPanel';
 import { TrafficMark } from '@/components/TrafficIdentity';
 import { AssistantMessage, FailedMessage, UserMessage } from '@/components/ChatMessage';
 import { SourceReference, citationToSource } from '@/components/SourceReference';
@@ -32,11 +33,12 @@ function EvidencePanel({ response, onOpenSource }: { response: ChatResponse; onO
 export default function ChatScreen() {
   const { colors } = useTheme();
   const { isDesktop } = useBreakpoint();
-  const { entries, ask, retry, sending, clearConversation, historyLoading, connection } = useAppState();
+  const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation, newConversation } = useAppState();
   const stats = useAsync(() => api.stats(), [connection]);
   const [question, setQuestion] = useState('');
   const [inputError, setInputError] = useState<string | null>(null);
   const [panel, setPanel] = useState<ChatResponse | null>(null);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
   const latestAnswer = [...entries].reverse().find((e) => e.kind === 'answer');
@@ -44,11 +46,18 @@ export default function ChatScreen() {
   useEffect(() => {
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     return () => clearTimeout(timer);
-  }, [entries.length, sending]);
+  }, [entries.length, sending, conversationId]);
+
+  useEffect(() => {
+    setPanel(null);
+    setQuestion('');
+    setInputError(null);
+  }, [conversationId]);
 
   const noDocuments = stats.data !== null && stats.data.documents_processed === 0;
 
   const submit = () => {
+    if (sending || historyLoading || historyError) return;
     const text = question.trim();
     if (!text) {
       setInputError('Escreva uma pergunta antes de enviar.');
@@ -88,13 +97,27 @@ export default function ChatScreen() {
               </AppText>
             </View>
             <IconButton icon="folder-open-outline" accessibilityLabel="Abrir documentos do acervo" onPress={() => router.navigate('/documentos')} />
-            <IconButton icon="trash-outline" accessibilityLabel="Limpar conversa" onPress={() => setConfirmClear(true)} disabled={!entries.length || sending} />
+            <IconButton icon="trash-outline" accessibilityLabel="Limpar conversa" onPress={() => setConfirmClear(true)} disabled={!entries.length || sending || historyLoading} />
+          </View>
+
+          <View style={[styles.chatActions, { borderBottomColor: colors.border }]}>
+            <Button label="Histórico de chats" icon="time-outline" variant="ghost" size="sm" disabled={sending || historyLoading} onPress={() => setHistoryVisible(true)} />
+            <Button label="Nova conversa" icon="add" variant="secondary" size="sm" disabled={sending || historyLoading} onPress={newConversation} />
           </View>
 
           <ScrollView ref={scrollRef} style={styles.flex} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
             <View style={styles.messagesInner}>
+              {historyError ? (
+                <Notice tone="danger" title="Histórico indisponível">
+                  <AppText>{historyError}</AppText>
+                  <Button label="Tentar carregar novamente" variant="secondary" size="sm" disabled={historyLoading || sending} onPress={() => { if (conversationId) void openConversation(conversationId); }} />
+                </Notice>
+              ) : null}
               {historyLoading ? <LoadingState label="Carregando histórico…" /> : null}
-              {!historyLoading && !entries.length ? (
+              {!historyLoading && !entries.length && conversations.some((c) => c.id === conversationId) && !historyError ? (
+                <Notice tone="info">Esta conversa não tem mensagens disponíveis. Elas podem ter sido removidas pelo prazo de retenção do serviço.</Notice>
+              ) : null}
+              {!historyLoading && !entries.length && !historyError ? (
                 noDocuments ? (
                   <EmptyState
                     icon="folder-open-outline"
@@ -145,11 +168,11 @@ export default function ChatScreen() {
                     showCounter
                     error={inputError}
                     helper={Platform.OS === 'web' ? 'Enter envia · Shift+Enter quebra a linha' : undefined}
-                    editable={!sending}
+                    editable={!sending && !historyLoading && !historyError}
                     testID="campo-pergunta"
                   />
                 </View>
-                <Button label="Enviar" icon="send" onPress={submit} loading={sending} disabled={historyLoading || noDocuments} testID="botao-enviar" />
+                <Button label="Enviar" icon="send" onPress={submit} loading={sending} disabled={historyLoading || noDocuments || !!historyError} testID="botao-enviar" />
               </Row>
             </View>
           </View>
@@ -170,6 +193,7 @@ export default function ChatScreen() {
         ) : null}
       </View>
 
+      <ChatHistoryPanel visible={historyVisible} onClose={() => setHistoryVisible(false)} />
       <Dialog visible={panel !== null} title="Fontes da resposta" variant="sheet" onClose={() => setPanel(null)}>
         {panel ? <EvidencePanel response={panel} onOpenSource={(id) => { setPanel(null); openSource(id); }} /> : null}
       </Dialog>
@@ -195,6 +219,7 @@ const styles = StyleSheet.create({
   conversationColumn: { flex: 1 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.lg, borderBottomWidth: 1 },
+  chatActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderBottomWidth: 1 },
   messages: { padding: spacing.md, flexGrow: 1 },
   messagesInner: { width: '100%', maxWidth: maxContentWidth.reading, alignSelf: 'center', gap: spacing.lg },
   turn: { gap: spacing.sm },

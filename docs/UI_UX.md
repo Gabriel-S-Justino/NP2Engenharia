@@ -70,3 +70,8 @@ Design detalhado em [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); operações em [FLUXOS
 O nome público do aplicativo é Lumme. A interface, os metadados visíveis da aplicação, a identificação da API e os textos do projeto usam essa marca. Textos mantidos pelo aplicativo não usam travessões; usam pontuação simples e hífen quando necessário.
 
 O domínio de produção atual, os identificadores de pacote e de instalação e o prefixo de armazenamento local permanecem iguais para preservar links, instalação, preferências, token e histórico existentes. Esses identificadores técnicos não são o nome apresentado ao usuário. Documentos enviados pelos usuários e capturas históricas não são reescritos.
+
+
+## Histórico de chats
+
+A tela Tire suas dúvidas agora oferece Histórico de chats e Nova conversa. O painel permite buscar pelo título, identificar o chat atual e abrir conversas anteriores, preservando as fontes. A lista pertence ao navegador ou dispositivo. Os controles ficam bloqueados durante envio ou carregamento; falhas são apresentadas com nova tentativa. [Detalhes e limitações](HISTORICO_CHATS.md).

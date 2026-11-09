@@ -376,9 +376,12 @@ def chat(request: Request, body: ChatRequest) -> ChatResponse:
 
 
 @router.get("/chat/history/{conversation_id}", response_model=ChatHistory, tags=["chat"])
-def chat_history(request: Request, conversation_id: str) -> ChatHistory:
-    items = container(request).pipeline.chat.history(conversation_id)
-    return ChatHistory(conversation_id=conversation_id, items=items)
+def chat_history(
+    request: Request, conversation_id: str,
+    limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0),
+) -> ChatHistory:
+    items = container(request).pipeline.chat.history(conversation_id, limit=limit + 1, offset=offset)
+    return ChatHistory(conversation_id=conversation_id, items=items[:limit], has_more=len(items) > limit)
 
 
 @router.delete("/chat/history/{conversation_id}", response_model=ClearHistoryResult, tags=["chat"])

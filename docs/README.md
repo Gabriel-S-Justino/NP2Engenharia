@@ -10,6 +10,8 @@ Interface atual: Escola de trânsito, revisada em 09/11/2026. A revisão muda ap
 - [Contrato do frontend](CONTRATO_FRONTEND.md)
 - [Validação da revisão visual](REVISAO_UI_2026-11-09.md)
 
+- [Histórico de chats](HISTORICO_CHATS.md)
+
 ## Implantação e operação
 
 - [Arquitetura](ARQUITETURA.md)

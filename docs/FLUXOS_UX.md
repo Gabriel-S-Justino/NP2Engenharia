@@ -49,3 +49,8 @@ Avisos de informação insuficiente, divergência, conteúdo suspeito, citação
 Revisão de qualidade mantém seleção de conjunto, execução, histórico, filtros e registro de ajustes. Diário da equipe mantém formulário, validação e salvamento. Configurações mantém verificação de disponibilidade, quatro parâmetros editáveis, confirmação de reprocessamento, token, privacidade e tema.
 
 O agrupamento Espaço da equipe é somente uma indicação visual: nenhuma rota foi removida ou recebeu nova autenticação.
+
+
+## Criar e retomar conversas
+
+Tire suas dúvidas → Nova conversa abre um chat vazio sem excluir os anteriores. Histórico de chats → buscar pelo título → selecionar → carregar todas as páginas → continuar a conversa. Falha de carregamento mantém o chat anterior. Para remover, abra o chat → Limpar conversa → confirmar; uma falha no servidor mantém o conteúdo e apresenta o erro. [Guia](HISTORICO_CHATS.md).

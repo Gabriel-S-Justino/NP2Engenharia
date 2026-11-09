@@ -12,6 +12,12 @@ A consulta apresenta resposta, avisos e fontes verificáveis. Scores, latências
 
 Documentação: [índice](docs/README.md), [UI/UX](docs/UI_UX.md), [design system](docs/DESIGN_SYSTEM.md), [fluxos](docs/FLUXOS_UX.md) e [validação da revisão](docs/REVISAO_UI_2026-11-09.md).
 
+## Histórico de chats
+
+Na tela Tire suas dúvidas, use Histórico de chats para buscar e retomar conversas anteriores ou Nova conversa para começar outro assunto. A conversa antiga é preservada. O catálogo fica neste navegador ou dispositivo; mensagens e fontes permanecem no servidor conforme o prazo de retenção. Não exige admin token nem cria sincronização entre dispositivos.
+
+Guia: [Histórico de chats](docs/HISTORICO_CHATS.md).
+
 ## Configuração obrigatória
 
 A aplicação utiliza `LLM_PROVIDER=gemini` por padrão. Configure no servidor:

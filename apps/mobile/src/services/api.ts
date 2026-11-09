@@ -189,7 +189,7 @@ export const api = {
 
   chat: (body: ChatRequest, signal?: AbortSignal) =>
     request<ChatResponse>('/api/chat', { method: 'POST', body, timeoutMs: CHAT_TIMEOUT_MS, signal }),
-  chatHistory: (conversationId: string) => request<ChatHistory>(`/api/chat/history/${encodeURIComponent(conversationId)}`),
+  chatHistory: (conversationId: string, offset = 0) => request<ChatHistory>(`/api/chat/history/${encodeURIComponent(conversationId)}${offset ? `?offset=${offset}` : ''}`),
   clearChat: (conversationId: string) =>
     request<{ removed: number }>(`/api/chat/history/${encodeURIComponent(conversationId)}`, { method: 'DELETE' }),
 

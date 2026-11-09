@@ -269,6 +269,7 @@ class ChatResponse(BaseModel):
 class ChatHistory(BaseModel):
     conversation_id: str
     items: list[ChatResponse]
+    has_more: bool = False
 
 
 class ClearHistoryResult(BaseModel):
