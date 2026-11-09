@@ -1,6 +1,6 @@
-# UI/UX - Lume, Escola de trânsito
+# UI/UX - Lumme, Escola de trânsito
 
-Atualização de apresentação em 09/11/2026. O Lume aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
+Atualização de apresentação em 09/11/2026. O Lumme aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
 
 ## Identidade e público
 
@@ -67,6 +67,6 @@ Design detalhado em [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md); operações em [FLUXOS
 
 ## Nome e escrita
 
-O nome público do aplicativo é Lume. A interface, os metadados visíveis da aplicação, a identificação da API e os textos do projeto usam essa marca. Textos mantidos pelo aplicativo não usam travessões; usam pontuação simples e hífen quando necessário.
+O nome público do aplicativo é Lumme. A interface, os metadados visíveis da aplicação, a identificação da API e os textos do projeto usam essa marca. Textos mantidos pelo aplicativo não usam travessões; usam pontuação simples e hífen quando necessário.
 
 O domínio de produção atual, os identificadores de pacote e de instalação e o prefixo de armazenamento local permanecem iguais para preservar links, instalação, preferências, token e histórico existentes. Esses identificadores técnicos não são o nome apresentado ao usuário. Documentos enviados pelos usuários e capturas históricas não são reescritos.

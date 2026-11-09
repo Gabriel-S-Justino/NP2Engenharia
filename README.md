@@ -1,10 +1,10 @@
-# Lume - Escola de trânsito
+# Lumme - Escola de trânsito
 
 Aplicação web e mobile de consulta a leis de trânsito com RAG: recupera evidências dos documentos adicionados pela equipe, responde com um LLM real e apresenta citações verificáveis. Sem evidências suficientes, recusa a pergunta.
 
 ## Interface de trânsito e escola
 
-O nome público do aplicativo é Lume. O endereço de produção e os identificadores técnicos existentes são preservados.
+O nome público do aplicativo é Lumme. O endereço de produção e os identificadores técnicos existentes são preservados.
 
 A interface usa verde de lousa, amarelo de sinalização, livro e placa escolar para orientar a consulta aos materiais. As telas principais são Início, Tire suas dúvidas, Biblioteca e Fontes. Revisão de qualidade, Diário da equipe e Configurações continuam disponíveis no espaço da equipe, com as mesmas rotas e ações.
 

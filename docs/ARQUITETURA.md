@@ -1,4 +1,4 @@
-# Arquitetura do Lume
+# Arquitetura do Lumme
 
 > **Interface revisada em 09/11/2026.** A camada visual usa o tema Escola de trânsito e componentes decorativos sem estado de domínio. As mesmas rotas, hooks, chamadas HTTP, schemas e regras de acesso permanecem em uso. Scores, IDs e parâmetros de infraestrutura continuam na API, mas não ocupam as telas de consulta.
 

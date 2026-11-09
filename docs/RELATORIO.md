@@ -1,4 +1,4 @@
-# Relatório técnico - Lume
+# Relatório técnico - Lumme
 
 > **Interface revisada em 09/11/2026.** A interface atual segue o tema Escola de trânsito: verde de lousa, amarelo de sinalização e fundo de papel. A revisão é somente de apresentação; métricas e resultados anteriores abaixo são históricos, não uma nova medição do RAG.
 
@@ -12,7 +12,7 @@
 
 ## 1. Introdução
 
-O Lume é um assistente de consulta documental sobre leis de trânsito. Ele combina recuperação semântica de
+O Lumme é um assistente de consulta documental sobre leis de trânsito. Ele combina recuperação semântica de
 trechos (busca vetorial) com geração de texto, e só apresenta respostas sustentadas por trechos dos documentos
 selecionados pela equipe, sempre com a fonte (documento, página, seção e trecho). Quando não há evidência, o
 sistema informa isso em vez de responder.

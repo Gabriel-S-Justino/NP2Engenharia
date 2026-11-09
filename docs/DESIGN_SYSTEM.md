@@ -1,4 +1,4 @@
-# Design system - Lume, Escola de trânsito
+# Design system - Lumme, Escola de trânsito
 
 Revisado em 09/11/2026. Tokens em apps/mobile/src/theme/tokens.ts; componentes base em src/components/ui; marca e ilustração em TrafficIdentity.tsx.
 

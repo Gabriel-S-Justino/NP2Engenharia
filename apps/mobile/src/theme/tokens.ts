@@ -1,5 +1,5 @@
 /**
- * Tokens do design system do Lume.
+ * Tokens do design system do Lumme.
  *
  * Componentes usam apenas nomes semânticos (background, surface, textPrimary...).
  * O contraste das combinações principais é verificado em src/__tests__/tokens.test.ts (WCAG 2.2 AA).

@@ -17,7 +17,7 @@ from app.core.container import Container
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Indexação do acervo Lume")
+    parser = argparse.ArgumentParser(description="Indexação do acervo Lumme")
     parser.add_argument("--reindex", action="store_true", help="Reprocessa todos os documentos")
     args = parser.parse_args()
     settings = get_settings()

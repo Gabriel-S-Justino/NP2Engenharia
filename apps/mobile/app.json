@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Lume",
+    "name": "Lumme",
     "slug": "acervo-ia",
     "version": "1.0.0",
     "orientation": "default",
@@ -24,7 +24,7 @@
     "web": {
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "Lume - Escola de trânsito",
+      "name": "Lumme - Escola de trânsito",
       "lang": "pt-BR"
     },
     "plugins": [

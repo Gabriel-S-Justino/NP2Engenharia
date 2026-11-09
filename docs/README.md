@@ -1,4 +1,4 @@
-# Documentação do Lume
+# Documentação do Lumme
 
 Interface atual: Escola de trânsito, revisada em 09/11/2026. A revisão muda apresentação e linguagem; as operações continuam com os mesmos contratos e fluxos.
 
