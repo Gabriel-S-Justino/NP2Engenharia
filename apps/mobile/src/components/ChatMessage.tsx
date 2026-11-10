@@ -1,6 +1,9 @@
 import { StyleSheet, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { useState } from 'react';
+import { api } from '@/services/api';
 
-import { AppText, Badge, Button, Notice } from '@/components/ui';
+import { AppText, Badge, Button, Notice, useToast } from '@/components/ui';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import type { ChatResponse } from '@/types/api';
@@ -51,6 +54,21 @@ type AssistantProps = {
 /** Resposta do assistente: separa claramente a RESPOSTA GERADA das EVIDÊNCIAS RECUPERADAS. */
 export function AssistantMessage({ response, onOpenSource, onShowEvidence, showInlineSources = true }: AssistantProps) {
   const { colors } = useTheme();
+  const toast = useToast();
+  const [rating, setRating] = useState<-1 | 1 | null>(null);
+  const [savingRating, setSavingRating] = useState(false);
+  const submitRating = async (value: -1 | 1) => {
+    if (savingRating) return;
+    setSavingRating(true);
+    try { await api.feedback(response.interaction_id, value); setRating(value); toast.show('Avaliação registrada.', 'success'); }
+    catch { toast.show('Não foi possível registrar sua avaliação. Tente novamente.', 'danger'); }
+    finally { setSavingRating(false); }
+  };
+  const copy = async () => {
+    const text = [response.answer || response.notice || '', '', ...response.citations.map((c) => `[${c.label}] ${c.document_title || c.filename}, página ${c.page ?? 'não informada'}\n${c.excerpt}`)].join('\n');
+    try { if (!await Clipboard.setStringAsync(text)) throw new Error('clipboard'); toast.show('Resposta e fontes copiadas.', 'success'); }
+    catch { toast.show('Não foi possível copiar. Selecione o texto para copiar manualmente.', 'danger'); }
+  };
   const cited = response.citations.filter((c) => c.cited_in_answer);
   const others = response.citations.filter((c) => !c.cited_in_answer);
   const labels = response.citations.map((c) => c.label);
@@ -114,6 +132,11 @@ export function AssistantMessage({ response, onOpenSource, onShowEvidence, showI
         </View>
       ) : null}
 
+      <View style={styles.metaRow}>
+        <Button label="Copiar resposta" icon="copy-outline" variant="ghost" size="sm" onPress={() => void copy()} />
+        <Button label={rating === 1 ? 'Útil ✓' : 'Útil'} icon="thumbs-up-outline" variant="ghost" size="sm" disabled={savingRating} onPress={() => void submitRating(1)} />
+        <Button label={rating === -1 ? 'Não ajudou ✓' : 'Não ajudou'} icon="thumbs-down-outline" variant="ghost" size="sm" disabled={savingRating} onPress={() => void submitRating(-1)} />
+      </View>
       {onShowEvidence && response.retrieval ? (
         <Button label="Conferir fontes" icon="layers-outline" variant="ghost" size="sm" onPress={() => onShowEvidence(response)} />
       ) : null}

@@ -79,8 +79,12 @@ def evaluate_case(case: EvaluationCase, response: ChatResponse) -> EvaluationCas
         checks["fonte_esperada_citada"] = (not case.expected_sources) or bool(cited_files & set(case.expected_sources))
         answer_norm = _norm(answer)
         cited_text = _norm(" ".join(c.excerpt for c in used))
-        in_answer = [k for k in case.expected_keywords if _norm(k) in answer_norm]
-        supported = [k for k in case.expected_keywords if _norm(k) in cited_text]
+        def matches(group: str, text: str) -> bool:
+            return any(_norm(word) in text for word in group.split('|') if word.strip())
+        in_answer = [k for k in case.expected_keywords if matches(k, answer_norm)]
+        supported = [k for k in case.expected_keywords if matches(k, cited_text)]
+        if case.expected_pages:
+            checks['pagina_esperada_citada'] = any(c.page in case.expected_pages for c in used)
         checks["palavras_chave_na_resposta"] = len(in_answer) == len(case.expected_keywords)
         checks["fidelidade_ao_trecho_citado"] = len(supported) == len(case.expected_keywords)
         fidelity = {
@@ -240,8 +244,13 @@ class EvaluationService:
         return load_suites(self.suites_dir)
 
     def run(self, suite: EvaluationSuite, pipeline, *, extra_params: dict | None = None) -> EvaluationResults:
+        if suite.provenance.get('sha256') and not pipeline.db.query_one(
+            "SELECT 1 FROM documents WHERE sha256 = ? AND status = 'processed' LIMIT 1", (suite.provenance['sha256'],)
+        ):
+            raise ValueError('O documento conferido nesta matriz não está no acervo atual. Revise a matriz antes de avaliar.')
         params = {**pipeline.effective_params(), **(extra_params or {})}
         params.update({
+            "corpus_provenance": suite.provenance,
             "embedding": pipeline.embedder.fingerprint,
             "embedding_semantic": pipeline.embedder.semantic,
             "generation": pipeline.generator.describe(),

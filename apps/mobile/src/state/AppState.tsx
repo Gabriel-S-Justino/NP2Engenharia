@@ -2,59 +2,55 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { ApiError, api, errorMessage, setAdminToken } from '@/services/api';
 import { readValue, writeValue } from '@/services/storage';
+import { useAuth } from '@/state/AuthState';
 import type { ChatFilters, ChatResponse, Health } from '@/types/api';
-import { CONVERSATIONS_KEY, parseConversations, rememberConversation, type SavedConversation } from '@/utils/conversations';
+import { CONVERSATIONS_KEY, parseConversations, type SavedConversation } from '@/utils/conversations';
 
 export type ConnectionState = 'checking' | 'online' | 'degraded' | 'offline';
-
 export type ChatEntry =
   | { id: string; kind: 'pending'; question: string }
   | { id: string; kind: 'answer'; question: string; response: ChatResponse }
   | { id: string; kind: 'error'; question: string; message: string; retryable: boolean };
 
 type AppStateValue = {
-  connection: ConnectionState;
-  health: Health | null;
-  lastHealthCheck: string | null;
-  refreshHealth: () => Promise<void>;
-  adminToken: string | null;
-  saveAdminToken: (token: string | null) => Promise<void>;
-  conversationId: string | null;
-  conversations: SavedConversation[];
-  entries: ChatEntry[];
-  sending: boolean;
-  historyLoading: boolean;
-  historyError: string | null;
-  openConversation: (id: string) => Promise<boolean>;
-  newConversation: () => void;
-  ask: (question: string, filters?: ChatFilters) => Promise<void>;
-  retry: (entryId: string) => Promise<void>;
+  connection: ConnectionState; health: Health | null; lastHealthCheck: string | null;
+  refreshHealth: () => Promise<void>; adminToken: string | null; saveAdminToken: (token: string | null) => Promise<void>;
+  conversationId: string | null; conversations: SavedConversation[]; entries: ChatEntry[];
+  sending: boolean; historyLoading: boolean; historyError: string | null;
+  openConversation: (id: string) => Promise<boolean>; newConversation: () => void;
+  ask: (question: string, filters?: ChatFilters) => Promise<void>; retry: (entryId: string) => Promise<void>;
   clearConversation: () => Promise<void>;
+  renameConversation: (id: string, title: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
+  refreshConversations: () => Promise<void>;
+  importLegacy: () => Promise<number>; legacyCount: number;
 };
-
 const AppStateContext = createContext<AppStateValue | null>(null);
 
-function newConversationId() {
-  return `conv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 14)}${Math.random().toString(36).slice(2, 14)}`;
-}
-
+function newId() { return `conv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 14)}${Math.random().toString(36).slice(2, 14)}`; }
 async function readHistory(id: string): Promise<ChatResponse[]> {
   const items: ChatResponse[] = [];
-  let more = true;
-  while (more) {
+  while (true) {
     const page = await api.chatHistory(id, items.length);
     items.push(...page.items);
-    more = !!page.has_more && page.items.length > 0;
+    if (!page.has_more || !page.items.length) return items;
   }
-  return items;
 }
-
+async function readCatalog(): Promise<SavedConversation[]> {
+  const result: SavedConversation[] = [];
+  while (true) {
+    const page = await api.conversations(result.length);
+    result.push(...page.items.map((c) => ({ id: c.id, title: c.title, updatedAt: c.updated_at })));
+    if (!page.has_more || !page.items.length) return result;
+  }
+}
 function toEntries(items: ChatResponse[]): ChatEntry[] {
   return items.map((response) => ({ id: response.interaction_id, kind: 'answer', question: response.question, response }));
 }
 
-/** A lista pertence ao dispositivo; as mensagens e fontes continuam armazenadas no servidor. */
 export function AppStateProvider({ children, pollMs = 30_000 }: { children: ReactNode; pollMs?: number }) {
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
   const [connection, setConnection] = useState<ConnectionState>('checking');
   const [health, setHealth] = useState<Health | null>(null);
   const [lastHealthCheck, setLastHealthCheck] = useState<string | null>(null);
@@ -65,186 +61,183 @@ export function AppStateProvider({ children, pollMs = 30_000 }: { children: Reac
   const [sending, setSending] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [legacyIds, setLegacyIds] = useState<string[]>([]);
   const sendingRef = useRef(false);
   const historyBusy = useRef(true);
   const conversationRef = useRef<string | null>(null);
-  const conversationsRef = useRef<SavedConversation[]>([]);
+  const epoch = useRef(0);
   const writes = useRef<Promise<void>>(Promise.resolve());
 
-  // Serializa as gravações para uma resposta antiga não sobrescrever a seleção mais recente.
   const persist = useCallback((key: string, value: string | null) => {
     writes.current = writes.current.then(() => writeValue(key, value));
   }, []);
-
-  const updateConversations = useCallback((list: SavedConversation[]) => {
-    conversationsRef.current = list;
-    setConversations(list);
-    persist(CONVERSATIONS_KEY, JSON.stringify(list));
-  }, [persist]);
-
-  const selectConversation = useCallback((id: string, items: ChatResponse[]) => {
+  const select = useCallback((id: string, items: ChatResponse[]) => {
     conversationRef.current = id;
     setConversationId(id);
     setEntries(toEntries(items));
-    persist('conversation-id', id);
-  }, [persist]);
-
+    if (userId) persist('conversation-id:' + userId, id);
+  }, [persist, userId]);
   const refreshHealth = useCallback(async () => {
     try {
       const h = await api.health();
-      setHealth(h);
-      setConnection(h.status === 'ok' ? 'online' : 'degraded');
-    } catch {
-      setHealth(null);
-      setConnection('offline');
-    } finally {
-      setLastHealthCheck(new Date().toISOString());
-    }
+      setHealth(h); setConnection(h.status === 'ok' ? 'online' : 'degraded');
+    } catch { setHealth(null); setConnection('offline'); }
+    finally { setLastHealthCheck(new Date().toISOString()); }
   }, []);
-
   useEffect(() => {
     void refreshHealth();
     if (!pollMs) return;
     const timer = setInterval(() => void refreshHealth(), pollMs);
     return () => clearInterval(timer);
   }, [refreshHealth, pollMs]);
-
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const [token, conv, saved] = await Promise.all([
-        readValue('admin-token'), readValue('conversation-id'), readValue(CONVERSATIONS_KEY),
-      ]);
-      if (!active) return;
-      setToken(token);
-      setAdminToken(token);
-      const list = parseConversations(saved);
-      conversationsRef.current = list;
-      setConversations(list);
-      const id = conv ?? newConversationId();
-      conversationRef.current = id;
-      setConversationId(id);
-      try {
-        const items = await readHistory(id);
-        if (!active) return;
-        selectConversation(id, items);
-        updateConversations(rememberConversation(list, id, items));
-      } catch {
-        if (active) {
-          // Mantém o identificador legado recuperável mesmo quando o servidor está offline.
-          if (conv && !list.some((c) => c.id === conv)) {
-            updateConversations([{ id: conv, title: 'Conversa anterior', updatedAt: new Date().toISOString() }, ...list]);
-          }
-          setHistoryError('Não foi possível carregar esta conversa. Tente abri-la novamente pelo histórico.');
-        }
-      } finally {
-        if (active) {
-          historyBusy.current = false;
-          setHistoryLoading(false);
-        }
-      }
+    let alive = true;
+    void (async () => {
+      const [legacy, legacyId] = await Promise.all([readValue(CONVERSATIONS_KEY), readValue('conversation-id')]);
+      if (!alive) return;
+      setLegacyIds([...new Set([...parseConversations(legacy).map((c) => c.id), ...(legacyId ? [legacyId] : [])])]);
     })();
-    return () => { active = false; };
-  }, [selectConversation, updateConversations]);
-
-  const saveAdminToken = useCallback(async (token: string | null) => {
-    const value = token && token.trim() ? token.trim() : null;
-    setToken(value);
-    setAdminToken(value);
-    await writeValue('admin-token', value);
+    return () => { alive = false; };
   }, []);
 
-  const openConversation = useCallback(async (id: string) => {
-    if (sendingRef.current || historyBusy.current || (id !== conversationRef.current && !conversationsRef.current.some((c) => c.id === id))) return false;
+  useEffect(() => {
+    const version = ++epoch.current;
     historyBusy.current = true;
-    setHistoryLoading(true);
-    setHistoryError(null);
+    sendingRef.current = false;
+    setAdminToken(null);
+    void (async () => {
+      await Promise.resolve();
+      if (version !== epoch.current) return;
+      setEntries([]); setConversations([]); setSending(false); setHistoryError(null); setToken(null);
+      conversationRef.current = null; setConversationId(null);
+      setHistoryLoading(true);
+      if (authLoading) return;
+      if (!userId) { historyBusy.current = false; setHistoryLoading(false); return; }
+      try {
+        const [catalog, savedId, token] = await Promise.all([readCatalog(), readValue('conversation-id:' + userId), readValue('admin-token:' + userId)]);
+        if (version !== epoch.current) return;
+        setConversations(catalog); setToken(token); setAdminToken(token);
+        const id = catalog.some((c) => c.id === savedId) ? savedId! : catalog[0]?.id ?? newId();
+        const items = catalog.some((c) => c.id === id) ? await readHistory(id) : [];
+        if (version !== epoch.current) return;
+        select(id, items);
+      } catch { if (version === epoch.current) setHistoryError('Não foi possível carregar suas conversas. Tente novamente.'); }
+      finally { if (version === epoch.current) { historyBusy.current = false; setHistoryLoading(false); } }
+    })();
+    return () => { epoch.current = version + 1; };
+  }, [userId, authLoading, select]);
+
+  const saveAdminToken = useCallback(async (token: string | null) => {
+    if (!userId) throw new Error('Entre na sua conta antes de salvar o token administrativo.');
+    const value = token?.trim() || null;
+    setToken(value); setAdminToken(value); await writeValue('admin-token:' + userId, value);
+  }, [userId]);
+
+  const refreshConversations = useCallback(async () => {
+    if (!userId) return;
+    const version = epoch.current;
+    const catalog = await readCatalog();
+    if (version === epoch.current) { setConversations(catalog); setHistoryError(null); }
+  }, [userId]);
+
+  const openConversation = useCallback(async (id: string) => {
+    if (!userId || sendingRef.current || historyBusy.current) return false;
+    const version = epoch.current;
+    historyBusy.current = true; setHistoryLoading(true); setHistoryError(null);
     try {
       const items = await readHistory(id);
-      selectConversation(id, items);
-      updateConversations(rememberConversation(conversationsRef.current, id, items));
+      if (version !== epoch.current) return false;
+      select(id, items);
       return true;
-    } catch {
-      setHistoryError('Não foi possível abrir a conversa. Suas mensagens atuais foram mantidas. Tente novamente.');
-      return false;
-    } finally {
-      historyBusy.current = false;
-      setHistoryLoading(false);
-    }
-  }, [selectConversation, updateConversations]);
+    } catch { if (version === epoch.current) setHistoryError('Não foi possível abrir a conversa. O chat atual foi mantido.'); return false; }
+    finally { if (version === epoch.current) { historyBusy.current = false; setHistoryLoading(false); } }
+  }, [select, userId]);
 
   const newConversation = useCallback(() => {
-    if (sendingRef.current || historyBusy.current) return;
-    selectConversation(newConversationId(), []);
-    setHistoryError(null);
-  }, [selectConversation]);
+    if (!userId || sendingRef.current || historyBusy.current) return;
+    select(newId(), []); setHistoryError(null);
+  }, [select, userId]);
 
   const runQuestion = useCallback(async (entryId: string, question: string, filters?: ChatFilters) => {
-    if (sendingRef.current || historyBusy.current || !conversationRef.current) return;
-    sendingRef.current = true;
-    setSending(true);
+    if (!userId || sendingRef.current || historyBusy.current || !conversationRef.current) return;
+    const version = epoch.current;
     const id = conversationRef.current;
+    sendingRef.current = true; setSending(true);
     try {
       const response = await api.chat({ question, conversation_id: id, filters });
-      setEntries((list) => list.map((e) => (e.id === entryId ? { id: entryId, kind: 'answer', question, response } : e)));
-      updateConversations(rememberConversation(conversationsRef.current, id, [response]));
+      if (version !== epoch.current) return;
+      setEntries((list) => list.map((e) => e.id === entryId ? { id: entryId, kind: 'answer', question, response } : e));
+      try { await refreshConversations(); } catch { /* a resposta já foi salva; o catálogo poderá ser recarregado */ }
     } catch (err) {
-      const retryable = err instanceof ApiError ? err.retryable : true;
-      setEntries((list) => list.map((e) => (
-        e.id === entryId ? { id: entryId, kind: 'error', question, message: errorMessage(err), retryable } : e
-      )));
-    } finally {
-      sendingRef.current = false;
-      setSending(false);
-    }
-  }, [updateConversations]);
+      if (version === epoch.current) setEntries((list) => list.map((e) => e.id === entryId ?
+        { id: entryId, kind: 'error', question, message: errorMessage(err), retryable: err instanceof ApiError ? err.retryable : true } : e));
+    } finally { if (version === epoch.current) { sendingRef.current = false; setSending(false); } }
+  }, [refreshConversations, userId]);
 
   const ask = useCallback(async (question: string, filters?: ChatFilters) => {
-    const trimmed = question.trim();
-    if (!trimmed || sendingRef.current || historyBusy.current || !conversationRef.current || historyError) return;
+    const text = question.trim();
+    if (!text || !userId || historyError || historyBusy.current || sendingRef.current) return;
     const id = `local_${Date.now().toString(36)}`;
-    setEntries((list) => [...list, { id, kind: 'pending', question: trimmed }]);
-    await runQuestion(id, trimmed, filters);
-  }, [runQuestion, historyError]);
+    setEntries((list) => [...list, { id, kind: 'pending', question: text }]);
+    await runQuestion(id, text, filters);
+  }, [historyError, runQuestion, userId]);
 
   const retry = useCallback(async (entryId: string) => {
     const entry = entries.find((e) => e.id === entryId);
-    if (!entry || entry.kind !== 'error' || sendingRef.current || historyBusy.current || historyError) return;
-    setEntries((list) => list.map((e) => (e.id === entryId ? { id: entryId, kind: 'pending', question: entry.question } : e)));
+    if (!entry || entry.kind !== 'error' || historyBusy.current || sendingRef.current || historyError) return;
+    setEntries((list) => list.map((e) => e.id === entryId ? { id: entryId, kind: 'pending', question: entry.question } : e));
     await runQuestion(entryId, entry.question);
-  }, [entries, runQuestion, historyError]);
+  }, [entries, historyError, runQuestion]);
 
-  const clearConversation = useCallback(async () => {
-    if (!conversationRef.current || sendingRef.current || historyBusy.current) return;
-    const id = conversationRef.current;
-    historyBusy.current = true;
-    setHistoryLoading(true);
+  const deleteConversation = useCallback(async (id: string) => {
+    if (!userId || historyBusy.current || sendingRef.current) throw new Error('Aguarde a operação atual terminar.');
+    const version = epoch.current;
+    historyBusy.current = true; setHistoryLoading(true);
     try {
       await api.clearChat(id);
-      updateConversations(conversationsRef.current.filter((c) => c.id !== id));
-      selectConversation(newConversationId(), []);
+      if (version !== epoch.current) return;
+      setConversations((list) => list.filter((c) => c.id !== id));
+      if (conversationRef.current === id) select(newId(), []);
       setHistoryError(null);
-    } catch {
-      setHistoryError('Não foi possível apagar a conversa no servidor. Ela continua salva. Tente novamente.');
-    } finally {
-      historyBusy.current = false;
-      setHistoryLoading(false);
-    }
-  }, [selectConversation, updateConversations]);
+    } finally { if (version === epoch.current) { historyBusy.current = false; setHistoryLoading(false); } }
+  }, [select, userId]);
+
+  const clearConversation = useCallback(async () => {
+    if (!conversationRef.current) return;
+    const version = epoch.current;
+    try { await deleteConversation(conversationRef.current); }
+    catch { if (version === epoch.current) setHistoryError('Não foi possível excluir a conversa. Ela continua salva.'); }
+  }, [deleteConversation]);
+
+  const renameConversation = useCallback(async (id: string, title: string) => {
+    if (!userId || historyBusy.current || sendingRef.current) throw new Error('Aguarde a operação atual terminar.');
+    const version = epoch.current;
+    await api.renameConversation(id, title.trim());
+    if (version === epoch.current) setConversations((list) => list.map((c) => c.id === id ? { ...c, title: title.trim() } : c));
+  }, [userId]);
+
+  const importLegacy = useCallback(async () => {
+    if (!userId || !adminToken) throw new Error('Entre na sua conta e informe o token administrativo.');
+    const result = await api.importLegacy(legacyIds);
+    await refreshConversations();
+    await writeValue(CONVERSATIONS_KEY, null); await writeValue('conversation-id', null);
+    setLegacyIds([]);
+    return result.imported;
+  }, [adminToken, legacyIds, refreshConversations, userId]);
 
   const value = useMemo(() => ({
-    connection, health, lastHealthCheck, refreshHealth, adminToken, saveAdminToken,
-    conversationId, conversations, entries, sending, historyLoading, historyError,
-    openConversation, newConversation, ask, retry, clearConversation,
-  }), [connection, health, lastHealthCheck, refreshHealth, adminToken, saveAdminToken,
-    conversationId, conversations, entries, sending, historyLoading, historyError,
-    openConversation, newConversation, ask, retry, clearConversation]);
+    connection, health, lastHealthCheck, refreshHealth, adminToken, saveAdminToken, conversationId, conversations,
+    entries, sending, historyLoading, historyError, openConversation, newConversation, ask, retry, clearConversation,
+    renameConversation, deleteConversation, refreshConversations, importLegacy, legacyCount: legacyIds.length,
+  }), [connection, health, lastHealthCheck, refreshHealth, adminToken, saveAdminToken, conversationId, conversations,
+    entries, sending, historyLoading, historyError, openConversation, newConversation, ask, retry, clearConversation,
+    renameConversation, deleteConversation, refreshConversations, importLegacy, legacyIds.length]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
 
 export function useAppState(): AppStateValue {
-  const ctx = useContext(AppStateContext);
-  if (!ctx) throw new Error('useAppState deve ser usado dentro de AppStateProvider');
-  return ctx;
+  const state = useContext(AppStateContext);
+  if (!state) throw new Error('useAppState deve ser usado dentro de AppStateProvider');
+  return state;
 }

@@ -56,3 +56,5 @@ equipe adicionar e validar os arquivos.
 
 Não coloque documentos com dados pessoais ou confidenciais. Por padrão, o `.gitignore` impede que
 os arquivos desta pasta sejam enviados ao GitHub; versione apenas documentos públicos, se a equipe decidir.
+
+Atualização de 10/11/2026: o histórico de produção pertence a contas e fica no banco. Conteúdos de teste permanecem separados do acervo real. Consulte [Contas e conversas](../docs/CONTAS_E_CONVERSAS.md).

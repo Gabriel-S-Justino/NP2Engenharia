@@ -202,7 +202,7 @@ def test_admin_token_protects_mutations(tmp_path):
         ok = c.post("/api/ingestion/scan?wait=true", headers={"X-Admin-Token": "token-de-teste-123"})
         assert ok.status_code == 202
         assert c.get("/api/documents").status_code == 200  # leitura continua pública
-        assert c.post("/api/chat", json={"question": "Qual a velocidade nas vias escolares?"}).status_code == 200
+        assert c.post("/api/chat", json={"question": "Qual a velocidade nas vias escolares?"}).status_code == 401
 
 
 def test_production_without_admin_token_blocks_mutations(tmp_path):
@@ -221,8 +221,11 @@ def test_cors_restricted(client):
 
 
 def test_rate_limit(tmp_path):
+    from app.core.auth import AuthUser, require_user
     settings = make_settings(tmp_path, rate_limit_per_minute=2)
-    with TestClient(create_app(settings)) as c:
+    app = create_app(settings)
+    app.dependency_overrides[require_user] = lambda: AuthUser("quota-test")
+    with TestClient(app) as c:
         codes = [c.post("/api/chat", json={"question": "Teste de limite"}).status_code for _ in range(3)]
         assert codes == [200, 200, 429]
 

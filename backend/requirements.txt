@@ -17,3 +17,5 @@ httpx==0.28.1
 
 # Leitura de fontes CFF/Type1 em PDFs comprimidos.
 fonttools==4.68.0
+
+PyJWT[crypto]>=2.10,<3

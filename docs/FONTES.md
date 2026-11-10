@@ -1,57 +1,19 @@
 # Fontes do acervo
 
-> **Interface revisada em 09/11/2026.** A revisão visual não adiciona nem remove fontes. Título, página, trecho, autoria e acesso ao original permanecem disponíveis. A pontuação de similaridade não é exibida ao usuário final; ela continua no contrato da API.
+Conferência em 10/11/2026 a partir dos trechos já indexados no banco. Nenhum PDF original foi baixado para esta entrega.
 
-> **Estado:** nenhum documento real foi adicionado até esta versão. A tabela abaixo deve ser preenchida pela
-> equipe **depois** de ler e validar cada documento. Não preencha campos que a fonte não informa: use "não informado".
+| Campo | Valor |
+|---|---|
+| Arquivo | Codigo_de_transito_brasileiro_compressed.pdf |
+| ID | doc_7e9019702398 |
+| SHA-256 | c1cc9c518450968db52abb8546746694d4a07276bcd62297c6cd08c4fada404b |
+| Páginas físicas | 197 |
+| Trechos indexados na conferência | 517 |
+| Edição indicada no expediente | 2009 |
+| Atualização indicada | Junho de 2008 |
 
-Requisito do professor: **mínimo de 10 documentos ou 25 páginas de conteúdo útil**. Gere o inventário automático
-com `python scripts/inventario_documentos.py --markdown docs/resultados/inventario_documentos.md` e confira
-abaixo a utilidade de cada fonte (decisão humana).
+A capa e o expediente apresentam referências editoriais diferentes. A advertência utiliza a informação explícita de atualização do expediente, na página física 5. Este arquivo não comprova a legislação vigente.
 
-## Tabela de fontes (a preencher)
+As páginas das citações e matrizes são páginas físicas do PDF, contando a capa como página 1. Artigos 61, 62 e 65 estão na página 34; artigo 148, na 54. A matriz contém perguntas sobre o conteúdo desse arquivo, sem apresentá-lo como norma atual.
 
-| ID | Título | Autor ou instituição | URL ou caminho | Data | Versão | Licença | Relevância para o público | Observações sobre confiabilidade | Validado por |
-|---|---|---|---|---|---|---|---|---|---|
-| F-01 | | | `Documentos/...` | | | | | | |
-| F-02 | | | | | | | | | |
-| F-03 | | | | | | | | | |
-| F-04 | | | | | | | | | |
-| F-05 | | | | | | | | | |
-| F-06 | | | | | | | | | |
-| F-07 | | | | | | | | | |
-| F-08 | | | | | | | | | |
-| F-09 | | | | | | | | | |
-| F-10 | | | | | | | | | |
-
-## Lacunas e fontes frágeis (a preencher)
-
-| Tema necessário ao público | Coberto? | Lacuna / risco | Ação |
-|---|---|---|---|
-| Habilitação e permissão para dirigir | | | |
-| Limites de velocidade | | | |
-| Infrações, pontuação e suspensão | | | |
-| Álcool e direção | | | |
-| Transporte de crianças | | | |
-| Pedestres e ciclistas | | | |
-
-Critérios para marcar uma fonte como frágil: não oficial, sem data/versão, desatualizada em relação a alterações
-recentes do CTB, licença incerta, PDF digitalizado com extração ruim, conteúdo contraditório com fonte oficial.
-
-## Sugestões de busca (verificar antes de usar)
-
-- Lei nº 9.503/1997 (Código de Trânsito Brasileiro), texto compilado - Planalto.
-- Resoluções do CONTRAN aplicáveis a condutores iniciantes.
-- Manual Brasileiro de Fiscalização de Trânsito - SENATRAN.
-- Manuais de direção defensiva e cartilhas de DETRANs (conferir licença).
-
-Textos de leis, decretos e regulamentos não são protegidos por direito autoral no Brasil (Lei 9.610/1998,
-art. 8º, IV); cartilhas e manuais de terceiros podem ter restrições.
-
-## Fontes sintéticas de teste (não são fontes do trabalho)
-
-| Arquivo | Natureza | Uso |
-|---|---|---|
-| `tests/fixtures/documentos_sinteticos/regulamento_sintetico_vila_exemplo.pdf` | Fictício (3 páginas) | Suíte automatizada `fixtures` |
-| `tests/fixtures/documentos_sinteticos/guia_sintetico_pedestres_ciclistas.txt` | Fictício (3 páginas) | Suíte automatizada `fixtures` |
-| `tests/fixtures/documentos_sinteticos/boletim_sintetico_mobilidade_com_injecao.txt` | Fictício, contém injeção proposital | Teste de segurança |
+A titularidade, licença de redistribuição e procedência do upload devem ser confirmadas pelo responsável pelo acervo. Não foram inventados metadados ausentes. Atualizar documentos é uma ação manual da equipe e exige nova avaliação e conferência do hash.

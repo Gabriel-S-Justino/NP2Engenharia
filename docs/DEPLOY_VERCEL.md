@@ -1,6 +1,6 @@
 # Deploy da aplicação completa na Vercel
 
-> **Interface revisada em 09/11/2026.** O tema Escola de trânsito é entregue pelo mesmo build Expo e pela mesma implantação. Após publicar, confira Início, Tire suas dúvidas, Sua biblioteca, Fontes para conferir e Configurações nos temas claro/escuro. Não há novas variáveis obrigatórias, serviços ou dependências.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 Toda a aplicação roda em **um único projeto Vercel**:
 
@@ -143,3 +143,7 @@ Apps nativos não dependem de CORS. Para builds de loja, use EAS com essa variá
 
 Fontes consultadas sobre limites da plataforma (verifique a versão atual): documentação de funções e do runtime
 Python da Vercel e FAQ da integração Neon-Vercel.
+
+## Acesso às contas
+
+Além das variáveis existentes, defina NEON_AUTH_BASE_URL ou use DATABASE_NEON_AUTH_BASE_URL da integração. O frontend obtém a URL pública por /api/auth/config. Autorize cada domínio real em Neon Auth; não use origens curinga. O ADMIN_TOKEN não substitui a conta do usuário. Configure remetente de e-mail próprio e homologue recuperação de acesso. Depois do deploy, valide 401 sem sessão e isolamento entre contas.

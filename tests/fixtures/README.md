@@ -13,3 +13,5 @@ equipe de desenvolvimento apenas para validar o software (ingestão, recuperaç�
 
 A suíte `tests/acceptance/matriz_fixtures.json` usa estes documentos em um pipeline **isolado** (banco e índice
 próprios em `data/eval_fixtures/`), sem misturá-los com o acervo real de `Documentos/`.
+
+Atualização de 10/11/2026: o histórico de produção pertence a contas e fica no banco. Conteúdos de teste permanecem separados do acervo real. Consulte [Contas e conversas](../../docs/CONTAS_E_CONVERSAS.md).

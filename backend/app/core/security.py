@@ -10,8 +10,9 @@ import unicodedata
 from collections import defaultdict, deque
 from pathlib import Path
 
-from fastapi import Request
+from fastapi import Depends, Request
 
+from app.core.auth import AuthUser, require_user
 from app.core.config import Settings
 from app.core.errors import ForbiddenError, RateLimitedError
 
@@ -67,10 +68,12 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "desconhecido"
 
 
-def rate_limit_chat(request: Request) -> None:
+def rate_limit_chat(request: Request, user: AuthUser = Depends(require_user)) -> None:
     from app.core.container import get_container  # import tardio: evita ciclo de importação
+    from app.repositories.conversations import UsageRepository
 
-    get_container(request.app).rate_limiter.check(client_key(request))
+    c = get_container(request.app)
+    UsageRepository(c.pipeline.db).reserve(user.id, client_key(request), c.settings)
 
 
 def require_cron_secret(request: Request) -> None:

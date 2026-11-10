@@ -13,3 +13,5 @@ Pode ser apagada para recomeçar do zero: os documentos de `Documentos/` permane
 pela interface (guardados no banco) são perdidos.
 Na Vercel esta pasta fica em `/tmp` e é só rascunho: os dados persistentes vão para o Postgres (`DATABASE_URL`).
 No contêiner alternativo, monte-a em um disco persistente (ver `docs/DEPLOY_BACKEND.md`).
+
+Atualização de 10/11/2026: o histórico de produção pertence a contas e fica no banco. Conteúdos de teste permanecem separados do acervo real. Consulte [Contas e conversas](../docs/CONTAS_E_CONVERSAS.md).

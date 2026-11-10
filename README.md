@@ -1,107 +1,39 @@
-# Lumme - Escola de trânsito
+# Lumme
 
-Aplicação web e mobile de consulta a leis de trânsito com RAG: recupera evidências dos documentos adicionados pela equipe, responde com um LLM real e apresenta citações verificáveis. Sem evidências suficientes, recusa a pergunta.
+Escola de trânsito com consulta a documentos, respostas com fontes e histórico de conversas. A aplicação usa Expo Router na web, FastAPI, Neon Postgres com pgvector, FastEmbed e Gemini.
 
-## Interface de trânsito e escola
+Produção: https://lumme.vercel.app
 
-O nome público do aplicativo é Lumme. O endereço de produção e os identificadores técnicos existentes são preservados.
+## Como usar
 
-A interface usa verde de lousa, amarelo de sinalização, livro e placa escolar para orientar a consulta aos materiais. As telas principais são Início, Tire suas dúvidas, Biblioteca e Fontes. Revisão de qualidade, Diário da equipe e Configurações continuam disponíveis no espaço da equipe, com as mesmas rotas e ações.
+Crie uma conta em Sua conta e entre para perguntar. O token administrativo não é necessário para conversar. Na sidebar, inicie, busque e retome chats. O menu de cada chat permite renomear, exportar e excluir. Respostas podem ser copiadas e avaliadas.
 
-A consulta apresenta resposta, avisos e fontes verificáveis. Scores, latências, nomes de modelos e identificadores internos não aparecem no conteúdo destinado ao usuário; continuam no contrato técnico. Upload, preparação dos documentos, recuperação, geração, validações, autenticação e persistência não mudam nesta revisão visual.
+O histórico fica na conta e aparece em outros dispositivos. A seleção do chat fica neste navegador. Conversas anônimas anteriores precisam de vínculo administrativo explícito. O contexto das últimas mensagens ajuda a interpretar perguntas de continuação, sempre exigindo evidências do acervo atual.
 
-Documentação: [índice](docs/README.md), [UI/UX](docs/UI_UX.md), [design system](docs/DESIGN_SYSTEM.md), [fluxos](docs/FLUXOS_UX.md) e [validação da revisão](docs/REVISAO_UI_2026-11-09.md).
+**O documento legal atualmente conferido foi atualizado até junho de 2008. Consulte o aviso da aplicação e confira normas atuais em fontes oficiais.** Esta entrega não baixa documentos reais.
 
-## Histórico de chats
+## Configuração
 
-Use a sidebar para buscar e retomar conversas anteriores ou Nova conversa, no topo, para começar outro assunto. No celular, abra o menu lateral pelo botão no cabeçalho. A conversa antiga é preservada. O catálogo fica neste navegador ou dispositivo; mensagens e fontes permanecem no servidor conforme o prazo de retenção. Não exige admin token nem cria sincronização entre dispositivos.
+No servidor, configure DATABASE_URL, LLM_PROVIDER=gemini, LLM_API_KEY, NEON_AUTH_BASE_URL (ou DATABASE_NEON_AUTH_BASE_URL) e ADMIN_TOKEN. A chave do Gemini e o token administrativo nunca entram no bundle público.
 
-Guia: [Histórico de chats](docs/HISTORICO_CHATS.md).
+Autorize o domínio da aplicação no Neon Auth. O serviço existente já aceita os domínios públicos da aplicação. Consulte [Produção](docs/PRODUCAO.md) e [Variáveis de ambiente](docs/VARIAVEIS_AMBIENTE.md).
 
-## Configuração obrigatória
+.env.example contém nomes e valores de referência, sem credenciais. O arquivo .env real não deve ser versionado.
 
-A aplicação utiliza `LLM_PROVIDER=gemini` por padrão. Configure no servidor:
+## Desenvolvimento e verificações
 
-```dotenv
-LLM_PROVIDER=gemini
-LLM_API_KEY=<sua chave>
-LLM_MODEL=gemini-flash-latest
-```
-
-A inicialização é bloqueada sem chave. O gerador extrativo é restrito aos testes automatizados (`APP_ENV=test`); não existe fallback demonstrativo na aplicação. Nunca coloque credenciais em variáveis `EXPO_PUBLIC_*`.
-
-O provedor também aceita `Google`, `google` e `GEMINI`, normalizados para `gemini`. A chave pode estar em `LLM_API_KEY`, `GEMINI_API_KEY` ou `GOOGLE_API_KEY` (nessa ordem de prioridade). Para Anthropic, use `LLM_PROVIDER=anthropic` e um modelo Claude. O adaptador Gemini segue a [API GenerateContent oficial](https://ai.google.dev/api/generate-content).
-
-## Documentos adicionados manualmente
-
-Nenhum comando de instalação ou preparação baixa documentos. Você deve:
-
-1. Colocar seus arquivos PDF/TXT/MD em `Documentos/` ou enviá-los pela biblioteca da aplicação.
-2. Preencher os metadados de `Documentos/manifest.json`, seguindo `manifest.example.json`.
-3. Executar a indexação na interface ou com `backend/.venv/Scripts/python.exe scripts/ingest_documents.py` (Windows; em Unix, use `.venv/bin/python`).
-4. Preparar perguntas e respostas verificadas em `tests/acceptance/matriz_acervo_real.json` e perguntas separadas em `tests/acceptance/calibracao_real.json`. Marcar a matriz como `ready: true` apenas após revisar as fontes.
-5. Executar `npm run prepare` para indexar, calibrar e avaliar esse acervo.
-
-A preparação para antes de indexar se a pasta estiver vazia ou a matriz não estiver pronta. O acervo não acompanha este commit; documentos locais e dados derivados não são publicados automaticamente.
-
-O modelo de embeddings semânticos `fastembed` precisa ser obtido na primeira utilização. Isso é independente dos documentos, que são adicionados manualmente.
-
-## Executar
-
-Pré-requisitos: Python 3.11+, Node.js 20+ e npm.
+Node e Python são necessários para os comandos do repositório:
 
 ```bash
 npm run setup
-```
-
-O setup instala dependências e cria `.env` com tokens aleatórios se ele ainda não existir. Um `.env` existente é preservado: revise `LLM_PROVIDER=gemini`, `LLM_API_KEY` e `LLM_MODEL` antes de iniciar.
-
-```bash
 npm run dev
+npm run backend:test
+npm run frontend:test
+npm run frontend:build
 ```
 
-No Windows também estão disponíveis `.\scripts\setup.ps1`, `.\scripts\dev.ps1` e `.\scripts\prepare.ps1`. Os comandos npm selecionam PowerShell ou Bash conforme o sistema.
+Em apps/mobile, execute npm run lint e npm run typecheck. Configure Neon Auth inclusive em ambientes de desenvolvimento se quiser exercitar login real. Os testes automatizados usam identidades e documentos sintéticos controlados; eles não validam entrega de e-mail.
 
-Interface: http://localhost:8081. API: http://127.0.0.1:8000/api/docs. Para Android/iOS, configure `EXPO_PUBLIC_API_URL` com a URL pública da API ou o IP do computador; `localhost` no celular aponta para o próprio aparelho.
+A avaliação real de 10/11/2026 usou o PDF já indexado, sem baixar o original, e obteve 9 de 10 casos na versão e9077366. O relatório identifica que se trata da linha de base anterior às novas contas e memória. [Relatório real](docs/resultados/acervo_real_real_2d891ced724e.md).
 
-## Publicar na Vercel
-
-Importe o repositório com a raiz como Root Directory. O `vercel.json` reúne web e API. Configure:
-
-- `DATABASE_URL`: Postgres com pgvector; sem persistência, upload e indexação são bloqueados.
-- `ADMIN_TOKEN`: obrigatório para operações administrativas em produção; informe-o em Configurações na interface.
-- `LLM_PROVIDER=gemini`, `LLM_API_KEY` e um `LLM_MODEL` disponível na sua conta.
-- `CRON_SECRET`: para a chamada agendada de ingestão.
-
-Não copie o `.env` local inteiro para a hospedagem. Deixe `DATA_DIR`, `EMBEDDING_CACHE_DIR`, `APP_ENV` e `EXPO_PUBLIC_API_URL` ausentes para os padrões serverless. Depois do deploy, adicione documentos manualmente e indexe no banco de destino. Banco, índice e calibração locais não são transferidos pelo Git.
-
-Guia: [DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md). Alternativa: [DEPLOY_BACKEND.md](docs/DEPLOY_BACKEND.md).
-
-## Validação
-
-```bash
-npm run verify
-npm run evaluate:real
-```
-
-`verify` executa testes, lint e build. Os testes usam dados sintéticos e clientes simulados isolados para não consumir a API paga; seus resultados não comprovam uma chamada real ao LLM. `evaluate:real` usa o acervo e o provedor configurados, podendo consumir créditos.
-
-A calibração usa parâmetros por chamada, sem expor limiares experimentais às outras instâncias da API. O limiar inicial do `fastembed` é 0,35; calibre com seu próprio acervo.
-
-## Estrutura
-
-- `apps/mobile/`: Expo, React Native, TypeScript e interface web.
-- `backend/`: FastAPI, ingestão, recuperação, geração, citações e testes.
-- `api/index.py`: entrada da função Python na Vercel.
-- `Documentos/`: documentos e metadados fornecidos manualmente.
-- `data/`: banco, índices e cache locais, ignorados pelo Git.
-- `scripts/`: instalação, execução, ingestão, calibração e verificação.
-- `docs/`: arquitetura, segurança, implantação e documentação acadêmica.
-
-Os relatórios históricos de demonstração em `docs/` descrevem execuções anteriores. Não representam validação do LLM real nem do acervo que você ainda vai fornecer.
-
-## Recuperação de indisponibilidade do Gemini
-
-Em erros temporários de conexão ou HTTP 500/502/503/504, a aplicação repete o modelo principal uma vez e depois tenta `gemini-3.5-flash-lite`. Todas as tentativas compartilham `LLM_TIMEOUT_SECONDS` (60 segundos por padrão). Respostas geradas pela alternativa registram o modelo efetivo no contrato da API e exibem um aviso em linguagem simples; as mesmas evidências e validações de citações são mantidas.
-
-Configure `LLM_MAX_RETRIES=0` para desativar a repetição e `LLM_FALLBACK_MODELS=` para desativar alternativas. A lista de alternativas aceita até dois identificadores Gemini separados por vírgula. Erros de chave, permissão, modelo inexistente e cota não são repetidos nem acionam outro modelo. Se todos os modelos estiverem indisponíveis, a aplicação mostra a falha e os trechos recuperados.
+Documentação completa: [índice](docs/README.md). Limites e itens que precisam de homologação: [limitações](docs/LIMITACOES.md).

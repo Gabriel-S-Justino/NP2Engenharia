@@ -10,6 +10,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { api } from '@/services/api';
 import { useAppState } from '@/state/AppState';
+import { useAuth } from '@/state/AuthState';
 import { useTheme } from '@/theme/ThemeProvider';
 import { maxContentWidth, spacing } from '@/theme/tokens';
 import type { ChatResponse } from '@/types/api';
@@ -32,7 +33,8 @@ function EvidencePanel({ response, onOpenSource }: { response: ChatResponse; onO
 function ChatConversation() {
   const { colors } = useTheme();
   const { isDesktop } = useBreakpoint();
-  const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation } = useAppState();
+  const { user, loading: authLoading } = useAuth();
+  const { entries, ask, retry, sending, clearConversation, historyLoading, conversations, connection, historyError, conversationId, openConversation, refreshConversations } = useAppState();
   const stats = useAsync(() => api.stats(), [connection]);
   const [question, setQuestion] = useState('');
   const [inputError, setInputError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ function ChatConversation() {
   const noDocuments = stats.data !== null && stats.data.documents_processed === 0;
 
   const submit = () => {
-    if (sending || historyLoading || historyError) return;
+    if (!user || sending || historyLoading || historyError || authLoading) return;
     const text = question.trim();
     if (!text) {
       setInputError('Escreva uma pergunta antes de enviar.');
@@ -94,17 +96,19 @@ function ChatConversation() {
 
           <ScrollView ref={scrollRef} style={styles.flex} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
             <View style={styles.messagesInner}>
-              {historyError ? (
+              {stats.data?.corpus_notice ? <Notice tone="warning" title="Confira a versão do material">{stats.data.corpus_notice}</Notice> : null}
+              {!user && !authLoading ? <Notice tone="info" title="Suas conversas em uma conta"><AppText>Entre ou crie uma conta para conversar e acessar seu histórico em outros dispositivos.</AppText><Button label="Entrar ou criar conta" onPress={() => router.navigate('/conta')} /></Notice> : null}
+              {historyError && user ? (
                 <Notice tone="danger" title="Histórico indisponível">
                   <AppText>{historyError}</AppText>
-                  <Button label="Tentar carregar novamente" variant="secondary" size="sm" disabled={historyLoading || sending} onPress={() => { if (conversationId) void openConversation(conversationId); }} />
+                  <Button label="Tentar carregar novamente" variant="secondary" size="sm" disabled={historyLoading || sending} onPress={() => { if (conversationId) void openConversation(conversationId); else void refreshConversations().catch(() => undefined); }} />
                 </Notice>
               ) : null}
               {historyLoading ? <LoadingState label="Carregando histórico…" /> : null}
               {!historyLoading && !entries.length && conversations.some((c) => c.id === conversationId) && !historyError ? (
                 <Notice tone="info">Esta conversa não tem mensagens disponíveis. Elas podem ter sido removidas pelo prazo de retenção do serviço.</Notice>
               ) : null}
-              {!historyLoading && !entries.length && !historyError ? (
+              {!historyLoading && !entries.length && !historyError && !!user ? (
                 noDocuments ? (
                   <EmptyState
                     icon="folder-open-outline"
@@ -155,11 +159,11 @@ function ChatConversation() {
                     showCounter
                     error={inputError}
                     helper={Platform.OS === 'web' ? 'Enter envia · Shift+Enter quebra a linha' : undefined}
-                    editable={!sending && !historyLoading && !historyError}
+                    editable={!!user && !authLoading && !sending && !historyLoading && !historyError}
                     testID="campo-pergunta"
                   />
                 </View>
-                <Button label="Enviar" icon="send" onPress={submit} loading={sending} disabled={historyLoading || noDocuments || !!historyError} testID="botao-enviar" />
+                <Button label="Enviar" icon="send" onPress={submit} loading={sending} disabled={!user || authLoading || historyLoading || noDocuments || !!historyError} testID="botao-enviar" />
               </Row>
             </View>
           </View>

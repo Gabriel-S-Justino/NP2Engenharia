@@ -52,6 +52,11 @@ export class ApiError extends Error {
   }
 }
 
+let accessTokenGetter: (() => Promise<string | null>) | null = null;
+let authFailureHandler: (() => void) | null = null;
+export function setAccessTokenGetter(getter: (() => Promise<string | null>) | null) { accessTokenGetter = getter; }
+export function setAuthFailureHandler(handler: (() => void) | null) { authFailureHandler = handler; }
+
 let adminToken: string | null = null;
 let baseUrl = API_BASE_URL;
 
@@ -73,6 +78,7 @@ export function setBaseUrl(url: string) {
 }
 
 const STATUS_MESSAGES: Record<number, string> = {
+  401: 'Entre na sua conta para acessar suas conversas.',
   403: 'Esta operação exige autorização. Informe o token administrativo em Configurações.',
   404: 'O recurso solicitado não foi encontrado.',
   413: 'O arquivo ou a requisição excede o tamanho permitido.',
@@ -90,6 +96,11 @@ type RequestOptions = {
 };
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const privatePath = /^\/api\/(chat|conversations|account)([/?]|$)/.test(path);
+  let bearer: string | null = null;
+  if (privatePath && accessTokenGetter) {
+    try { bearer = await accessTokenGetter(); } catch { throw new ApiError('Não foi possível validar sua sessão. Tente novamente.', 'network'); }
+  }
   const controller = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {
@@ -102,6 +113,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (adminToken) headers['X-Admin-Token'] = adminToken;
+  if (bearer) headers.Authorization = `Bearer ${bearer}`;
 
   let response: Response;
   try {
@@ -134,6 +146,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
   }
   if (!response.ok) {
+    if (response.status === 401 && privatePath) authFailureHandler?.();
     const body = data as { error?: { code?: string; message?: string; details?: unknown } } | null;
     const message = body?.error?.message ?? STATUS_MESSAGES[response.status] ?? 'Não foi possível concluir a operação.';
     throw new ApiError(message, 'http', response.status, body?.error?.code ?? null, body?.error?.details ?? null);
@@ -192,6 +205,13 @@ export const api = {
   chatHistory: (conversationId: string, offset = 0) => request<ChatHistory>(`/api/chat/history/${encodeURIComponent(conversationId)}${offset ? `?offset=${offset}` : ''}`),
   clearChat: (conversationId: string) =>
     request<{ removed: number }>(`/api/chat/history/${encodeURIComponent(conversationId)}`, { method: 'DELETE' }),
+
+  conversations: (offset = 0) => request<{ items: { id: string; title: string; updatedAt?: string; updated_at: string }[]; has_more: boolean }>(`/api/conversations?offset=${offset}`),
+  renameConversation: (id: string, title: string) => request<{ id: string; title: string }>(`/api/conversations/${encodeURIComponent(id)}`, { method: 'PATCH', body: { title } }),
+  exportConversation: (id: string) => request<{ filename: string; content: string }>(`/api/conversations/${encodeURIComponent(id)}/export`),
+  importLegacy: (ids: string[]) => request<{ imported: number }>('/api/conversations/import-legacy', { method: 'POST', body: { conversation_ids: ids } }),
+  feedback: (id: string, rating: -1 | 1, comment = '') => request<{ saved: boolean; rating: number }>(`/api/chat/feedback/${encodeURIComponent(id)}`, { method: 'POST', body: { rating, comment } }),
+  usage: () => request<{ daily_used: number; daily_limit: number; minute_used: number; minute_limit: number; resets_at: string }>('/api/account/usage'),
 
   evaluations: () => request<EvaluationsOverview>('/api/evaluations'),
   runEvaluation: (suite: string) =>

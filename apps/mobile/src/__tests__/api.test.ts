@@ -1,4 +1,4 @@
-import { ApiError, api, request, setAdminToken, setBaseUrl } from '@/services/api';
+import { ApiError, api, request, setAdminToken, setBaseUrl, setAccessTokenGetter, setAuthFailureHandler } from '@/services/api';
 
 const originalFetch = global.fetch;
 
@@ -13,6 +13,8 @@ function jsonResponse(status: number, body: unknown): Partial<Response> {
 beforeEach(() => {
   setBaseUrl('http://api.teste');
   setAdminToken(null);
+  setAccessTokenGetter(null);
+  setAuthFailureHandler(null);
 });
 afterAll(() => {
   global.fetch = originalFetch;
@@ -65,4 +67,14 @@ it('codifica identificadores na URL (evita path traversal no cliente)', async ()
   mockFetch(async () => jsonResponse(200, {}));
   await api.document('../etc/passwd');
   expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe('http://api.teste/api/documents/..%2Fetc%2Fpasswd');
+});
+
+
+it('envia Bearer no catálogo paginado e não envia identidade a rotas públicas', async () => {
+  setAccessTokenGetter(async () => 'session-jwt');
+  mockFetch(async () => jsonResponse(200, {items:[],has_more:false}));
+  await api.conversations(100);
+  expect((global.fetch as jest.Mock).mock.calls[0][1].headers.Authorization).toBe('Bearer session-jwt');
+  await api.health();
+  expect((global.fetch as jest.Mock).mock.calls[1][1].headers.Authorization).toBeUndefined();
 });

@@ -1,56 +1,24 @@
 # Documentação do Lumme
 
-Interface atual: Escola de trânsito, revisada em 09/11/2026. A revisão muda apresentação e linguagem; as operações continuam com os mesmos contratos e fluxos.
+Atualizada em 10/11/2026 para contas, memória, histórico no servidor, ações de chat, consumo e avaliação real.
 
-## Experiência e interface
+| Assunto | Documento |
+|---|---|
+| Arquitetura e persistência | [Arquitetura](ARQUITETURA.md) |
+| Login, histórico, memória e cotas | [Contas e conversas](CONTAS_E_CONVERSAS.md) |
+| Uso da sidebar | [Histórico de chats](HISTORICO_CHATS.md) |
+| Rotas e autorização | [Contrato frontend](CONTRATO_FRONTEND.md) |
+| Credenciais e acesso | [Segurança](SEGURANCA.md) |
+| Configuração | [Variáveis de ambiente](VARIAVEIS_AMBIENTE.md) |
+| Implantação | [Deploy Vercel](DEPLOY_VERCEL.md), [backend](DEPLOY_BACKEND.md) |
+| Operação | [Produção](PRODUCAO.md), [testes](TESTES_PRODUCAO.md), [rollback](ROLLBACK.md) |
+| Avaliação | [Matriz de testes](MATRIZ_TESTES.md), [relatório](RELATORIO.md) |
+| Acervo | [Fontes](FONTES.md) |
+| Interface | [UI/UX](UI_UX.md), [design system](DESIGN_SYSTEM.md), [fluxos](FLUXOS_UX.md) |
+| Pendências e entrega | [Limitações](LIMITACOES.md), [etapas manuais](ENTREGA_MANUAL.md) |
+| Registro de trabalho | [Diário](DIARIO_VALIDACAO_IA.md), [divisão de tarefas](DIVISAO_TAREFAS.md) |
+| Demonstração e requisitos | [Roteiro](ROTEIRO_APRESENTACAO.md), [conformidade](CONFORMIDADE.md) |
 
-- [UI/UX](UI_UX.md)
-- [Design system](DESIGN_SYSTEM.md)
-- [Fluxos de uso](FLUXOS_UX.md)
-- [Contrato do frontend](CONTRATO_FRONTEND.md)
-- [Validação da revisão visual](REVISAO_UI_2026-11-09.md)
+Os relatórios antigos em resultados e a revisão visual de 09/11 registram suas respectivas versões. Não representam a medição atual. A execução real está em [acervo_real_real_2d891ced724e.md](resultados/acervo_real_real_2d891ced724e.md).
 
-- [Histórico de chats](HISTORICO_CHATS.md)
-
-## Implantação e operação
-
-- [Arquitetura](ARQUITETURA.md)
-- [Produção](PRODUCAO.md)
-- [Deploy na Vercel](DEPLOY_VERCEL.md)
-- [Deploy do backend](DEPLOY_BACKEND.md)
-- [Variáveis de ambiente](VARIAVEIS_AMBIENTE.md)
-- [Segurança](SEGURANCA.md)
-- [Rollback](ROLLBACK.md)
-- [Testes de produção](TESTES_PRODUCAO.md)
-- [Entrega manual](ENTREGA_MANUAL.md)
-- [Fontes](FONTES.md)
-- [Limitações](LIMITACOES.md)
-
-## Projeto e validação
-
-- [Conformidade](CONFORMIDADE.md)
-- [Matriz de testes](MATRIZ_TESTES.md)
-- [Relatório](RELATORIO.md)
-- [Divisão de tarefas](DIVISAO_TAREFAS.md)
-- [Diário de validação de IA](DIARIO_VALIDACAO_IA.md)
-- [Roteiro de apresentação](ROTEIRO_APRESENTACAO.md)
-
-## Resultados históricos
-
-Os registros abaixo descrevem execuções anteriores. Seus resultados são preservados; rótulos e capturas podem anteceder o tema atual.
-
-- [calibracao_hashing_fixtures.md](resultados/calibracao_hashing_fixtures.md)
-- [execucao1_hashing_fixtures_eval_2238adc25daf4e62.md](resultados/execucao1_hashing_fixtures_eval_2238adc25daf4e62.md)
-- [execucao2_hashing_fixtures_eval_f204dc3fb38e4931.md](resultados/execucao2_hashing_fixtures_eval_f204dc3fb38e4931.md)
-- [execucao3_hashing_limiar_calibrado.md](resultados/execucao3_hashing_limiar_calibrado.md)
-- [execucao4_final_fixtures_eval_62edf4857fcb4410.md](resultados/execucao4_final_fixtures_eval_62edf4857fcb4410.md)
-- [ultima_execucao_fixtures.md](resultados/ultima_execucao_fixtures.md)
-- [verificacao_projeto.md](resultados/verificacao_projeto.md)
-
-## Materiais e dados
-
-- [Documentos adicionados manualmente](../Documentos/README.md)
-- [Dados e artefatos locais](../data/README.md)
-- [Fixtures de teste](../tests/fixtures/README.md)
-
-As instruções de agentes (AGENTS.md) são orientações de desenvolvimento, não documentação da interface do produto.
+Verificações desta entrega: [Validação de 10/11/2026](VALIDACAO_2026-11-10.md).

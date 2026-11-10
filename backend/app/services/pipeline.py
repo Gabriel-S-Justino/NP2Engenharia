@@ -30,6 +30,7 @@ from app.schemas.models import (
     RetrievedCandidate,
 )
 from app.services import citations as cit
+from app.services.corpus import corpus_notice
 from app.services.embeddings import (
     EmbeddingProvider,
     EmbeddingUnavailableError,
@@ -39,6 +40,7 @@ from app.services.embeddings import (
 from app.services.evidence import TermStatistics, detect_conflicts, sentence_score, split_sentences, weighted_coverage
 from app.services.generation import EvidenceSource, GenerationUnavailableError, Generator, build_generator
 from app.services.ingestion import IngestionService
+from app.services.memory import bounded_history, retrieval_question
 from app.services.retrieval import RetrievalResult, retrieve
 from app.services.safety import detect_injection, scrub_secrets
 from app.services.vector_store import METRIC, IndexIncompatibleError, build_vector_store
@@ -303,8 +305,11 @@ class RagPipeline:
         top_k: int | None = None,
         similarity_threshold: float | None = None,
         persist: bool = True,
+        history: list[ChatResponse] | None = None,
     ) -> ChatResponse:
         started = time.perf_counter()
+        history = bounded_history(history, self.settings.chat_context_turns, self.settings.chat_context_chars)
+        search_question = retrieval_question(question, history)
         params = self.effective_params()
         top_k = top_k or int(params["top_k"])
         threshold = float(params["similarity_threshold"] if similarity_threshold is None else similarity_threshold)
@@ -314,6 +319,8 @@ class RagPipeline:
             mode=self.generator.mode, is_llm=self.generator.is_llm,
         )
         logger.info("pergunta", extra={"q_hash": fingerprint_text(question), "q_len": len(question), "pipeline": self.name})
+
+        edition_notice = corpus_notice(self.settings, self.db)
 
         def finish(status, evidence_status, *, answer=None, notice=None, citations=None, retrieval=None,
                    generation_ms=None, warnings=None, citations_valid=True, gen_info=None) -> ChatResponse:
@@ -327,7 +334,7 @@ class RagPipeline:
                 notice=notice,
                 citations=citations or [],
                 citations_valid=citations_valid,
-                warnings=warnings or [],
+                warnings=([edition_notice] if edition_notice else []) + (warnings or []),
                 retrieval=retrieval,
                 generation=gen_info or generation_info,
                 latency=Latency(
@@ -361,7 +368,7 @@ class RagPipeline:
 
         # 3. Recuperação.
         result = retrieve(
-            question, embedder=self.embedder, store=self.vector_store, documents=self.documents,
+            search_question, embedder=self.embedder, store=self.vector_store, documents=self.documents,
             top_k=top_k, threshold=threshold, filters=filters,
         )
         retrieval_ms = result.latency_ms
@@ -369,7 +376,7 @@ class RagPipeline:
         retrieval_info = self._retrieval_info(result)
 
         if not result.selected:
-            coverage = weighted_coverage(question, [c.row["text"] for c in result.candidates], stats)
+            coverage = weighted_coverage(search_question, [c.row["text"] for c in result.candidates], stats)
             status = "out_of_scope" if coverage.ratio < 0.25 else "insufficient_evidence"
             notice = MESSAGES[status]
             if result.best_score is not None:
@@ -405,7 +412,8 @@ class RagPipeline:
         if any(s.suspicious for s in sources):
             warnings.append("Um ou mais trechos recuperados contêm texto com formato de instrução; foram tratados apenas como dados.")
         try:
-            output = self.generator.generate(question, sources, stats)
+            output = (self.generator.generate(question, sources, stats, history=history) if history
+                      else self.generator.generate(question, sources, stats))
         except GenerationUnavailableError as exc:
             citations = [cit.build_citation(label, item, cited=False) for label, item in by_label.items()]
             return finish("provider_error", "none", notice=f"{exc.public_message} {MESSAGES['provider_error']}",

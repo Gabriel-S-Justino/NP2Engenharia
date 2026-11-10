@@ -1,6 +1,6 @@
 # Deploy alternativo do backend em contêiner (fora da Vercel)
 
-> **Interface revisada em 09/11/2026.** Esta revisão visual não altera a API, o contêiner, as credenciais, o banco ou a configuração de hospedagem. O frontend mantém as mesmas chamadas e regras de origem. Consulte UI_UX.md para os nomes atuais das telas.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 > **O caminho principal é a aplicação completa na Vercel** ([DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)): web + função
 > Python + Neon Postgres. Este documento descreve a **alternativa** de hospedar a API como contêiner - útil se um

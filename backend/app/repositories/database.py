@@ -135,6 +135,31 @@ SQLITE_MIGRATIONS: list[str] = [
         created_at TEXT NOT NULL
     );
     """,
+
+    """
+    CREATE TABLE chat_conversations (
+        id TEXT PRIMARY KEY,
+        owner_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT
+    );
+    CREATE INDEX idx_conversations_owner ON chat_conversations(owner_id, updated_at);
+    CREATE TABLE chat_feedback (
+        interaction_id TEXT PRIMARY KEY REFERENCES chat_interactions(id) ON DELETE CASCADE,
+        owner_id TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        comment TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL
+    );
+    CREATE TABLE usage_buckets (
+        key TEXT PRIMARY KEY,
+        hits INTEGER NOT NULL,
+        expires_at TEXT NOT NULL
+    );
+    CREATE INDEX idx_usage_expiration ON usage_buckets(expires_at);
+    """,
 ]
 
 POSTGRES_MIGRATIONS: list[str] = [
@@ -252,6 +277,31 @@ POSTGRES_MIGRATIONS: list[str] = [
         author TEXT,
         created_at TEXT NOT NULL
     );
+    """,
+
+    """
+    CREATE TABLE chat_conversations (
+        id TEXT PRIMARY KEY,
+        owner_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT
+    );
+    CREATE INDEX idx_conversations_owner ON chat_conversations(owner_id, updated_at);
+    CREATE TABLE chat_feedback (
+        interaction_id TEXT PRIMARY KEY REFERENCES chat_interactions(id) ON DELETE CASCADE,
+        owner_id TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        comment TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL
+    );
+    CREATE TABLE usage_buckets (
+        key TEXT PRIMARY KEY,
+        hits INTEGER NOT NULL,
+        expires_at TEXT NOT NULL
+    );
+    CREATE INDEX idx_usage_expiration ON usage_buckets(expires_at);
     """,
 ]
 

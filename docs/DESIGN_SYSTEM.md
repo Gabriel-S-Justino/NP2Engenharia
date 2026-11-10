@@ -1,5 +1,7 @@
 # Design system - Lumme, Escola de trânsito
 
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
+
 Revisado em 09/11/2026. Tokens em apps/mobile/src/theme/tokens.ts; componentes base em src/components/ui; marca e ilustração em TrafficIdentity.tsx.
 
 ## Direção visual
@@ -68,4 +70,8 @@ Fonte vetorial: apps/mobile/assets/favicon-lumme.svg. Imagem de entrada para o E
 
 Organização inspirada em interfaces de chat: Nova conversa no topo, atalhos compactos, busca, lista de títulos em uma linha com rolagem independente e configurações no rodapé. Seleção usa primarySoft; superfícies usam o verde e os tons do Lumme. A sidebar tem 280 px aberta e 72 px recolhida. Linhas interativas têm ao menos 44 px de altura, foco visível e rótulos acessíveis. Os textos mantêm contraste dos tokens existentes.
 
-Em telas compactas, o botão de menu abre um painel de 280 px limitado a 90% da largura, alinhado à esquerda. Fecha pelo botão, fundo, Escape ou seleção de rota/conversa. A navegação inferior e o modal exclusivo de histórico deixam de ser utilizados. O componente ConversationList apresenta o catálogo existente sem mudar armazenamento, retenção ou endpoints.
+Em telas compactas, o botão de menu abre um painel de 280 px limitado a 90% da largura, alinhado à esquerda. Fecha pelo botão, fundo, Escape ou seleção de rota/conversa. A navegação inferior e o modal exclusivo de histórico deixam de ser utilizados. O componente ConversationList apresenta o catálogo da conta vindo do servidor e usa os endpoints privados de conversa.
+
+## Contas e ações de conversa
+
+A sidebar mostra o catálogo do usuário autenticado e o atalho Sua conta. Visitantes recebem orientação de entrada. O menu de cada linha contém renomear, exportar e excluir com confirmação, estados de envio e erros. Respostas têm copiar e feedback acessíveis por rótulo. A tela de conta oferece recuperação de acesso e consumo. O aviso de edição antiga do acervo é relevante para quem consulta e permanece visível.

@@ -8,6 +8,8 @@ import { AppStateProvider } from '@/state/AppState';
 
 import { chatResponse } from '@/test-utils/fixtures';
 
+jest.mock('@/state/AuthState', () => ({ useAuth: () => ({ user: {id:'test-user',email:'test@example.com',name:'Teste'}, loading:false }) }));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), navigate: jest.fn(), back: jest.fn(), canGoBack: () => false },
   usePathname: () => '/chat',
@@ -20,6 +22,7 @@ jest.mock('@/services/api', () => {
     ...actual,
     api: {
       health: jest.fn(),
+      conversations: jest.fn(),
       stats: jest.fn(),
       chat: jest.fn(),
       chatHistory: jest.fn(),
@@ -45,6 +48,7 @@ function renderChat() {
 beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
+  mocked.conversations.mockResolvedValue({items:[],has_more:false});
   mocked.health.mockResolvedValue({ status: 'ok', issues: [] } as never);
   mocked.stats.mockResolvedValue({ documents_processed: 3 } as never);
   mocked.chatHistory.mockResolvedValue({ conversation_id: 'c', items: [] });

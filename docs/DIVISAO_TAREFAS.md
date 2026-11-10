@@ -1,6 +1,6 @@
 # Divisão de tarefas (sugestão)
 
-> **Interface revisada em 09/11/2026.** Inclua a revisão da identidade Escola de trânsito e dos textos na atividade de frontend/documentação. A revisão visual não preenche nomes ou contribuições dos integrantes e não altera responsabilidades já definidas.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 Equipe de cinco integrantes. **Nomes e contribuições reais devem ser preenchidos pela equipe** - este documento
 não atribui trabalho a ninguém. Cada integrante deve conseguir explicar ao menos **uma decisão técnica, uma fonte

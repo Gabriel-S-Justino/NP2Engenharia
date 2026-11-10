@@ -91,6 +91,12 @@ class Settings(BaseSettings):
     weak_evidence_margin: float = Field(default=0.08, ge=0.0, le=1.0)
     min_term_coverage: float = Field(default=0.5, ge=0.0, le=1.0)
 
+    neon_auth_base_url: str | None = Field(default=None, validation_alias=AliasChoices('NEON_AUTH_BASE_URL', 'DATABASE_NEON_AUTH_BASE_URL'))
+    chat_context_turns: int = Field(default=6, ge=0, le=20)
+    chat_context_chars: int = Field(default=6000, ge=500, le=20000)
+    user_daily_questions: int = Field(default=100, ge=1, le=10000)
+    global_daily_questions: int = Field(default=1000, ge=1, le=100000)
+
     # Limites e segurança
     max_upload_size_mb: int = Field(default=20, ge=1, le=200)
     max_question_chars: int = Field(default=1000, ge=10, le=10000)

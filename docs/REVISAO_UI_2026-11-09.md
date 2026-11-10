@@ -1,5 +1,7 @@
 # Revisão da interface - 09/11/2026
 
+Registro histórico da revisão visual de 09/11/2026. Para o comportamento atual de contas, memória e histórico, consulte [Contas e conversas](CONTAS_E_CONVERSAS.md).
+
 ## Escopo
 
 Revisão exclusiva de apresentação: tema de trânsito e escola, linguagem para estudantes, hierarquia visual, espaçamento e redução de ruído técnico. Não altera lógica de negócio, fluxos, rotas, autenticação, contratos, parâmetros, ingestão, busca, geração ou banco.

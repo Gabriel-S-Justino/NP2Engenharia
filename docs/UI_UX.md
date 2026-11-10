@@ -1,5 +1,7 @@
 # UI/UX - Lumme, Escola de trânsito
 
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
+
 Atualização de apresentação em 09/11/2026. O Lumme aproxima o estudo das leis de trânsito da experiência de uma escola: orientação clara, materiais de apoio e fontes acessíveis. Esta revisão não altera regras de negócio, rotas, condições de habilitação, validações ou processamento.
 
 ## Identidade e público
@@ -75,3 +77,7 @@ O domínio de produção atual, os identificadores de pacote e de instalação e
 ## Histórico de chats
 
 O histórico fica diretamente na sidebar, no padrão de navegação de aplicações de chat: Nova conversa no topo, busca, lista compacta com rolagem e destaque da conversa atual. No celular, o menu abre pela esquerda; no desktop, pode ser recolhido. Ferramentas da equipe expande os links de revisão e diário; Configurações permanece no rodapé. A busca usa os títulos das conversas. A lista pertence ao navegador ou dispositivo. Trocar de chat preserva as fontes e permanece bloqueado durante envio ou carregamento. [Detalhes e limitações](HISTORICO_CHATS.md).
+
+## Contas e ações de conversa
+
+A sidebar mostra o catálogo do usuário autenticado e o atalho Sua conta. Visitantes recebem orientação de entrada. O menu de cada linha contém renomear, exportar e excluir com confirmação, estados de envio e erros. Respostas têm copiar e feedback acessíveis por rótulo. A tela de conta oferece recuperação de acesso e consumo. O aviso de edição antiga do acervo é relevante para quem consulta e permanece visível.

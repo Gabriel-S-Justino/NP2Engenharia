@@ -105,6 +105,14 @@ class ChatRepository:
         )
         return [ChatResponse.model_validate_json(r["payload_json"]) for r in rows]
 
+    def recent(self, conversation_id: str, limit: int = 6) -> list[ChatResponse]:
+        if limit <= 0:
+            return []
+        rows = self.db.query(
+            """SELECT payload_json FROM chat_interactions WHERE conversation_id = ? AND status = 'answered'
+               ORDER BY created_at DESC, id DESC LIMIT ?""", (conversation_id, limit))
+        return [ChatResponse.model_validate_json(r["payload_json"]) for r in reversed(rows)]
+
     def clear(self, conversation_id: str) -> int:
         return self.db.execute("DELETE FROM chat_interactions WHERE conversation_id = ?", (conversation_id,)).rowcount
 

@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.auth import AuthUser, require_user
 from app.core.config import REPO_ROOT, Settings
 from app.main import create_app
 
@@ -50,6 +51,7 @@ def settings(tmp_path: Path) -> Settings:
 @pytest.fixture
 def client(settings: Settings):
     app = create_app(settings)
+    app.dependency_overrides[require_user] = lambda: AuthUser("test-user")
     with TestClient(app) as test_client:
         yield test_client
 

@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppShell } from '@/components/AppShell';
 import { ToastProvider } from '@/components/ui';
+import { AuthProvider } from '@/state/AuthState';
 import { AppStateProvider } from '@/state/AppState';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
@@ -23,11 +24,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <AuthProvider>
         <AppStateProvider>
           <ToastProvider>
             <Themed />
           </ToastProvider>
         </AppStateProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

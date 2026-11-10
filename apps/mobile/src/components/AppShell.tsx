@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Button, IconButton } from '@/components/ui';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useAppState } from '@/state/AppState';
+import { useAuth } from '@/state/AuthState';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 
@@ -60,11 +61,13 @@ function NavigationItem({ item, active, collapsed, onPress }: { item: NavItem; a
 function Sidebar({ collapsed = false, onToggle, onClose }: { collapsed?: boolean; onToggle?: () => void; onClose?: () => void }) {
   const { colors } = useTheme();
   const pathname = usePathname();
+  const { user, loading: authLoading } = useAuth();
   const { newConversation, sending, historyLoading } = useAppState();
   const [toolsOpen, setToolsOpen] = useState(false);
-  const busy = sending || historyLoading;
+  const busy = sending || historyLoading || authLoading;
   const startChat = () => {
     if (busy) return;
+    if (!user) { router.navigate('/conta'); onClose?.(); return; }
     newConversation();
     router.navigate('/chat');
     onClose?.();
@@ -105,6 +108,7 @@ function Sidebar({ collapsed = false, onToggle, onClose }: { collapsed?: boolean
       </View>
       {!collapsed ? <ConversationList active={isActive(pathname, '/chat')} onOpened={goToChat} /> : <View style={styles.flex} />}
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <NavigationItem item={{ href: '/conta', path: '/conta', label: user ? 'Sua conta' : 'Entrar ou criar conta', icon: 'person-circle-outline', primary: false }} active={isActive(pathname, '/conta')} collapsed={collapsed} onPress={onClose} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Ferramentas da equipe"
@@ -141,6 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { hasSidebar, isTablet } = useBreakpoint();
   const insets = useSafeAreaInsets();
   const { newConversation, sending, historyLoading } = useAppState();
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState<boolean | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isCollapsed = collapsed ?? isTablet;
@@ -152,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <View style={[styles.mobileHeader, { backgroundColor: colors.surfaceMuted, borderBottomColor: colors.border, paddingTop: insets.top }]}>
           <IconButton icon="menu-outline" accessibilityLabel="Abrir menu de conversas" onPress={() => setDrawerOpen(true)} />
           <AppText variant="subtitle" style={styles.flex}>Lumme</AppText>
-          <IconButton icon="create-outline" accessibilityLabel="Nova conversa" disabled={sending || historyLoading} onPress={() => { newConversation(); router.navigate('/chat'); }} />
+          <IconButton icon="create-outline" accessibilityLabel="Nova conversa" disabled={sending || historyLoading} onPress={() => { if (!user) { router.navigate('/conta'); return; } newConversation(); router.navigate('/chat'); }} />
         </View>
       ) : null}
       <View role="main" style={[styles.flex, !hasSidebar && { paddingBottom: insets.bottom }]}>{children}</View>

@@ -216,6 +216,7 @@ export type EvaluationSummary = {
 };
 
 export type Stats = {
+  corpus_notice?: string | null;
   documents_total: number;
   documents_processed: number;
   documents_failed: number;

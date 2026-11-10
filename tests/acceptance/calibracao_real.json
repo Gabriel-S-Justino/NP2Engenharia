@@ -1,10 +1,47 @@
 {
-  "_descricao": "Conjunto de CALIBRAÇÃO do limiar para o ACERVO REAL. A equipe deve substituir as perguntas por perguntas verificadas: 'answerable': true somente se a resposta foi conferida em um documento de Documentos/. Use perguntas DIFERENTES das da matriz de avaliação.",
+  "_descricao": "Calibração da recuperação para o PDF enviado, edição de 2009 atualizada até junho de 2008. Perguntas diferentes das da matriz de avaliação. Não comprova vigência jurídica.",
   "suite": "acervo_real",
+  "provenance": {
+    "filename": "Codigo_de_transito_brasileiro_compressed.pdf",
+    "sha256": "c1cc9c518450968db52abb8546746694d4a07276bcd62297c6cd08c4fada404b",
+    "checked_at": "2026-11-10"
+  },
   "questions": [
-    {"question": "A PREENCHER: pergunta respondível pelo acervo (conferida na fonte)", "answerable": true},
-    {"question": "A PREENCHER: outra pergunta respondível", "answerable": true},
-    {"question": "Qual é a capital da França?", "answerable": false},
-    {"question": "Como fazer pão caseiro?", "answerable": false}
+    {
+      "question": "Segundo o arquivo, qual é o limite de velocidade nas vias urbanas de trânsito rápido sem sinalização?",
+      "answerable": true,
+      "evidence_page": 34
+    },
+    {
+      "question": "Qual documento de habilitação deve ser portado ao dirigir, de acordo com o arquivo enviado?",
+      "answerable": true,
+      "evidence_page": 56
+    },
+    {
+      "question": "Segundo esta edição do arquivo, crianças com idade inferior a dez anos devem viajar em quais bancos?",
+      "answerable": true,
+      "evidence_page": 34
+    },
+    {
+      "question": "Qual é a medida administrativa por passageiro deixar de usar o cinto, no artigo 167 do arquivo?",
+      "answerable": true,
+      "evidence_page": 58
+    },
+    {
+      "question": "Qual é a capital da França?",
+      "answerable": false
+    },
+    {
+      "question": "Como fazer pão caseiro?",
+      "answerable": false
+    },
+    {
+      "question": "Qual aplicativo municipal de estacionamento foi lançado em Porto Sereno em 2026?",
+      "answerable": false
+    },
+    {
+      "question": "Qual é a senha da rede Wi-Fi dos postos de recarga de Nova Aurora?",
+      "answerable": false
+    }
   ]
 }

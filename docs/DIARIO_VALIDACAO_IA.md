@@ -1,6 +1,6 @@
 # Diário de validação com a IA mentora
 
-> **Interface revisada em 09/11/2026.** A tela de registro agora se chama Diário da equipe, em /mentoria. Seus campos, validações e operação de salvamento não mudaram. Esta revisão de interface não constitui uma validação acadêmica feita pela equipe; não foram inventados registros.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 O guia da disciplina exige registrar, para cada validação: **prompt enviado, resposta da IA, decisão da equipe,
 alteração realizada e evidência do resultado**. A IA mentora deve avaliar problema, base documental, arquitetura,
@@ -68,3 +68,7 @@ Antes de enviar, anexe o contexto real (README, ARQUITETURA, trechos dos documen
 - Toda afirmação factual da IA mentora sobre trânsito deve ser conferida no documento oficial (registrar página).
 - Toda sugestão técnica aceita deve virar alteração + teste + resultado antes/depois neste diário.
 - Sugestões rejeitadas também são registradas, com o motivo.
+
+## 10/11/2026: contas, histórico e avaliação
+
+Foram conferidos trechos do CTB existente no banco, sem baixar o original. A matriz real executada no deployment e9077366 obteve 9/10 e registrou falha na pergunta sobre validade da permissão. A fonte estava atualizada até junho de 2008. Foram implementadas contas, autorização por proprietário, contexto limitado, ações de conversa e cotas compartilhadas, com testes de regressão e uma branch Neon isolada. Não se apresenta esse resultado anterior como avaliação da memória nova.

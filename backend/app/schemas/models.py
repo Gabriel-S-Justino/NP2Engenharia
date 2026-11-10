@@ -298,6 +298,7 @@ class EvaluationSummary(BaseModel):
 
 
 class Stats(BaseModel):
+    corpus_notice: str | None = None
     documents_total: int
     documents_processed: int
     documents_failed: int
@@ -385,6 +386,7 @@ class EvaluationCase(BaseModel):
     expected_answer: str
     expected_keywords: list[str] = []
     expected_sources: list[str] = []
+    expected_pages: list[int] = []
     expected_evidence: str | None = None
     forbidden_terms: list[str] = []
     notes: str | None = None
@@ -396,6 +398,7 @@ class EvaluationSuite(BaseModel):
     description: str
     synthetic: bool
     ready: bool
+    provenance: dict = Field(default_factory=dict)
     cases: list[EvaluationCase]
 
 
@@ -464,3 +467,27 @@ class MentorLog(BaseModel):
 
 
 IngestionStatus.model_rebuild()
+
+
+class ConversationRename(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=100)
+
+    @field_validator("title")
+    @classmethod
+    def clean_title(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Informe um título para a conversa.")
+        return value
+
+
+class FeedbackIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    rating: Literal[-1, 1]
+    comment: str = Field(default="", max_length=1000)
+
+
+class LegacyImport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    conversation_ids: list[str] = Field(max_length=100)

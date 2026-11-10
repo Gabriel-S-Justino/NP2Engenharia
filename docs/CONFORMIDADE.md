@@ -1,64 +1,20 @@
-# Matriz de conformidade com o guia do professor
+# Conformidade e evidências atuais
 
-> **Interface revisada em 09/11/2026.** A apresentação foi revisada para motoristas e estudantes: fontes e páginas seguem acessíveis, os avisos de segurança permanecem e os detalhes técnicos deixam de competir com a resposta. Avaliação, diário e configurações continuam nas mesmas rotas, identificados como espaço da equipe.
+Atualizado em 10/11/2026.
 
-Estados: **Atendido** (implementado e verificado) · **Parcial** (implementado, falta etapa da equipe ou verificação
-externa) · **Bloqueado** (depende de credencial/serviço indisponível) · **Não atendido**.
-
-## Critérios de avaliação (5,00 pontos)
-
-| Critério | Peso | Evidência | Teste/verificação | Estado |
-|---|---|---|---|---|
-| Problema, público-alvo e adequação do RAG | 0,75 | README; RELATORIO §2-5 (inclui quando busca convencional basta) | Revisão documental | **Atendido** (a equipe deve revisar o texto) |
-| Funcionamento técnico do pipeline RAG | 1,50 | `backend/app/services/*`; ARQUITETURA.md | 82 testes backend (incl. Postgres/pgvector); E2E 11/11 (local e Vercel simulada); matriz 10/10 | **Atendido** com documentos sintéticos e embeddings lexicais; **Parcial** quanto a embeddings semânticos e LLM real (bloqueados neste ambiente) |
-| Fontes, citações e segurança | 1,00 | `citations.py`, `safety.py`, SEGURANCA.md, FONTES.md | testes de citação inventada, injeção, segredos, uploads | **Parcial**: citações e segurança atendidas; **fontes reais pendentes da equipe** |
-| Testes, métricas e análise de falhas | 0,75 | MATRIZ_TESTES.md; `docs/resultados/` | 4 execuções reais (80% → 100%) com causa e ajuste | **Atendido** para a suíte sintética; suíte real pendente |
-| Validação com IA mentora | 0,75 | DIARIO_VALIDACAO_IA.md; tela/endpoint `/api/mentor-log` | `test_mentor_log_roundtrip` | **Parcial**: estrutura pronta; **nenhuma interação real registrada** |
-| Documentação e apresentação | 0,25 | README, RELATORIO, ROTEIRO_APRESENTACAO, docs/* | `verify_project.py` (arquivos obrigatórios) | **Parcial**: campos [a preencher] com nomes, fontes e resultados reais |
-
-## Requisitos do guia
-
-| Requisito | Evidência | Estado |
+| Requisito | Estado | Evidência ou limite |
 |---|---|---|
-| Problema, público e adequação do RAG justificados | RELATORIO §2-3 | Atendido |
-| Base documental ≥ 10 documentos ou 25 páginas, validada pela equipe | `Documentos/` (vazio), `scripts/inventario_documentos.py`, checklist em `Documentos/README.md` | **Não atendido - depende da equipe** |
-| Metadados (título, URL, página, seção, assunto, licença; autoria, data, versão) | `manifest.json`, `SourceMetadata`, tela Fontes ("Não informado" quando ausente) | Atendido (software); preenchimento pendente |
-| Registro de lacunas e fontes frágeis | FONTES.md (seções prontas) | Parcial |
-| Pipeline observável (documentos → … → recusa segura) | painel de evidências com candidatos e motivos; `/api/ingestion/status`; logs JSON | Atendido |
-| Relatório explicita top-k, filtros, limiar, embeddings e geração com justificativas | RELATORIO §8-9 | Atendido (limiar do fastembed a recalibrar) |
-| Matriz ≥ 10 perguntas, exatamente 6/2/2 | `matriz_fixtures.json`; `matriz_acervo_real.json` (modelo) | Atendido (sintética); real pendente |
-| Meta ≥ 80% calculada sobre testes executados | `evaluation.summarize`; `test_evaluation_run_and_results` | Atendido |
-| Causa, ajuste e nova execução das falhas | MATRIZ_TESTES §3; ajustes registráveis pela interface | Atendido |
-| Diário da equipe (prompt, resposta, decisão, alteração, evidência) | DIARIO_VALIDACAO_IA.md + formulário | Parcial (sem registros reais) |
-| Segurança, privacidade, ética, instruções maliciosas, limites, evidência insuficiente | SEGURANCA.md, LIMITACOES.md | Atendido |
-| Aplicação funcional, código organizado, README, relatório, matriz, diário, apresentação ≤ 7 min | repositório; ROTEIRO_APRESENTACAO.md | Atendido/Parcial (itens da equipe) |
-| Equipe de 5, divisão de tarefas, cada integrante explica algo | DIVISAO_TAREFAS.md (sem nomes inventados) | Parcial |
+| Consulta RAG com fontes e recusa | Implementado | Matriz real: 9 de 10 na linha de base e9077366 |
+| Login e histórico por usuário | Implementado | Neon Auth, verificação JWT e propriedade em todas as rotas privadas |
+| Memória da conversa | Implementado | Contexto limitado e escapado, sem transformar histórico em evidência |
+| Ações do chat | Implementado | Renomear, exportar, excluir com confirmação, copiar e feedback |
+| Limites compartilhados | Implementado | Transação no banco por conta, IP e serviço |
+| Web em produção | Existente | Vercel com Neon Postgres e Gemini |
+| Android e iOS | Homologação pendente | O build web não comprova funcionamento nativo |
+| Acervo atualizado | Pendente | Arquivo conferido atualizado até junho de 2008 |
+| Avaliação real | Executada na versão anterior | Amostra pequena, um caso falhou; relatório preservado |
+| Calibração semântica nova | Não executada | Perguntas independentes preparadas, parâmetros não promovidos |
+| Entrega de e-mail e navegadores alvo | Homologação pendente | Serviço de autenticação gerenciado usa remetente compartilhado |
+| Documentação | Atualizada | Contrato, segurança, contas, operação, fontes e limitações |
 
-## Requisitos técnicos e de produto (resumo)
-
-| Requisito | Estado | Observação |
-|---|---|---|
-| Stack obrigatória (RN, Expo, TS, Expo Router, RN Web, Python, FastAPI, Pydantic, Pytest, embeddings, busca vetorial) | Atendido | |
-| Pasta `Documentos/` com instruções; originais nunca alterados | Atendido | testes de hash antes/depois |
-| PDF/TXT, páginas e metadados, SHA-256, duplicatas, falhas isoladas, idempotência | Atendido | |
-| Chunks configuráveis, embeddings abstraídos, FAISS persistente e seguro, incompatibilidade detectada | Atendido | |
-| Recuperação com limiar, métrica, filtros, latência; recusa sem evidência | Atendido | |
-| Geração por LLM configurável + modo demonstração identificado | Parcial | LLM não executado (sem chave) |
-| Citações verificáveis e validadas | Atendido | |
-| 17 endpoints exigidos + OpenAPI | Atendido | + chunks, histórico, ajustes, estado de execução |
-| Telas: Dashboard, Chat, Biblioteca, Fontes, Laboratório, Configurações (+ Diário) | Atendido | E2E 11/11 |
-| Design system, responsividade, acessibilidade básica, estados | Atendido | leitores de tela reais não testados |
-| Web / Android / iOS | Parcial | web testada; Android/iOS compatíveis via Expo, não testados em dispositivo |
-| Testes automatizados backend e frontend | Atendido | 82 (75 SQLite + 7 Postgres) + 59 |
-| Scripts Unix/PowerShell, Docker | Parcial | scripts `.sh` executados; `.ps1` não executados (sem Windows); imagem Docker não construída (Docker Hub 429) |
-| Deploy: aplicação completa na Vercel (web + função Python + Neon Postgres/pgvector), CI, rollback, variáveis | Preparado | `vercel build` oficial aprovado; função executada pelo handler do runtime da Vercel; nenhum deploy remoto (sem contas/autorização) |
-| Nenhuma credencial no repositório | Atendido | `.env` ignorado; CI verifica o bundle |
-
-## Pendências que dependem da equipe
-1. Reunir e validar o acervo real; preencher `manifest.json` e FONTES.md; rodar o inventário.
-2. Rodar com `fastembed` (internet na 1ª execução), recalibrar o limiar e preencher/executar a matriz real.
-3. Configurar `LLM_API_KEY` no servidor e reavaliar com leitura humana das respostas.
-4. Realizar e registrar as validações com a IA mentora.
-5. Criar o projeto na Vercel com o banco Neon, definir `ADMIN_TOKEN`/`CRON_SECRET`, publicar o preview, validá-lo e
-   publicar a produção com autorização (DEPLOY_VERCEL.md).
-6. Preencher nomes/contribuições e testar no celular (Expo Go).
+A curadoria deve atualizar o material legal e conferir licenças e procedência. Papéis individuais de administrador, custos por tokens e sincronização em tempo real de abas não fazem parte desta entrega. Não se atribuem resultados de testes sintéticos ao acervo real.

@@ -5,6 +5,7 @@ import { AppText, Badge, Button, Card, ConfirmDialog, ErrorState, FilterChip, Lo
 import { useAsync } from '@/hooks/useAsync';
 import { api, errorMessage } from '@/services/api';
 import { useAppState } from '@/state/AppState';
+import { useAuth } from '@/state/AuthState';
 import { useTheme, type ThemePreference } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import type { SettingsOut } from '@/types/api';
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
   const toast = useToast();
   const { preference, setPreference } = useTheme();
   const { connection, lastHealthCheck, refreshHealth, adminToken, saveAdminToken } = useAppState();
+  const { user } = useAuth();
   const settings = useAsync(() => api.settings(), [connection]);
   // Rascunho local; null = valores atuais do servidor.
   const [draft, setForm] = useState<RetrievalForm | null>(null);
@@ -144,8 +146,8 @@ export default function SettingsScreen() {
             <Item label="Token neste dispositivo" value={adminToken ? 'Configurado' : 'Não configurado'} tone={adminToken ? 'success' : undefined} />
             <TextField label="Token administrativo" secureTextEntry autoCapitalize="none" autoCorrect={false} value={tokenInput} onChangeText={setTokenInput} placeholder="Cole o token fornecido pelo responsável" />
             <Row>
-              <Button label="Salvar token" size="sm" onPress={() => { void saveAdminToken(tokenInput); setTokenInput(''); toast.show('Token salvo neste dispositivo.', 'success'); }} disabled={!tokenInput.trim()} />
-              {adminToken ? <Button label="Remover token" size="sm" variant="ghost" onPress={() => void saveAdminToken(null)} /> : null}
+              <Button label="Salvar token" size="sm" onPress={() => { void saveAdminToken(tokenInput).then(() => { setTokenInput(''); toast.show('Token salvo para esta conta neste dispositivo.', 'success'); }).catch(() => toast.show('Entre na sua conta e tente salvar o token novamente.', 'danger')); }} disabled={!user || !tokenInput.trim()} />
+              {adminToken ? <Button label="Remover token" size="sm" variant="ghost" onPress={() => void saveAdminToken(null).catch(() => toast.show('Não foi possível remover o token.', 'danger'))} /> : null}
             </Row>
           </Card>
 

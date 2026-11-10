@@ -1,110 +1,30 @@
-# Contrato frontend ↔ backend
+# Contrato frontend e API
 
-> **Revisão visual de 09/11/2026.** Nenhum endpoint, schema, tipo TypeScript, parâmetro, autenticação ou comportamento de rede foi alterado nesta revisão.
+O contrato completo é gerado pelo FastAPI em /api/openapi.json. Erros mantêm o envelope existente. Rotas públicas de acervo continuam disponíveis; operações administrativas exigem X-Admin-Token.
 
-Fonte da verdade: schemas Pydantic em `backend/app/schemas/models.py` (OpenAPI em `/api/openapi.json` e
-documentação interativa em `/api/docs`).
-Espelho TypeScript: `apps/mobile/src/types/api.ts`. Cliente: `apps/mobile/src/services/api.ts`.
-O contrato foi **validado com o backend real** pelo teste E2E (`tests/e2e/web_smoke.mjs`); não há dados mockados
-na aplicação (mocks existem apenas nos testes automatizados).
+## Contas
 
-## Convenções
-- JSON UTF-8; datas ISO 8601 (UTC); `null` = não informado (nunca string vazia).
-- Erros: `{"error": {"code": "...", "message": "...", "details"?: ...}}` - `message` é pública e em português.
-- Operações administrativas enviam `X-Admin-Token` quando o servidor exige (`settings.admin_required`).
-- Endereço: na web publicada (Vercel) o cliente usa a **mesma origem** (`/api/...`); `EXPO_PUBLIC_API_URL`
-  sobrepõe (apps nativos, backend em outro domínio). Regras em `services/config.ts` (`resolveApiBaseUrl`).
-- Timeouts do cliente: 20 s (padrão), 120 s (chat - inclui cold start na Vercel), 310 s (upload, indexação,
-  reindexação, avaliação e ajustes de chunking, que na Vercel são síncronos). `ApiError.kind`:
-  `network | timeout | http | aborted`.
-- **Modo síncrono (serverless):** `POST /api/ingestion/scan|reindex` e `POST /api/evaluations/run` retornam já
-  concluídos (`status: completed|failed`). Na indexação, `stats.remaining > 0` significa que o orçamento de tempo
-  acabou: o cliente chama `/api/ingestion/scan` de novo até `remaining = 0`. Em modo local, retornam `running` e o
-  cliente acompanha por polling.
-
-## Endpoints
-
-| Método e caminho | Requisição | Resposta | Admin |
+| Método | Caminho | Controle | Resultado |
 |---|---|---|---|
-| GET `/api/health` | - | `Health` | não |
-| GET `/api/stats` | - | `Stats` | não |
-| GET `/api/documents` | `page, page_size, status, search, file_type, sort` | `Paginated<DocumentSummary>` | não |
-| POST `/api/documents/upload` | multipart `file` (≤ `max_upload_size_mb`; 4 MB na Vercel) | `UploadResult` (201; documento e execução do lote, que pode ter continuação pendente) | sim |
-| GET `/api/documents/{id}` | - | `DocumentSummary` | não |
-| GET `/api/documents/{id}/chunks` | `page, page_size` | `Paginated<ChunkOut>` | não |
-| DELETE `/api/documents/{id}` | - | `DeleteResult` | sim |
-| GET `/api/sources/{source_id}` | - | `SourceDetail` | não |
-| POST `/api/ingestion/scan` | `?wait=bool` | `IngestionRun` (202; em serverless já concluído, ver `stats.remaining`) | sim |
-| POST `/api/ingestion/reindex` | `{document_ids?: string[]}` | `IngestionRun` (202) | sim |
-| GET `/api/ingestion/status` | - | `IngestionStatus` | não |
-| GET `/api/cron/ingestion` | `Authorization: Bearer <CRON_SECRET>` | `IngestionRun` | segredo do cron |
-| POST `/api/chat` | `ChatRequest` | `ChatResponse` | não (limite/minuto) |
-| GET/DELETE `/api/chat/history/{conversation_id}` | - | `ChatHistory` / `{removed}` | não |
-| GET `/api/evaluations` | - | `{suites, runs, current}` | não |
-| POST `/api/evaluations/run` | `{suite}` | estado da execução (202) | sim |
-| GET `/api/evaluations/runs/{id}` | - | `{id, status, error_message}` | não |
-| GET `/api/evaluations/results` | `run_id?` ou `suite?` | `EvaluationResults` (404 = ainda não avaliado) | não |
-| POST `/api/evaluations/results/{run}/cases/{case}/adjustment` | `{adjustment}` | `EvaluationSummary` | sim |
-| GET `/api/settings` | - | `SettingsOut` (sem segredos) | não |
-| PATCH `/api/settings` | `SettingsUpdate` | `SettingsOut` (409 se faltar `confirm_reindex`) | sim |
-| GET/POST `/api/mentor-log` | `MentorEntryIn` | `MentorLog` / `MentorEntry` (201) | POST sim |
+| GET | /api/auth/config | Público | URL pública do Neon Auth e configured |
+| GET | /api/account/me | Bearer JWT | Identidade validada |
+| GET | /api/account/usage | Bearer JWT | daily_used, daily_limit, minute_used, minute_limit, resets_at |
 
-## Tipos principais (resumo)
-```ts
-type ChatStatus = 'answered' | 'insufficient_evidence' | 'out_of_scope' | 'no_documents' | 'blocked' | 'provider_error' | 'index_unavailable';
-type EvidenceStatus = 'sufficient' | 'weak' | 'conflicting' | 'insufficient' | 'none';
+Senhas e códigos de recuperação são enviados diretamente ao Neon Auth pelo SDK oficial.
 
-type Citation = {
-  label: string;            // F1 - usado no texto da resposta
-  source_id: string;        // ID estável do trecho → GET /api/sources/{source_id}
-  document_id: string; document_title: string; filename: string;
-  page: number | null; section: string | null; excerpt: string;
-  relevance: number;        // similaridade de cosseno; NÃO é probabilidade
-  url: string | null; license: string | null; author: string | null; institution: string | null;
-  published_date: string | null; version: string | null; origin: string;
-  suspicious: boolean;      // trecho com formato de instrução (tratado como dado)
-  cited_in_answer: boolean; // false = recuperado mas não citado
-};
+## Conversas
 
-type ChatResponse = {
-  interaction_id: string; conversation_id: string; question: string;
-  status: ChatStatus; evidence_status: EvidenceStatus;
-  answer: string | null;    // null em recusas e falhas
-  notice: string | null;    // aviso a exibir ao usuário
-  citations: Citation[]; citations_valid: boolean; warnings: string[];
-  retrieval: RetrievalInfo | null;  // top_k, limiar, métrica, candidatos e motivos
-  generation: { provider: string; model: string; mode: 'demo_extractive' | 'llm' | 'none'; is_llm: boolean };
-  latency: { retrieval_ms: number | null; generation_ms: number | null; total_ms: number };
-  created_at: string;
-};
-```
-Campos completos de `DocumentSummary`, `Stats`, `Health`, `SettingsOut`, `EvaluationResults` etc. em `types/api.ts`.
-Campos ligados à implantação: `Health.storage` (`backend`, `persistent`, `serverless`, `originals_in_database`),
-`Health.embeddings.loaded` (modelo carregado sob demanda), `IngestionStats.remaining`, `SettingsOut.serverless`,
-`storage_backend`, `persistent_storage`, `ingestion_time_budget_seconds`. Erro `503 armazenamento_efemero`: a API
-recusa alterar o acervo sem banco persistente em serverless.
+| Método | Caminho | Resultado |
+|---|---|---|
+| GET | /api/conversations?offset=0&limit=100 | items com id, title, updated_at e has_more |
+| PATCH | /api/conversations/{id} | Renomeia com title entre 1 e 100 caracteres |
+| GET | /api/conversations/{id}/export | filename e content Markdown |
+| POST | /api/conversations/import-legacy | conversation_ids, retorna imported; exige também admin |
+| POST | /api/chat | Contrato anterior, agora exige conta; ID é verificado ou criado |
+| GET | /api/chat/history/{id} | Mensagens paginadas e has_more |
+| DELETE | /api/chat/history/{id} | Exclusão da conversa e total removido |
+| POST | /api/chat/feedback/{interaction_id} | rating 1 ou -1, comment opcional até 1.000 caracteres |
 
-## Estados de carregamento e erro no cliente
-- `useAsync`: `{data, error, loading, reload}`; ignora respostas fora de ordem.
-- `useIngestion`: polling de 1,5 s enquanto `running`.
-- Erros HTTP → mensagem do backend; rede/timeout → mensagem padrão + opção de repetir quando `retryable`.
+Todas exigem Bearer JWT. Toda operação com ID confere propriedade no backend. 401 indica sessão ausente ou inválida; 404 evita revelar conversas de terceiros; 429 indica cota atingida. ADMIN_TOKEN sozinho não libera o chat.
 
-## Dependências do backend e pendências
-- O frontend depende de `EXPO_PUBLIC_API_URL` (pública) e do CORS do backend incluir a origem da web.
-- Pendências: nenhuma divergência de contrato conhecida. Mudanças futuras no backend exigem atualizar `types/api.ts`
-  (não há geração automática de tipos a partir do OpenAPI - melhoria possível).
-
-## Separação entre dados e apresentação
-
-O frontend continua recebendo retrieval (scores, candidatos e parâmetros), generation (provedor e modelo real), latency e IDs. Essas informações deixam de aparecer na consulta cotidiana, mas não foram removidas do payload.
-
-Os status processed/pending/processing/failed/excluded são apresentados como Pronto para consulta/Na fila/Preparando/Precisa de atenção/Não utilizado. A tabela de mapeamento muda somente texto e cor.
-
-A função userFacingText em utils/presentation.ts atua apenas na string renderizada; não altera respostas persistidas, regras de recusa, flags de segurança ou tratamento de erro. Campos de token e ajustes mantêm os mesmos nomes internos, validações e chamadas HTTP.
-
-UploadResult já contém document, message e a execução opcional ingestion, usada pelo fluxo existente de continuação de lotes. Esta revisão não muda esse contrato.
-
-
-## Paginação do histórico
-
-GET /api/chat/history/{conversation_id} aceita limit (1 a 100, padrão 100) e offset (a partir de 0). A resposta preserva conversation_id e items e acrescenta has_more. O frontend carrega as páginas antes de selecionar a conversa. O catálogo versionado de IDs e títulos fica no dispositivo; não existe listagem global de chats. Os demais contratos de chat são preservados. [Detalhes](HISTORICO_CHATS.md).
+Stats inclui corpus_notice opcional. ChatResponse mantém seus campos; histórico limitado é montado no servidor, sem o frontend enviar textos anteriores. A exportação só inclui a conversa autorizada. Respostas privadas não devem ser armazenadas em cache compartilhado.

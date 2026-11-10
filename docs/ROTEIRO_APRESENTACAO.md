@@ -1,6 +1,6 @@
 # Roteiro de apresentação (até 7 minutos)
 
-> **Interface revisada em 09/11/2026.** Na demonstração, use Início → Tire suas dúvidas → Fontes para conferir e Sua biblioteca. Mostre as citações e as páginas; reserve métricas técnicas para a explicação da equipe. As rotas e as ações de envio, revisão e remoção permanecem as mesmas.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 Organizado pelos critérios de avaliação do professor. Substitua os campos **[ ]** pelos dados reais da equipe.
 Preparação: backend e web rodando (ou URLs de produção), acervo real indexado, uma conversa limpa, aba do
@@ -27,3 +27,7 @@ Laboratório com a última execução, capturas de reserva em `docs/capturas/` c
 - Sem internet: rodar `./scripts/dev.sh --demo` (offline) e deixar claro que é o modo demonstração, com
   documentos sintéticos e gerador extrativo.
 - Capturas de tela em `docs/capturas/` para cada etapa.
+
+## Percurso atual
+
+Entre com uma conta, faça uma pergunta sobre o arquivo, mostre o aviso de edição antiga e confira as fontes. Continue a conversa, renomeie pela sidebar e exporte. Mostre consumo e saída. Ao apresentar qualidade, use o relatório real de 9/10 como linha de base anterior às novas contas e memória, com a falha e as limitações explícitas. Não confunda os resultados de fixtures com o acervo real.

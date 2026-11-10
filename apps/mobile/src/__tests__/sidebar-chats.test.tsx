@@ -8,6 +8,8 @@ import { ConversationList } from '@/components/ConversationList';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useAppState } from '@/state/AppState';
 
+jest.mock('@/state/AuthState', () => ({ useAuth: () => ({ user: {id:'test-user',email:'test@example.com',name:'Teste'}, loading:false }) }));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-router', () => {
   return {
     usePathname: () => '/chat',

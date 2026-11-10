@@ -13,3 +13,5 @@ psycopg[binary]==3.3.6
 
 # Leitura de fontes CFF/Type1 em PDFs comprimidos.
 fonttools==4.68.0
+
+PyJWT[crypto]>=2.10,<3

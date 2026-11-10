@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import * as Clipboard from 'expo-clipboard';
+import { api } from '@/services/api';
 import { AssistantMessage } from '@/components/ChatMessage';
 import { FormattedText } from '@/components/FormattedText';
 import { SourceReference, citationToSource } from '@/components/SourceReference';
@@ -7,6 +9,9 @@ import { Button, EmptyState, ErrorState, StatCard } from '@/components/ui';
 import { breakpointFor } from '@/hooks/useBreakpoint';
 
 import { chatResponse, citation } from '@/test-utils/fixtures';
+
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
+jest.mock('@/services/api', () => ({ api: { feedback: jest.fn() } }));
 
 describe('SourceReference', () => {
   it('mostra documento, página, trecho e abre detalhes', async () => {
@@ -101,4 +106,18 @@ it('breakpoints documentados', () => {
   expect(breakpointFor(420)).toBe('mobileWide');
   expect(breakpointFor(800)).toBe('tablet');
   expect(breakpointFor(1280)).toBe('desktop');
+});
+
+
+it('copia resposta com quebras de linha e fontes e envia feedback', async () => {
+  jest.mocked(Clipboard.setStringAsync).mockResolvedValue(true);
+  jest.mocked(api.feedback).mockResolvedValue({saved:true,rating:1});
+  await render(<AssistantMessage response={chatResponse()} onOpenSource={jest.fn()} />);
+  await fireEvent.press(screen.getByRole('button', {name:'Copiar resposta'}));
+  await waitFor(()=>expect(Clipboard.setStringAsync).toHaveBeenCalled());
+  const copied=jest.mocked(Clipboard.setStringAsync).mock.calls[0][0];
+  expect(copied).toContain('\n');
+  expect(copied).toContain('[F1]');
+  await fireEvent.press(screen.getByRole('button', {name:'Útil'}));
+  await waitFor(()=>expect(api.feedback).toHaveBeenCalledWith(chatResponse().interaction_id,1));
 });

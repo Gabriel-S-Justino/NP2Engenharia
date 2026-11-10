@@ -61,7 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_origins=settings.cors_list,
         allow_credentials=False,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Admin-Token"],
+        allow_headers=["Content-Type", "X-Admin-Token", "Authorization"],
         max_age=600,
     )
 
@@ -77,6 +77,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
         response.headers.setdefault("X-Frame-Options", "DENY")
+        if request.url.path.startswith(("/api/chat", "/api/conversations", "/api/account")):
+            response.headers["Cache-Control"] = "no-store, private"
+            response.headers["Vary"] = "Authorization"
         return response
 
     app.include_router(router)

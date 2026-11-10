@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.core.auth import AuthUser, require_user
 from app.core.container import Container, get_container
 from app.core.errors import (
     AppError,
@@ -19,6 +20,7 @@ from app.core.errors import (
     UnsupportedMediaError,
 )
 from app.core.security import rate_limit_chat, require_admin, require_cron_secret, sanitize_filename
+from app.repositories.conversations import ConversationRepository, UsageRepository
 from app.repositories.documents import row_to_chunk
 from app.schemas.models import (
     AdjustmentRequest,
@@ -27,6 +29,7 @@ from app.schemas.models import (
     ChatResponse,
     ChunkList,
     ClearHistoryResult,
+    ConversationRename,
     DeleteResult,
     DocumentList,
     DocumentSummary,
@@ -35,9 +38,11 @@ from app.schemas.models import (
     EvaluationRunRequest,
     EvaluationSuite,
     EvaluationSummary,
+    FeedbackIn,
     Health,
     IngestionRun,
     IngestionStatus,
+    LegacyImport,
     MentorEntry,
     MentorEntryIn,
     MentorLog,
@@ -48,12 +53,13 @@ from app.schemas.models import (
     Stats,
     UploadResult,
 )
+from app.services.corpus import corpus_notice
 from app.services.document_loader import PDF_MAGIC, SUPPORTED_EXTENSIONS, DocumentReadError, decode_text
 from app.services.ingestion import make_document_id
 from app.services.vector_store import METRIC
 
 ERRORS = {
-    400: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 404: {"model": ErrorResponse},
+    400: {"model": ErrorResponse}, 401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 404: {"model": ErrorResponse},
     409: {"model": ErrorResponse}, 413: {"model": ErrorResponse}, 415: {"model": ErrorResponse},
     422: {"model": ErrorResponse}, 429: {"model": ErrorResponse}, 503: {"model": ErrorResponse},
 }
@@ -149,6 +155,7 @@ def stats(request: Request) -> Stats:
         return round(value, digits) if value is not None else None
 
     return Stats(
+        corpus_notice=corpus_notice(c.settings, p.db),
         documents_total=sum(counts.values()),
         documents_processed=counts.get("processed", 0),
         documents_failed=counts.get("failed", 0),
@@ -366,28 +373,101 @@ def ingestion_status(request: Request) -> IngestionStatus:
 # ---------------------------------------------------------------------------
 @router.post("/chat", response_model=ChatResponse, tags=["chat"], dependencies=[Depends(rate_limit_chat)],
              summary="Pergunta ao acervo: recuperação, geração e citações verificáveis")
-def chat(request: Request, body: ChatRequest) -> ChatResponse:
+def chat(request: Request, body: ChatRequest, user: AuthUser = Depends(require_user)) -> ChatResponse:
     c = container(request)
     if len(body.question) > c.settings.max_question_chars:
         raise AppError(f"A pergunta excede o limite de {c.settings.max_question_chars} caracteres.",
                        code="pergunta_muito_longa", status_code=422)
-    return c.pipeline.answer(body.question, conversation_id=body.conversation_id, filters=body.filters,
-                             top_k=body.top_k)
+    conversations = ConversationRepository(c.pipeline.db)
+    conversation_id = conversations.ensure(body.conversation_id, user.id, body.question)
+    history = c.pipeline.chat.recent(conversation_id, limit=c.settings.chat_context_turns)
+    response = c.pipeline.answer(body.question, conversation_id=conversation_id, filters=body.filters,
+                                 top_k=body.top_k, history=history)
+    conversations.touch(conversation_id, user.id)
+    return response
 
 
 @router.get("/chat/history/{conversation_id}", response_model=ChatHistory, tags=["chat"])
 def chat_history(
     request: Request, conversation_id: str,
     limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0),
+    user: AuthUser = Depends(require_user),
 ) -> ChatHistory:
-    items = container(request).pipeline.chat.history(conversation_id, limit=limit + 1, offset=offset)
+    c = container(request)
+    ConversationRepository(c.pipeline.db).require(conversation_id, user.id)
+    items = c.pipeline.chat.history(conversation_id, limit=limit + 1, offset=offset)
     return ChatHistory(conversation_id=conversation_id, items=items[:limit], has_more=len(items) > limit)
 
 
 @router.delete("/chat/history/{conversation_id}", response_model=ClearHistoryResult, tags=["chat"])
-def clear_chat_history(request: Request, conversation_id: str) -> ClearHistoryResult:
-    removed = container(request).pipeline.chat.clear(conversation_id)
+def clear_chat_history(request: Request, conversation_id: str, user: AuthUser = Depends(require_user)) -> ClearHistoryResult:
+    removed = ConversationRepository(container(request).pipeline.db).delete(conversation_id, user.id)
     return ClearHistoryResult(conversation_id=conversation_id, removed=removed)
+
+
+
+@router.get("/auth/config", tags=["contas"])
+def auth_config(request: Request) -> dict:
+    base_url = request.app.state.settings.neon_auth_base_url
+    return {"base_url": base_url, "configured": bool(base_url)}
+
+
+@router.get("/account/me", tags=["contas"])
+def account_me(user: AuthUser = Depends(require_user)) -> dict:
+    return {"id": user.id, "email": user.email, "name": user.name}
+
+
+@router.get("/account/usage", tags=["contas"])
+def account_usage(request: Request, user: AuthUser = Depends(require_user)) -> dict:
+    c = container(request)
+    return UsageRepository(c.pipeline.db).status(user.id, c.settings)
+
+
+@router.get("/conversations", tags=["chat"])
+def conversations_list(request: Request, user: AuthUser = Depends(require_user),
+                       offset: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=100)) -> dict:
+    rows = ConversationRepository(container(request).pipeline.db).list(user.id, offset, limit + 1)
+    return {"items": rows[:limit], "has_more": len(rows) > limit}
+
+
+@router.patch("/conversations/{conversation_id}", tags=["chat"])
+def conversation_rename(request: Request, conversation_id: str, body: ConversationRename,
+                        user: AuthUser = Depends(require_user)) -> dict:
+    ConversationRepository(container(request).pipeline.db).rename(conversation_id, user.id, body.title)
+    return {"id": conversation_id, "title": body.title}
+
+
+@router.post("/conversations/import-legacy", tags=["chat"], dependencies=admin)
+def import_legacy(request: Request, body: LegacyImport, user: AuthUser = Depends(require_user)) -> dict:
+    count = ConversationRepository(container(request).pipeline.db).import_legacy(user.id, body.conversation_ids)
+    return {"imported": count}
+
+
+@router.get("/conversations/{conversation_id}/export", tags=["chat"])
+def conversation_export(request: Request, conversation_id: str, user: AuthUser = Depends(require_user)) -> dict:
+    c = container(request)
+    conversation = ConversationRepository(c.pipeline.db).require(conversation_id, user.id)
+    lines = ["# " + conversation["title"].replace("\n", " "), "", "Exportado do Lumme.", ""]
+    offset = 0
+    while True:
+        items = c.pipeline.chat.history(conversation_id, limit=100, offset=offset)
+        for item in items:
+            lines += ["## Você", "", item.question, "", "## Lumme", "", item.answer or item.notice or "Sem resposta.", ""]
+            if item.citations:
+                lines += ["### Fontes", ""]
+                for source in item.citations:
+                    lines += [f"- [{source.label}] {source.document_title or source.filename}, página {source.page or 'não informada'}", source.excerpt, ""]
+        if len(items) < 100:
+            break
+        offset += len(items)
+    return {"filename": f"lumme-{conversation_id}.md", "content": "\n".join(lines)}
+
+
+@router.post("/chat/feedback/{interaction_id}", tags=["chat"])
+def chat_feedback(request: Request, interaction_id: str, body: FeedbackIn,
+                  user: AuthUser = Depends(require_user)) -> dict:
+    ConversationRepository(container(request).pipeline.db).feedback(interaction_id, user.id, body.rating, body.comment)
+    return {"saved": True, "rating": body.rating}
 
 
 # ---------------------------------------------------------------------------

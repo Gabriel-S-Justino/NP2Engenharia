@@ -1,6 +1,6 @@
 # Inventário de variáveis de ambiente
 
-> **Interface revisada em 09/11/2026.** O tema Escola de trânsito não adiciona variáveis de ambiente nem altera valores. Informações de API, modelo e banco deixam de aparecer nas telas de consulta; continuam documentadas aqui e disponíveis aos responsáveis pela implantação.
+Atualizado em 10/11/2026. Contas, memória contextual, propriedade do histórico, ações da sidebar e cotas estão descritas em [Contas e conversas](CONTAS_E_CONVERSAS.md). A avaliação real e a edição antiga do acervo estão em [Matriz](MATRIZ_TESTES.md) e [Fontes](FONTES.md).
 
 Arquivo de exemplo: `.env.example` (sem segredos). O `.env` real é ignorado pelo Git.
 **Nunca cole segredos no chat, em issues ou no código**: na Vercel, use *Settings → Environment Variables*;
@@ -47,3 +47,17 @@ Legenda da coluna Vercel: **definir** = configure no painel; **auto** = definido
 
 Variáveis usadas apenas por testes e scripts: `TEST_DATABASE_URL` (testes com Postgres), `WEB_URL`,
 `ADMIN_TOKEN`, `SHOTS_DIR` (E2E).
+
+## Contas, memória e consumo
+
+| Variável | Padrão | Função |
+|---|---|---|
+| NEON_AUTH_BASE_URL | sem padrão | URL HTTPS pública do Neon Auth gerenciado |
+| DATABASE_NEON_AUTH_BASE_URL | integração Neon | Alias usado quando NEON_AUTH_BASE_URL não está definida |
+| CHAT_CONTEXT_TURNS | 6 | Respostas anteriores incluídas, de 0 a 20 |
+| CHAT_CONTEXT_CHARS | 6000 | Orçamento do histórico, de 500 a 20000 caracteres |
+| USER_DAILY_QUESTIONS | 100 | Requisições admitidas por conta por dia UTC |
+| GLOBAL_DAILY_QUESTIONS | 1000 | Requisições admitidas pelo serviço por dia UTC |
+| RATE_LIMIT_PER_MINUTE | 30 | Janela fixa de minuto por conta; IP compartilha três vezes esse valor |
+
+As cotas diárias aceitam valores positivos. O limite por minuto aceita 0 para desativar somente essa janela. A URL do Auth é pública, mas DATABASE_URL, ADMIN_TOKEN e LLM_API_KEY são segredos. O frontend obtém a configuração pública em /api/auth/config. Alterar o Auth exige alinhar origens confiáveis e não vincula automaticamente identidades de outro serviço.
