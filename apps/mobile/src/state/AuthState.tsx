@@ -6,7 +6,7 @@ import { getAuthClient } from '@/services/auth';
 export type AccountUser = { id: string; email: string; name: string };
 type AuthState = {
   user: AccountUser | null; loading: boolean; error: string | null;
-  refreshSession: () => Promise<void>; signOut: () => Promise<void>;
+  refreshSession: () => Promise<boolean>; signOut: () => Promise<void>;
 };
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -28,10 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return result.data?.session?.token ?? null;
       } : null);
       setUser(account ? { id: account.id, email: account.email, name: account.name } : null);
+      return Boolean(account);
     } catch {
       setUser(null);
       setAccessTokenGetter(null);
       setError('Não foi possível verificar sua conta. Tente novamente.');
+      return false;
     } finally {
       setLoading(false);
     }

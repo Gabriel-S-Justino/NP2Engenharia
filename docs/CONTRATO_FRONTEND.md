@@ -10,7 +10,18 @@ O contrato completo é gerado pelo FastAPI em /api/openapi.json. Erros mantêm o
 | GET | /api/account/me | Bearer JWT | Identidade validada |
 | GET | /api/account/usage | Bearer JWT | daily_used, daily_limit, minute_used, minute_limit, resets_at |
 
-Senhas e códigos de recuperação são enviados diretamente ao Neon Auth pelo SDK oficial.
+Na web publicada, o SDK usa a origem do Lumme. O servidor encaminha somente as operações de conta abaixo ao Neon Auth. Os erros preservam o código e o status do provedor quando a resposta é JSON.
+
+| Método | Caminho em /api/auth | Finalidade |
+|---|---|---|
+| GET | get-session | Restaurar a sessão e receber o JWT emitido pelo Neon |
+| POST | sign-up/email | Criar conta |
+| POST | sign-in/email | Entrar com e-mail e senha |
+| POST | sign-out | Encerrar sessão |
+| POST | email-otp/request-password-reset | Solicitar código de recuperação |
+| POST | email-otp/reset-password | Validar código e trocar senha |
+
+Os POSTs exigem a mesma origem da aplicação. As respostas de sessão usam `Cache-Control: no-store, private` e cookies `Secure`, `HttpOnly` e `SameSite=Lax`. O acesso nativo e o desenvolvimento com frontend e API em origens distintas usam a URL gerenciada do Neon Auth.
 
 ## Conversas
 

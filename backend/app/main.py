@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.api.auth_proxy import router as auth_proxy_router
 from app.api.routes import router
 from app.core.config import Settings, get_settings
 from app.core.container import get_container
@@ -83,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     app.include_router(router)
+    app.include_router(auth_proxy_router)
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:

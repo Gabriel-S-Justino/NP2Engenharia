@@ -34,9 +34,9 @@ export default function AccountScreen() {
     try {
       const client = await getAuthClient();
       if (mode === 'forgot') {
-        const result = await client.emailOtp.sendVerificationOtp({ email: address, type: 'forget-password' });
+        const result = await client.emailOtp.requestPasswordReset({ email: address });
         if (result.error) { setError(authMessage(result.error)); return; }
-        setMode('reset'); setMessage('Se houver uma conta para este e-mail, você receberá um código para recuperar o acesso.'); return;
+        setMode('reset'); setMessage('Pedido recebido. Se houver uma conta com esse e-mail, confira a caixa de entrada e o spam.'); return;
       }
       if (mode === 'reset') {
         const result = await client.emailOtp.resetPassword({ email: address, otp: otp.trim(), password });
@@ -48,9 +48,12 @@ export default function AccountScreen() {
         : await client.signIn.email({ email: address, password });
       if (result.error) { setError(authMessage(result.error)); return; }
       setPassword('');
-      await refreshSession();
+      if (!await refreshSession()) {
+        setError('Não foi possível iniciar a sessão neste navegador. Tente entrar novamente.');
+        return;
+      }
       router.replace('/chat');
-    } catch { setError('O serviço de acesso não respondeu. Tente novamente.'); }
+    } catch (failure) { setError(authMessage(failure)); }
     finally { setBusy(false); }
   };
 
@@ -103,8 +106,9 @@ export default function AccountScreen() {
           {mode !== 'forgot' ? <TextField label={mode === 'reset' ? 'Nova senha' : 'Senha'} value={password} onChangeText={setPassword} secureTextEntry autoComplete={mode === 'login' ? 'current-password' : 'new-password'} editable={!busy} /> : null}
           <Button label={mode === 'signup' ? 'Criar conta' : mode === 'login' ? 'Entrar' : mode === 'forgot' ? 'Enviar código' : 'Atualizar senha'} loading={busy || loading} onPress={() => void submit()} />
           <Button label={mode === 'login' ? 'Criar uma conta' : 'Voltar para entrar'} variant="ghost" disabled={busy} onPress={() => changeMode(mode === 'login' ? 'signup' : 'login')} />
+          {mode === 'reset' ? <Button label="Solicitar novo código" variant="ghost" disabled={busy} onPress={() => changeMode('forgot')} /> : null}
           {mode === 'login' ? <Button label="Esqueci minha senha" variant="ghost" disabled={busy} onPress={() => changeMode('forgot')} /> : null}
-          <AppText variant="caption" color="textSecondary">Usamos o Neon Auth para gerenciar seu acesso. Senhas não são guardadas no histórico nem enviadas à IA.</AppText>
+          <AppText variant="caption" color="textSecondary">Usamos o Neon Auth para gerenciar seu acesso. O Neon Auth valida as credenciais e gerencia a sessão.</AppText>
         </Card>
       )}
     </PageContainer>

@@ -2,7 +2,7 @@
 
 Após publicar:
 
-1. Abra Sua conta, crie ou use uma conta real e confirme a entrada. Senhas não devem ser enviadas ao desenvolvedor.
+1. Abra Sua conta, crie ou use uma conta de teste e confirme a entrada. Recarregue a página e confira se a sessão permanece. Teste uma senha errada e verifique a mensagem de credenciais.
 2. Faça uma pergunta respondível sobre o arquivo e confira resposta, fontes e aviso de edição antiga.
 3. Faça uma continuação na mesma conversa e confira que as fontes continuam atuais à requisição.
 4. Renomeie e reabra o chat pela sidebar. Exporte e confira perguntas, respostas e fontes. Teste copiar e avaliar.
@@ -10,7 +10,7 @@ Após publicar:
 6. Teste sessão expirada e acesso anônimo: as rotas privadas devem retornar 401.
 7. Confira consumo em Sua conta e o horário de renovação. Limites devem retornar 429.
 8. Exclua somente uma conversa criada para seu próprio teste, após confirmar, e confira que ela não reaparece.
-9. Teste recuperação por e-mail e saída da conta em dispositivo compartilhado.
+9. Saia da conta, solicite recuperação para o e-mail cadastrado e verifique o recebimento. Digite o código mais recente, altere a senha e entre com a nova senha. Registre separadamente o aceite da solicitação e o recebimento do código.
 
 Testes que removem dados devem usar conversas próprias de validação e consentimento do responsável. Não reindexe nem troque o acervo para validar apenas a interface.
 

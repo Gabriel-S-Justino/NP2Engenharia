@@ -1,10 +1,12 @@
 # Segurança
 
-Atualizado em 10/11/2026.
+Atualizado em 11/11/2026.
 
 ## Identidade e autorização
 
 Neon Auth gerencia credenciais e sessões. JWTs são verificados no backend usando JWKS, algoritmo EdDSA, expiração, emissor e público. Ausência ou invalidade retorna 401; indisponibilidade de validação retorna 503. As rotas privadas usam Cache-Control private, no-store e Vary Authorization.
+
+O acesso web encaminha apenas as operações de conta conhecidas ao Neon. O servidor verifica a origem dos POSTs e encaminha somente os cookies de sessão do Neon. O cookie fica restrito ao domínio do Lumme e ao caminho `/api/auth`. Senhas, códigos, cookies e JWTs ficam fora dos logs de autenticação.
 
 Todas as operações de conversa exigem identidade e propriedade: listar, consultar mensagens, renomear, exportar, excluir, enviar pergunta no mesmo ID e avaliar resposta. Outro usuário recebe 404 sem confirmação de existência. IDs excluídos não podem ser reutilizados.
 
@@ -22,6 +24,6 @@ Uploads mantêm validação de extensão, conteúdo, tamanho e caminhos. Trechos
 
 ## Operação
 
-Configure origens exatas no CORS da API e na lista de origens confiáveis do Neon Auth. Use domínio de autenticação e SMTP próprios para operação consolidada; valide entrega de recuperação de senha e política de verificação de e-mail. O projeto existente usa o remetente compartilhado do provedor. Não há promessa de entrega de e-mail ou homologação de todos os navegadores.
+Configure origens exatas no CORS da API e na lista de origens confiáveis do Neon Auth. O projeto usa o remetente compartilhado do Neon. A configuração de SMTP próprio e a verificação de recebimento de códigos estão descritas em [Produção](PRODUCAO.md).
 
 Veja [Variáveis de ambiente](VARIAVEIS_AMBIENTE.md), [Contas](CONTAS_E_CONVERSAS.md) e [Rollback](ROLLBACK.md).
