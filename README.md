@@ -36,4 +36,4 @@ Em apps/mobile, execute npm run lint e npm run typecheck. Configure Neon Auth in
 
 A avaliação real de 10/11/2026 usou o PDF já indexado, sem baixar o original, e obteve 9 de 10 casos na versão e9077366. O relatório identifica que se trata da linha de base anterior às novas contas e memória. [Relatório real](docs/resultados/acervo_real_real_2d891ced724e.md).
 
-Documentação completa: [índice](docs/README.md). Limites e itens que precisam de homologação: [limitações](docs/LIMITACOES.md).
+Consulte a [documentação técnica](docs/DOCUMENTACAO_TECNICA.md), o [índice de documentos](docs/README.md) e as [limitações](docs/LIMITACOES.md).

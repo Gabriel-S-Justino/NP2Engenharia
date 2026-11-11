@@ -1,9 +1,10 @@
 # Documentação do Lumme
 
-Atualizada em 10/11/2026 para contas, memória, histórico no servidor, ações de chat, consumo e avaliação real.
+A documentação técnica reúne arquitetura, fluxos, dados, contrato da API e operação da aplicação.
 
 | Assunto | Documento |
 |---|---|
+| Documentação técnica | [Guia técnico do Lumme](DOCUMENTACAO_TECNICA.md) |
 | Arquitetura e persistência | [Arquitetura](ARQUITETURA.md) |
 | Login, histórico, memória e cotas | [Contas e conversas](CONTAS_E_CONVERSAS.md) |
 | Uso da sidebar | [Histórico de chats](HISTORICO_CHATS.md) |
