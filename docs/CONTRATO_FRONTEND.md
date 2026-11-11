@@ -23,6 +23,17 @@ Na web publicada, o SDK usa a origem do Lumme. O servidor encaminha somente as o
 
 Os POSTs exigem a mesma origem da aplicação. As respostas de sessão usam `Cache-Control: no-store, private` e cookies `Secure`, `HttpOnly` e `SameSite=Lax`. O acesso nativo e o desenvolvimento com frontend e API em origens distintas usam a URL gerenciada do Neon Auth.
 
+## Revisão de qualidade
+
+| Método | Caminho | Resultado |
+|---|---|---|
+| GET | /api/evaluations | Matriz real, histórico e execução atual |
+| POST | /api/evaluations/run | Executa a matriz do acervo real com autorização administrativa |
+| GET | /api/evaluations/results | Resultados da última avaliação real ou do run_id informado |
+| POST | /api/evaluations/results/{run_id}/cases/{case_id}/adjustment | Registra ajuste de um caso da matriz real com autorização administrativa |
+
+O identificador de suíte aceito pela API é `acervo_real`. Ele é o padrão da execução e da consulta de resultados. IDs de outras suítes retornam 404 na consulta por execução. O indicador de avaliação em `/api/stats` usa a última avaliação real concluída.
+
 ## Conversas
 
 | Método | Caminho | Resultado |

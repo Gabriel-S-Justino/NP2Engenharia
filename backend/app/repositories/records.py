@@ -181,8 +181,11 @@ class EvaluationRepository:
             "SELECT * FROM evaluation_runs WHERE status = 'completed' ORDER BY started_at DESC, id DESC LIMIT 1"
         )
 
-    def list_runs(self, limit: int = 20):
-        return self.db.query("SELECT * FROM evaluation_runs ORDER BY started_at DESC, id DESC LIMIT ?", (limit,))
+    def list_runs(self, limit: int = 20, *, suite: str):
+        return self.db.query(
+            "SELECT * FROM evaluation_runs WHERE suite = ? ORDER BY started_at DESC, id DESC LIMIT ?",
+            (suite, limit),
+        )
 
     def results(self, run_id: str) -> list[EvaluationCaseResult]:
         rows = self.db.query(

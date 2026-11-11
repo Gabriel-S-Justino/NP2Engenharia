@@ -76,7 +76,6 @@ function CaseCard({ result, onAdjust }: { result: EvaluationCaseResult; onAdjust
 export default function EvaluationScreen() {
   const toast = useToast();
   const overview = useAsync(() => api.evaluations(), []);
-  const [suite, setSuite] = useState('fixtures');
   const [runId, setRunId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [filter, setFilter] = useState<'all' | 'failed'>('all');
@@ -86,13 +85,13 @@ export default function EvaluationScreen() {
   const [savingAdjust, setSavingAdjust] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const results = useAsync(() => api.evaluationResults(runId ?? undefined, runId ? undefined : suite), [runId, suite]);
+  const results = useAsync(() => api.evaluationResults(runId ?? undefined, 'acervo_real'), [runId]);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  const suiteInfo = overview.data?.suites.find((s) => s.id === suite);
+  const suiteInfo = overview.data?.suites.find((s) => s.id === 'acervo_real' && !s.synthetic);
 
   /** Acompanha a execução em segundo plano até o backend informar conclusão ou falha. */
   const waitForCompletion = async (attempt = 0): Promise<void> => {
@@ -121,7 +120,7 @@ export default function EvaluationScreen() {
     if (running) return;
     setRunning(true);
     try {
-      const state = await api.runEvaluation(suite);
+      const state = await api.runEvaluation('acervo_real');
       if (state.status === 'running') {
         await waitForCompletion();
         return;
@@ -168,18 +167,13 @@ export default function EvaluationScreen() {
     <PageContainer>
       <PageHeader
         title="Revisão de qualidade"
-        description="Espaço da equipe para conferir as respostas, revisar fontes e registrar melhorias."
+        description="Confira as respostas e as fontes da matriz do acervo real."
         right={<Button label={running ? 'Executando…' : 'Executar testes'} icon="play" onPress={() => void run()} loading={running} disabled={!suiteInfo?.ready} testID="botao-executar-testes" />}
       />
 
       {overview.error ? <ErrorState message={overview.error.message} onRetry={() => void overview.reload()} /> : null}
-      <Row gap={spacing.xs}>
-        {overview.data?.suites.map((s) => (
-          <FilterChip key={s.id} label={`${s.synthetic ? 'Material de teste' : 'Seu acervo'}${s.ready ? '' : ' (em preparação)'}`} selected={suite === s.id} onPress={() => { setSuite(s.id); setRunId(null); }} />
-        ))}
-      </Row>
       {suiteInfo ? (
-        <Notice tone={suiteInfo.synthetic ? 'warning' : suiteInfo.ready ? 'info' : 'danger'} title={suiteInfo.title}>
+        <Notice tone={suiteInfo.ready ? 'info' : 'danger'} title={suiteInfo.title}>
           <AppText variant="helper">{suiteInfo.description}</AppText>
         </Notice>
       ) : null}
@@ -196,7 +190,7 @@ export default function EvaluationScreen() {
           <View style={styles.grid}>
             <StatCard icon="speedometer-outline" label="Taxa de aprovação" value={formatPercent(summary.pass_rate, true)} hint={summary.target_met ? 'Meta de 80% atingida' : 'Abaixo da meta de 80%'} />
             <StatCard icon="list-outline" label="Testes executados" value={summary.executed} hint={`${summary.passed} aprovados · ${summary.failed} reprovados`} />
-            <StatCard icon="time-outline" label="Última execução" value={formatDateTime(summary.finished_at)} hint={`Suíte “${summary.suite}”`} />
+            <StatCard icon="time-outline" label="Última execução" value={formatDateTime(summary.finished_at)} hint="Acervo real" />
           </View>
           <Card>
             <SectionHeader title="Resultado por categoria" />
@@ -227,9 +221,9 @@ export default function EvaluationScreen() {
           <SectionHeader title="Histórico de execuções" />
           {overview.data.runs.map((r) => (
             <Row key={r.id}>
-              <Button label={`Ver revisão de ${formatDateTime(r.started_at)}`} variant="ghost" size="sm" onPress={() => { setSuite(r.suite); setRunId(r.id); }} />
+              <Button label={`Ver revisão de ${formatDateTime(r.started_at)}`} variant="ghost" size="sm" onPress={() => setRunId(r.id)} />
               <AppText variant="caption" color="textSecondary">
-                {r.suite} · {formatDateTime(r.started_at)} · {r.status}
+                {formatDateTime(r.started_at)} · {r.status}
                 {r.summary?.pass_rate !== undefined && r.summary?.pass_rate !== null ? ` · ${formatPercent(r.summary.pass_rate, true)}` : ''}
               </AppText>
             </Row>

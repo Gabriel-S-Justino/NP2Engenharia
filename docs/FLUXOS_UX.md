@@ -48,7 +48,7 @@ Avisos de informação insuficiente, divergência, conteúdo suspeito, citação
 
 ## Ferramentas da equipe
 
-Revisão de qualidade mantém seleção de conjunto, execução, histórico, filtros e registro de ajustes. Diário da equipe mantém formulário, validação e salvamento. Configurações mantém verificação de disponibilidade, quatro parâmetros editáveis, confirmação de reprocessamento, token, privacidade e tema.
+Revisão de qualidade executa a matriz do acervo real e reúne seu histórico, filtros e registro de ajustes. Diário da equipe mantém formulário, validação e salvamento. Configurações mantém verificação de disponibilidade, quatro parâmetros editáveis, confirmação de reprocessamento, token, privacidade e tema.
 
 O agrupamento Espaço da equipe organiza as ferramentas administrativas. O acesso às conversas agora exige uma conta, independentemente do token administrativo.
 

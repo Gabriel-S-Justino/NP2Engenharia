@@ -88,12 +88,12 @@ await step('Fonte: detalhes do trecho citado', async () => {
   await desktop.screenshot({ path: `${SHOTS}/06_fonte_detalhe.png`, fullPage: true });
 });
 
-await step('Laboratório: executar a matriz e ver taxa por categoria', async () => {
+await step('Revisão de qualidade apresenta a matriz do acervo real', async () => {
   await desktop.getByRole('button', { name: 'Ferramentas da equipe' }).click();
   await desktop.getByRole('link', { name: 'Revisão de qualidade' }).click();
-  await desktop.getByTestId('botao-executar-testes').click();
-  await desktop.getByText('Resultado por categoria').waitFor({ timeout: 60000 });
-  await desktop.getByText('Taxa de aprovação').waitFor();
+  await desktop.getByText('Confira as respostas e as fontes da matriz do acervo real.', { exact: true }).waitFor();
+  await desktop.getByText(/Avaliação do documento enviado/).waitFor();
+  if (await desktop.getByText('Material de teste', { exact: true }).count()) throw new Error('conjunto fictício visível');
   await desktop.screenshot({ path: `${SHOTS}/07_avaliacao_desktop.png`, fullPage: true });
 });
 

@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.core.errors import ConflictError, NotFoundError
 from app.core.security import RateLimiter
 from app.repositories.records import EvaluationRepository, MentorRepository
-from app.schemas.models import EvaluationResults
+from app.schemas.models import REAL_EVALUATION_SUITE, EvaluationResults
 from app.services.evaluation import EvaluationService
 from app.services.pipeline import RagPipeline
 
@@ -76,8 +76,8 @@ class Container:
     def run_evaluation(self, suite_id: str, *, wait: bool) -> dict:
         if self.settings.serverless:
             wait = True  # funções serverless não mantêm tarefas em segundo plano após a resposta
-        suites = self.evaluations.suites()
-        suite = suites.get(suite_id)
+        suite = (self.evaluations.real_suite() if suite_id == REAL_EVALUATION_SUITE
+                 else self.evaluations.suites().get(suite_id))
         if suite is None:
             raise NotFoundError(f"Suíte de avaliação '{suite_id}' não encontrada.")
         if not suite.ready:

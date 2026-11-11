@@ -4,7 +4,9 @@ A meta de aprovação é 80%. Resultados não são ajustados manualmente.
 
 ## Acervo real
 
-tests/acceptance/matriz_acervo_real.json contém seis perguntas com informação presente, duas com informação ausente, uma fora do escopo e uma adversarial. As respostas esperadas foram conferidas nos trechos indexados do CTB existente. Hash, edição e páginas físicas estão na proveniência da matriz. A execução é bloqueada se o hash conferido não existir como documento processado no banco.
+Na tela **Revisão de qualidade**, clique em **Executar testes** para rodar a matriz real. A tela e a API exibem apenas execuções dessa matriz, inclusive no histórico e no indicador da página inicial.
+
+tests/acceptance/matriz_acervo_real.json contém seis perguntas com informação presente, duas com informação ausente, uma fora do escopo e uma adversarial. As respostas esperadas foram conferidas nos trechos indexados do CTB existente. Hash, edição e páginas físicas estão na proveniência da matriz. Cada execução recupera trechos do documento de referência conferido pelo hash. Para avaliar, esse documento precisa estar processado no acervo real.
 
 A avaliação exige status answered, citações válidas, fonte e página esperadas, termos esperados na resposta e na evidência. Alternativas explícitas usam |, por exemplo 30|trinta. São critérios automáticos auxiliares, sem substituir leitura humana.
 
@@ -20,4 +22,4 @@ Testes frontend cobrem restauração do catálogo, troca de conta, descarte de r
 
 Comandos: npm run backend:test, npm run frontend:test, npm run frontend:build. Em apps/mobile: npm run lint e npm run typecheck.
 
-A suíte fixtures usa conteúdo fictício e é restrita a testes. Seus relatórios antigos não comprovam a qualidade da aplicação no acervo real.
+A CI executa a suíte de regressão em um ambiente isolado. Os resultados dessa suíte são independentes da Revisão de qualidade.

@@ -146,11 +146,18 @@ def test_serverless_api_upload_evaluation_and_ephemeral_guard(tmp_path):
         assert uploaded.json()["document"]["status"] == "processed"  # síncrono em serverless
         scan_run = client.post("/api/ingestion/scan", headers=headers).json()
         assert scan_run["status"] == "completed" and scan_run["stats"]["remaining"] == 0
-        state = client.post("/api/evaluations/run", json={"suite": "fixtures"}, headers=headers).json()
+        c = client.app.state.container
+        reference_id = uploaded.json()["document"]["id"]
+        reference = c.pipeline.db.query_one("SELECT sha256 FROM documents WHERE id = ?", (reference_id,))
+        suite = c.evaluations.real_suite()
+        suite.provenance["sha256"] = reference["sha256"]
+        (tmp_path / "matriz_acervo_real.json").write_text(suite.model_dump_json(), encoding="utf-8")
+        c.evaluations.suites_dir = tmp_path
+        state = client.post("/api/evaluations/run", json={}, headers=headers).json()
         assert state["status"] == "completed"
         results = client.get(f"/api/evaluations/results?run_id={state['run_id']}").json()
         assert results["summary"]["executed"] == 10
-        # O acervo principal (Postgres) não recebeu as fixtures da avaliação.
+        assert results["summary"]["params"]["document_ids"] == [reference_id]
         names = {d["filename"] for d in client.get("/api/documents").json()["items"]}
         assert names == {"regra.txt", "boletim_sintetico_mobilidade_com_injecao.txt",
                          "guia_sintetico_pedestres_ciclistas.txt", "regulamento_sintetico_vila_exemplo.pdf"}

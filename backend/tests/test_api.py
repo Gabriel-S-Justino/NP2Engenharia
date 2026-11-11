@@ -148,38 +148,76 @@ def test_settings_view_and_validated_updates(indexed_client):
     assert indexed_client.get("/api/settings").json()["requires_reindex"] is False
 
 
-def test_evaluation_run_and_results(client, tmp_path):
-    assert client.get("/api/evaluations/results").status_code == 404
+def test_evaluation_api_excludes_synthetic_runs(client):
+    c = client.app.state.container
     suites = client.get("/api/evaluations").json()["suites"]
-    assert {"fixtures", "acervo_real"} <= {s["id"] for s in suites}
-    fixtures = next(s for s in suites if s["id"] == "fixtures")
-    categories = [c["category"] for c in fixtures["cases"]]
+    assert [s["id"] for s in suites] == ["acervo_real"]
+    assert not suites[0]["synthetic"]
+    categories = [case["category"] for case in suites[0]["cases"]]
     assert len(categories) == 10
     assert categories.count("present") == 6 and categories.count("absent") == 2
     assert categories.count("out_of_scope") + categories.count("adversarial") == 2
-    state = client.post("/api/evaluations/run?wait=true", json={"suite": "fixtures"}).json()
+
+    assert client.post("/api/evaluations/run?wait=true", json={"suite": "fixtures"}).status_code == 422
+    assert client.get("/api/evaluations/results?suite=fixtures").status_code == 422
+
+    # Exercita o caminho interno usado pela CI e garante que seu histórico fique fora da API.
+    state = c.run_evaluation("fixtures", wait=True)
     assert state["status"] == "completed"
-    results = client.get(f"/api/evaluations/results?run_id={state['run_id']}").json()
+    run_id = state["run_id"]
+    assert client.get("/api/evaluations").json()["runs"] == []
+    assert client.get("/api/evaluations").json()["current"] is None
+    assert client.get(f"/api/evaluations/results?run_id={run_id}").status_code == 404
+    assert client.post(f"/api/evaluations/results/{run_id}/cases/A1/adjustment",
+                       json={"adjustment": "Registro de teste."}).status_code == 404
+    stats = client.get("/api/stats").json()
+    assert stats["documents_total"] == 0
+    assert stats["last_evaluation"] is None
+
+    response = client.post("/api/evaluations/run?wait=true", json={})
+    assert response.status_code == 202
+    assert response.json()["suite"] == "acervo_real"
+    assert response.json()["status"] == "failed"
+    assert "documento de referência" in response.json()["error"]
+    assert client.get("/api/evaluations/results").status_code == 404
+
+
+def test_real_evaluation_uses_reference_document_and_retains_adjustments(indexed_client, tmp_path):
+    c = indexed_client.app.state.container
+    suite = c.evaluations.real_suite()
+    reference = c.pipeline.documents.all_rows()[0]
+    suite.provenance["sha256"] = reference["sha256"]
+    (tmp_path / "matriz_acervo_real.json").write_text(suite.model_dump_json(), encoding="utf-8")
+    c.evaluations.suites_dir = tmp_path
+
+    c.pipeline.db.execute("UPDATE documents SET origin = 'fixtures' WHERE id = ?", (reference["id"],))
+    denied = indexed_client.post("/api/evaluations/run?wait=true", json={}).json()
+    assert denied["status"] == "failed"
+    c.pipeline.db.execute("UPDATE documents SET origin = 'documentos' WHERE id = ?", (reference["id"],))
+
+    state = indexed_client.post("/api/evaluations/run?wait=true", json={}).json()
+    assert state["status"] == "completed"
+    run_id = state["run_id"]
+    results = indexed_client.get(f"/api/evaluations/results?run_id={run_id}").json()
     summary = results["summary"]
+    assert summary["suite"] == "acervo_real"
     assert summary["executed"] == 10
+    assert summary["params"]["document_ids"] == [reference["id"]]
     assert summary["pass_rate"] == round(summary["passed"] / summary["executed"] * 100, 1)
     assert summary["target"] == 80.0
-    adj = client.post(f"/api/evaluations/results/{state['run_id']}/cases/A1/adjustment",
-                      json={"adjustment": "Teste de registro de ajuste."})
+    case_id = results["results"][0]["case_id"]
+    adj = indexed_client.post(f"/api/evaluations/results/{run_id}/cases/{case_id}/adjustment",
+                              json={"adjustment": "Registro de teste."})
     assert adj.status_code == 200
-    again = client.get(f"/api/evaluations/results?run_id={state['run_id']}").json()
-    assert next(r for r in again["results"] if r["case_id"] == "A1")["adjustment"] == "Teste de registro de ajuste."
-    # O acervo principal não foi contaminado pelas fixtures da avaliação.
-    assert client.get("/api/stats").json()["documents_total"] == 0
-    # A prontidão do acervo real muda com a entrega. Teste o bloqueio com uma
-    # suíte temporária explicitamente não pronta, sem depender desse estado.
-    pending = tmp_path / "evaluation_pending"
-    pending.mkdir()
-    suite = dict(id="pendente", title="Pendente", description="Teste", synthetic=False, ready=False, cases=[])
-    (pending / "matriz_pendente.json").write_text(json.dumps(suite), encoding="utf-8")
-    client.app.state.container.evaluations.suites_dir = pending
-    not_ready = client.post("/api/evaluations/run", json={"suite": "pendente"})
-    assert not_ready.status_code == 409
+    again = indexed_client.get("/api/evaluations/results").json()
+    assert again["results"][0]["adjustment"] == "Registro de teste."
+
+
+def test_real_evaluation_blocks_suite_not_ready(client, tmp_path):
+    suite = dict(id="acervo_real", title="Pendente", description="Teste", synthetic=False, ready=False, cases=[])
+    (tmp_path / "matriz_acervo_real.json").write_text(json.dumps(suite), encoding="utf-8")
+    client.app.state.container.evaluations.suites_dir = tmp_path
+    assert client.post("/api/evaluations/run", json={}).status_code == 409
 
 
 def test_mentor_log_roundtrip(client):

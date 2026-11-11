@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from fastapi.responses import JSONResponse
@@ -23,6 +24,7 @@ from app.core.security import rate_limit_chat, require_admin, require_cron_secre
 from app.repositories.conversations import ConversationRepository, UsageRepository
 from app.repositories.documents import row_to_chunk
 from app.schemas.models import (
+    REAL_EVALUATION_SUITE,
     AdjustmentRequest,
     ChatHistory,
     ChatRequest,
@@ -36,7 +38,6 @@ from app.schemas.models import (
     ErrorResponse,
     EvaluationResults,
     EvaluationRunRequest,
-    EvaluationSuite,
     EvaluationSummary,
     FeedbackIn,
     Health,
@@ -148,7 +149,7 @@ def stats(request: Request) -> Stats:
     p = c.pipeline
     counts = p.documents.counts()
     metrics = p.chat.metrics()
-    latest = c.evaluations.latest()
+    latest = c.evaluations.latest(REAL_EVALUATION_SUITE)
     origins = {row["origin"] for row in p.documents.all_rows()}
 
     def rnd(value, digits=2):
@@ -473,19 +474,24 @@ def chat_feedback(request: Request, interaction_id: str, body: FeedbackIn,
 # ---------------------------------------------------------------------------
 # Avaliação
 # ---------------------------------------------------------------------------
-@router.get("/evaluations", tags=["avaliação"], summary="Suítes de teste disponíveis e execuções recentes")
+@router.get("/evaluations", tags=["avaliação"], summary="Matriz do acervo real e execuções recentes")
 def list_evaluations(request: Request) -> dict:
     c = container(request)
-    suites: list[EvaluationSuite] = list(c.evaluations.suites().values())
+    suite = c.evaluations.real_suite()
     runs = [
         {
             "id": r["id"], "suite": r["suite"], "status": r["status"], "started_at": r["started_at"],
             "finished_at": r["finished_at"], "error_message": r["error_message"],
             "summary": json.loads(r["summary_json"] or "{}") or None,
         }
-        for r in c.evaluations.repository.list_runs()
+        for r in c.evaluations.repository.list_runs(suite=REAL_EVALUATION_SUITE)
     ]
-    return {"suites": [s.model_dump() for s in suites], "runs": runs, "current": c.current_evaluation}
+    current = c.current_evaluation
+    return {
+        "suites": [suite.model_dump()] if suite else [],
+        "runs": runs,
+        "current": current if current and current["suite"] == REAL_EVALUATION_SUITE else None,
+    }
 
 
 @router.post("/evaluations/run", status_code=202, tags=["avaliação"], dependencies=admin,
@@ -495,9 +501,10 @@ def run_evaluation(request: Request, body: EvaluationRunRequest, wait: bool = Qu
 
 
 @router.get("/evaluations/results", response_model=EvaluationResults, tags=["avaliação"])
-def evaluation_results(request: Request, run_id: str | None = Query(None), suite: str | None = Query(None)):
+def evaluation_results(request: Request, run_id: str | None = Query(None),
+                       suite: Literal["acervo_real"] = Query(REAL_EVALUATION_SUITE)):
     c = container(request)
-    result = c.evaluations.results_for(run_id) if run_id else c.evaluations.latest(suite)
+    result = c.evaluations.results_for(run_id, suite=suite) if run_id else c.evaluations.latest(suite)
     if result is None:
         return JSONResponse(status_code=404, content={"error": {
             "code": "sem_avaliacao", "message": "Ainda não avaliado. Execute os testes para conhecer o desempenho atual."}})
@@ -508,9 +515,9 @@ def evaluation_results(request: Request, run_id: str | None = Query(None), suite
              tags=["avaliação"], dependencies=admin, summary="Registra o ajuste aplicado após uma falha")
 def register_adjustment(request: Request, run_id: str, case_id: str, body: AdjustmentRequest) -> EvaluationSummary:
     c = container(request)
-    if not c.evaluations.repository.set_adjustment(run_id, case_id, body.adjustment):
+    result = c.evaluations.results_for(run_id, suite=REAL_EVALUATION_SUITE)
+    if result is None or not c.evaluations.repository.set_adjustment(run_id, case_id, body.adjustment):
         raise NotFoundError("Execução ou caso de teste não encontrado.")
-    result = c.evaluations.results_for(run_id)
     return result.summary
 
 

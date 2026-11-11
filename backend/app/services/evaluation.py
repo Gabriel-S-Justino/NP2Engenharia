@@ -22,8 +22,11 @@ import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.core.errors import ConflictError
 from app.repositories.records import EvaluationRepository
 from app.schemas.models import (
+    REAL_EVALUATION_SUITE,
+    ChatFilters,
     ChatResponse,
     EvaluationCase,
     EvaluationCaseResult,
@@ -243,14 +246,29 @@ class EvaluationService:
     def suites(self) -> dict[str, EvaluationSuite]:
         return load_suites(self.suites_dir)
 
+    def real_suite(self) -> EvaluationSuite | None:
+        suite = self.suites().get(REAL_EVALUATION_SUITE)
+        return suite if suite and not suite.synthetic else None
+
     def run(self, suite: EvaluationSuite, pipeline, *, extra_params: dict | None = None) -> EvaluationResults:
-        if suite.provenance.get('sha256') and not pipeline.db.query_one(
-            "SELECT 1 FROM documents WHERE sha256 = ? AND status = 'processed' LIMIT 1", (suite.provenance['sha256'],)
-        ):
-            raise ValueError('O documento conferido nesta matriz não está no acervo atual. Revise a matriz antes de avaliar.')
+        filters = None
+        reference_sha = suite.provenance.get("sha256")
+        if suite.id == REAL_EVALUATION_SUITE or reference_sha:
+            documents = pipeline.db.query(
+                "SELECT id FROM documents WHERE sha256 = ? AND status = 'processed' "
+                "AND origin IN ('documentos', 'upload') ORDER BY id",
+                (reference_sha,),
+            ) if reference_sha else []
+            if not documents or suite.synthetic:
+                raise ConflictError(
+                    "O documento de referência da matriz precisa estar indexado no acervo real.",
+                    code="documento_referencia_ausente",
+                )
+            filters = ChatFilters(document_ids=[row["id"] for row in documents])
         params = {**pipeline.effective_params(), **(extra_params or {})}
         params.update({
             "corpus_provenance": suite.provenance,
+            "document_ids": filters.document_ids if filters else None,
             "embedding": pipeline.embedder.fingerprint,
             "embedding_semantic": pipeline.embedder.semantic,
             "generation": pipeline.generator.describe(),
@@ -261,7 +279,7 @@ class EvaluationService:
         results: list[EvaluationCaseResult] = []
         try:
             for case in suite.cases:
-                response = pipeline.answer(case.question, conversation_id=f"eval_{run_id}", persist=False)
+                response = pipeline.answer(case.question, conversation_id=f"eval_{run_id}", filters=filters, persist=False)
                 result = evaluate_case(case, response)
                 self.repository.save_result(run_id, result)
                 results.append(result)
@@ -275,9 +293,9 @@ class EvaluationService:
         write_reports(self.output_dir, evaluation)
         return evaluation
 
-    def results_for(self, run_id: str) -> EvaluationResults | None:
+    def results_for(self, run_id: str, *, suite: str | None = None) -> EvaluationResults | None:
         row = self.repository.get_run(run_id)
-        if not row or row["status"] != "completed":
+        if not row or row["status"] != "completed" or (suite is not None and row["suite"] != suite):
             return None
         return EvaluationResults(
             summary=EvaluationSummary(**json.loads(row["summary_json"])),

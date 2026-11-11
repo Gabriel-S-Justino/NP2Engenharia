@@ -402,9 +402,12 @@ class EvaluationSuite(BaseModel):
     cases: list[EvaluationCase]
 
 
+REAL_EVALUATION_SUITE = "acervo_real"
+
+
 class EvaluationRunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    suite: str = Field(default="fixtures", pattern=r"^[a-z0-9_-]+$")
+    suite: Literal["acervo_real"] = REAL_EVALUATION_SUITE
 
 
 class EvaluationCaseResult(BaseModel):

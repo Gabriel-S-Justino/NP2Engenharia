@@ -12,6 +12,8 @@ Após publicar:
 8. Exclua somente uma conversa criada para seu próprio teste, após confirmar, e confira que ela não reaparece.
 9. Saia da conta, solicite recuperação para o e-mail cadastrado e verifique o recebimento. Digite o código mais recente, altere a senha e entre com a nova senha. Registre separadamente o aceite da solicitação e o recebimento do código.
 
+10. Abra **Revisão de qualidade** e confira o histórico do acervo real. Use **Executar testes** para avaliar o documento de referência indexado.
+
 Testes que removem dados devem usar conversas próprias de validação e consentimento do responsável. Não reindexe nem troque o acervo para validar apenas a interface.
 
 A entrega de e-mail e os navegadores alvo precisam de homologação humana. A matriz real produz chamadas ao provedor, consumo e relatório; executar testes sintéticos não substitui essa avaliação.

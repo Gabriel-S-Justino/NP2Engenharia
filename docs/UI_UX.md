@@ -19,7 +19,7 @@ A sinalização ilustrada e o livro são decorativos. Não representam progresso
 | /documentos | Sua biblioteca | Enviar arquivo, Preparar documentos, Preparar novamente, filtros, busca e remoção |
 | /documentos/[id] | Detalhe do material | Informações do documento, cuidados e trechos para consulta |
 | /fontes | Fontes para conferir | Documento, página, texto original e autoria disponível |
-| /testes | Revisão de qualidade | Mesmas avaliações, filtros, resultados e registro de ajustes |
+| /testes | Revisão de qualidade | Avaliação do acervo real, filtros, resultados e registro de ajustes |
 | /mentoria | Diário da equipe | Mesmos campos e registros de validação |
 | /configuracoes | Configurações | Disponibilidade, ajustes do acervo, token, privacidade e aparência |
 
