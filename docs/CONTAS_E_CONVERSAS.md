@@ -4,13 +4,13 @@ Atualizado em 11/11/2026.
 
 ## Acesso
 
-A tela Sua conta permite criar conta com e-mail e senha, entrar, recuperar acesso com código e sair. O serviço é Neon Auth gerenciado. O frontend usa o SDK oficial `@neon/auth`. Na web publicada, as chamadas de conta passam por `/api/auth` no domínio do Lumme, que as encaminha ao Neon por HTTPS. O cookie de sessão fica no domínio da aplicação. Ao criar ou redefinir, a interface exige pelo menos 12 caracteres. O servidor de identidade mantém sua própria política.
+A tela Sua conta permite criar conta com e-mail e senha, entrar, recuperar acesso com código e sair. O serviço é Neon Auth gerenciado. O frontend usa o SDK oficial `@neon/auth`. Na web publicada, as chamadas de conta passam por `/api/auth` no domínio do Lumme, que as encaminha ao Neon por HTTPS. O cookie de sessão fica no domínio da aplicação. Ao criar ou redefinir, a interface exige pelo menos 8 caracteres. O servidor de identidade mantém sua própria política.
 
 A API recebe o JWT de curta duração pelo cabeçalho Authorization e confere assinatura EdDSA, expiração, emissor e público no JWKS do Neon Auth. Emissor e público são a origem HTTPS do serviço, sem o caminho /neondb/auth. ID de conversa e token administrativo não substituem login.
 
 ### Criar conta, entrar e recuperar senha
 
-1. Abra [Sua conta no Lumme](https://lumme.vercel.app/conta). Em **Criar uma conta**, informe nome, e-mail e senha com pelo menos 12 caracteres. Se já tiver cadastro, use **Entrar**.
+1. Abra [Sua conta no Lumme](https://lumme.vercel.app/conta). Em **Criar uma conta**, informe nome, e-mail e senha com pelo menos 8 caracteres. Se já tiver cadastro, use **Entrar**.
 2. Em **Esqueci minha senha**, informe o mesmo e-mail do cadastro e clique em **Enviar código**. A mensagem confirma que o pedido foi recebido. A entrega depende do cadastro e do provedor de e-mail.
 3. Confira a caixa de entrada e o spam. Digite o código mais recente, escolha a nova senha e clique em **Atualizar senha**. Entre com a nova senha.
 4. Para reenviar, use **Solicitar novo código**. O Neon pode limitar solicitações repetidas.

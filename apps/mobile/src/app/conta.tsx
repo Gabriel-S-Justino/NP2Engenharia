@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AppText, Button, Card, Notice, PageContainer, PageHeader, TextField } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
 import { api } from '@/services/api';
-import { authMessage, getAuthClient } from '@/services/auth';
+import { authMessage, getAuthClient, MIN_PASSWORD_LENGTH } from '@/services/auth';
 import { useAppState } from '@/state/AppState';
 import { useAuth } from '@/state/AuthState';
 
@@ -28,7 +28,7 @@ export default function AccountScreen() {
     if (busy || loading) return;
     const address = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) { setError('Informe um e-mail válido.'); return; }
-    if ((mode === 'signup' || mode === 'reset') && password.length < 12) { setError('Use uma senha com pelo menos 12 caracteres.'); return; }
+    if ((mode === 'signup' || mode === 'reset') && password.length < MIN_PASSWORD_LENGTH) { setError(`Use uma senha com pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`); return; }
     if (mode === 'signup' && !name.trim()) { setError('Informe seu nome.'); return; }
     setBusy(true); setError(null); setMessage(null);
     try {

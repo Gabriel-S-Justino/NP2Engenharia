@@ -2,6 +2,8 @@ import { createAuthClient } from '@neon/auth';
 import { BetterAuthVanillaAdapter } from '@neon/auth/vanilla/adapters';
 import { API_BASE_URL } from './config';
 
+export const MIN_PASSWORD_LENGTH = 8;
+
 type ManagedResult<T> = { data: T | null; error: { code?: string; message?: string } | null };
 type ManagedMethods = {
   emailOtp: {
@@ -68,7 +70,7 @@ export function authMessage(error: unknown): string {
   if (code.includes('EXISTS') || code.includes('ALREADY_REGISTERED')) {
     return 'Tente entrar com esse e-mail ou use Esqueci minha senha.';
   }
-  if (code.includes('PASSWORD')) return 'Confira a senha. Use pelo menos 12 caracteres ao criar uma nova senha.';
+  if (code.includes('PASSWORD')) return `Confira a senha. Use pelo menos ${MIN_PASSWORD_LENGTH} caracteres ao criar uma nova senha.`;
   if (code === 'AUTH_UNAVAILABLE' || (problem.status ?? 0) >= 500) {
     return 'O serviço de acesso está temporariamente indisponível. Tente novamente mais tarde.';
   }
