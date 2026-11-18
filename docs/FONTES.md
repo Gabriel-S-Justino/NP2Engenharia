@@ -17,3 +17,10 @@ A capa e o expediente apresentam referências editoriais diferentes. A advertên
 As páginas das citações e matrizes são páginas físicas do PDF, contando a capa como página 1. Artigos 61, 62 e 65 estão na página 34; artigo 148, na 54. A matriz contém perguntas sobre o conteúdo desse arquivo, sem apresentá-lo como norma atual.
 
 A titularidade, licença de redistribuição e procedência do upload devem ser confirmadas pelo responsável pelo acervo. Não foram inventados metadados ausentes. Atualizar documentos é uma ação manual da equipe e exige nova avaliação e conferência do hash.
+
+## Confiabilidade e validade
+
+- **Identificação da instituição e da fonte**: os campos `institution` e `source_uri` devem estar presentes; quando ausentes o sistema adiciona as notas **"Instituição não identificada"** e **"Fonte não identificada"**.
+- **Registro das notas de confiabilidade**: `reliability_notes` provém exclusivamente do manifesto, aceita string ou lista, e é deduplicada preservando a ordem de inserção.
+- **Revisão de atualidade**: se algum dos campos temporais `temporal_limit` ou `valid_until` contiver uma data válida no formato ISO‑8601 (`YYYY‑MM‑DD`), é incluído o alerta **"Revisão de atualidade recomendada"** (apenas uma vez).
+- **Verificação da fonte original**: antes de considerar um documento como atualizado, a equipe deve confirmar a fonte original e a validade das informações, já que o acervo pode conter versões desatualizadas ou incompletas.
