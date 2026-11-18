@@ -1,7 +1,7 @@
 
 import pytest
 
-from app.services.ingestion import build_metadata, DiscoveredFile
+from app.services.ingestion import DiscoveredFile, build_metadata
 
 
 def _make_file(relative_path="doc.pdf"):
