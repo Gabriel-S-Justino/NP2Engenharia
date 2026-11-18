@@ -1,3 +1,4 @@
+
 """Ingestão idempotente: varredura, detecção de mudanças, chunking, embeddings e indexação.
 
 Regras importantes:
@@ -36,9 +37,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger("acervo.ingestion")
 
 IGNORED_NAMES = {"manifest.json", "manifest.example.json", "readme.md", ".gitkeep", ".ds_store", "thumbs.db", "desktop.ini"}
+
 METADATA_FIELDS = (
-    "title", "author", "institution", "published_date", "version", "url", "license", "subject", "reliability_notes",
+    "title",
+    "author",
+    "institution",
+    "published_date",
+    "version",
+    "url",
+    "license",
+    "subject",
+    "issuer",
+    "source_uri",
+    "reliability_notes",
 )
+
 LEASE_NAME = "ingestion"
 
 
@@ -131,7 +144,96 @@ def title_from_filename(filename: str) -> str:
     return " ".join(stem.split()) or filename
 
 
+
 def build_metadata(file: DiscoveredFile, manifest: dict, pdf_metadata: dict | None = None) -> dict:
+    """Constrói metadados combinando informações do manifesto e do PDF.
+
+    * Campos listados em ``METADATA_FIELDS`` são extraídos do manifesto quando
+      presentes e não vazios.
+    * ``title`` e ``author`` têm *fallback* para o PDF quando ausentes no
+      manifesto.
+    * ``reliability_notes`` é mesclado entre manifesto e PDF, aceita ``str`` ou
+      ``list``; duplicatas são removidas preservando a ordem.
+    * Campos temporais (``temporal_limit`` ou ``valid_until``) são reconhecidos
+      como *ISO‑8601* (ex.: ``2025-12-31``) – novo contrato de data.
+      Quando presentes e não vazios, adiciona‑se a nota
+      "Revisão de atualidade recomendada" ao ``reliability_notes``.
+    * Campos vazios são ignorados; a ausência de ``institution`` ou ``source_uri``
+      não interfere nas demais chaves.
+    """
+    entry = manifest.get(file.relative_path) or {}
+    metadata: dict = {}
+    origin = None
+
+    # Helper to normalise notas de confiabilidade para lista de strings
+    def _as_list(value: object) -> list[str]:
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if str(v).strip()]
+        if isinstance(value, str):
+            v = value.strip()
+            return [v] if v else []
+        # aceita int/float convertendo para string
+        if isinstance(value, (int, float)):
+            v = str(value).strip()
+            return [v] if v else []
+        return []
+
+    # Primeiro, copie campos simples (exceto reliability_notes que será tratado depois)
+    for field in METADATA_FIELDS:
+        if field == "reliability_notes":
+            continue
+        value = entry.get(field)
+        if isinstance(value, (str, int, float)) and str(value).strip():
+            metadata[field] = str(value).strip()
+            origin = "manifesto"
+
+    # PDF metadata (fallback para título/autor e notas de confiabilidade)
+    pdf_metadata = pdf_metadata or {}
+    if "title" not in metadata and pdf_metadata.get("pdf_title"):
+        metadata["title"], origin = pdf_metadata["pdf_title"], origin or "pdf"
+    if "author" not in metadata and pdf_metadata.get("pdf_author"):
+        metadata["author"], origin = pdf_metadata["pdf_author"], origin or "pdf"
+
+    # Título inferido a partir do nome do arquivo, se ainda faltando
+    if "title" not in metadata:
+        metadata["title"] = title_from_filename(file.filename)
+        origin = origin or "inferido do nome do arquivo"
+
+    # ---------- reliability_notes ----------
+    manifest_notes = _as_list(entry.get("reliability_notes"))
+    pdf_notes = _as_list(pdf_metadata.get("reliability_notes"))
+    combined_notes: list[str] = []
+    seen: set[str] = set()
+    for note in manifest_notes + pdf_notes:
+        if note not in seen:
+            seen.add(note)
+            combined_notes.append(note)
+
+    # ---------- temporal limitation ----------
+    # Novo contrato: campos ``temporal_limit`` ou ``valid_until`` devem ser strings ISO‑8601.
+    # Caso existam e não estejam vazios, adiciona‑se o alerta de revisão.
+    temporal_value = None
+    if entry.get("temporal_limit"):
+        tl = str(entry.get("temporal_limit")).strip()
+        if tl:
+            temporal_value = tl
+    elif entry.get("valid_until"):
+        vu = str(entry.get("valid_until")).strip()
+        if vu:
+            temporal_value = vu
+    if temporal_value:
+        alert = "Revisão de atualidade recomendada"
+        if alert not in seen:
+            combined_notes.append(alert)
+            seen.add(alert)
+
+    if combined_notes:
+        # mantém como lista quando há múltiplas notas, caso contrário string simples
+        metadata["reliability_notes"] = combined_notes if len(combined_notes) > 1 else combined_notes[0]
+
+    metadata["metadata_origin"] = origin
+    return metadata
+
     entry = manifest.get(file.relative_path) or {}
     metadata: dict = {}
     origin = None
@@ -431,7 +533,6 @@ class IngestionService:
             pipeline.db.delete_kv(checkpoint_key)
             pipeline.documents.mark_failed(file.document_id, "Erro inesperado ao processar o documento.")
             stats.failed += 1
-
 
     def _embed_checkpoint(self, file: DiscoveredFile, checkpoint: dict, previous_status: str | None,
                           run: IngestionRun, deadline: float | None) -> bool:
