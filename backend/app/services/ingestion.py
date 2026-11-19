@@ -297,18 +297,13 @@ def build_metadata(
 
             alert_added = True
 
-    # Mantém string quando há uma nota e lista quando há várias.
+    # Mantém reliability_notes sempre como lista.
     if combined_notes:
-        metadata["reliability_notes"] = (
-            combined_notes
-            if len(combined_notes) > 1
-            else combined_notes[0]
-        )
+        metadata["reliability_notes"] = combined_notes
 
     metadata["metadata_origin"] = origin
 
     return metadata
-
 
 class IngestionService:
     def __init__(self, pipeline: RagPipeline):

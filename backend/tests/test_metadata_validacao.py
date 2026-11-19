@@ -1,6 +1,7 @@
 
 import pytest
 
+from app.schemas.models import SourceMetadata
 from app.services.ingestion import DiscoveredFile, build_metadata
 
 
@@ -83,7 +84,7 @@ def test_reliability_notes_string_and_list():
 
     meta_str = build_metadata(_make_file(), manifest_str, None)
 
-    assert meta_str["reliability_notes"] == "única nota"
+    assert meta_str["reliability_notes"] == ["única nota"]
 
     manifest_list = {
         "doc.pdf": {
@@ -226,3 +227,29 @@ def test_metadata_origin_fallback_to_pdf():
 
     # Origin should be "pdf" because title/author came from PDF.
     assert meta["metadata_origin"] == "pdf"
+    
+def test_source_metadata_normalizes_reliability_notes():
+    # Compatibilidade com dados antigos que utilizavam string.
+    metadata_string = SourceMetadata(
+        reliability_notes="Nota antiga"
+    )
+
+    assert metadata_string.reliability_notes == ["Nota antiga"]
+
+    # Dados novos já chegam como lista.
+    metadata_list = SourceMetadata(
+        reliability_notes=["Nota 1", "Nota 2"]
+    )
+
+    assert metadata_list.reliability_notes == ["Nota 1", "Nota 2"]
+
+    # Campo ausente continua aceito.
+    metadata_none = SourceMetadata()
+
+    assert metadata_none.reliability_notes is None
+
+
+def test_source_metadata_normalizes_empty_string():
+    metadata = SourceMetadata(reliability_notes="")
+
+    assert metadata.reliability_notes == []

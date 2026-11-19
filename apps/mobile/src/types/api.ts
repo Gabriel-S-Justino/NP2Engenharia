@@ -25,7 +25,7 @@ export type SourceMetadata = {
   url: string | null;
   license: string | null;
   subject: string | null;
-  reliability_notes: string | null;
+  reliability_notes: string[] | null;
   metadata_origin: string | null;
 };
 
