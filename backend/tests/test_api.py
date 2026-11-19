@@ -29,13 +29,21 @@ def test_stats_reflect_real_state(indexed_client):
     indexed_client.post("/api/chat", json={"question": "Qual é a velocidade máxima nas vias escolares?"})
     assert indexed_client.get("/api/stats").json()["questions_answered"] == 1
 
-
 def test_documents_list_detail_chunks_and_sources(indexed_client):
-    listing = indexed_client.get("/api/documents?page_size=2&sort=name").json()
-    assert listing["total"] == 3 and len(listing["items"]) == 2
-    doc = listing["items"][0]
+    listing = indexed_client.get("/api/documents?page_size=10&sort=name").json()
+    assert listing["total"] == 3
+
+    doc = next(
+        item for item in listing["items"]
+        if item["filename"] == "guia_sintetico_pedestres_ciclistas.txt"
+    )
+
     detail = indexed_client.get(f"/api/documents/{doc['id']}").json()
     assert detail["metadata"]["title"] and detail["metadata"]["license"]
+    notes = detail["metadata"]["reliability_notes"]
+    assert isinstance(notes, list)
+    assert "Fictício. Usado apenas na suíte automatizada 'fixtures'." in notes
+
     chunks = indexed_client.get(f"/api/documents/{doc['id']}/chunks").json()
     assert chunks["total"] == doc["chunk_count"]
     source = indexed_client.get(f"/api/sources/{chunks['items'][0]['id']}").json()
@@ -43,7 +51,6 @@ def test_documents_list_detail_chunks_and_sources(indexed_client):
     assert indexed_client.get("/api/sources/inexistente").status_code == 404
     assert indexed_client.get("/api/documents?status=failed").json()["total"] == 0
     assert indexed_client.get("/api/documents?search=guia").json()["total"] == 1
-
 
 def test_chat_contract_and_history(indexed_client):
     response = indexed_client.post("/api/chat", json={"question": "Qual distância manter ao ultrapassar um ciclista?"})

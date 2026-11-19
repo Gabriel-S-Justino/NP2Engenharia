@@ -20,7 +20,12 @@ export function MetadataTable({ document: d }: { document: DocumentSummary }) {
     ['Assunto', m.subject],
     ['Endereço original', m.url],
     ['Licença', m.license],
-    ['Confiabilidade', m.reliability_notes],
+    [
+  'Confiabilidade',
+  m.reliability_notes?.length
+    ? m.reliability_notes.join('; ')
+    : null,
+],
     ['Tipo', d.file_type.toUpperCase()],
     ['Tamanho', formatBytes(d.size_bytes)],
     ['Páginas', d.page_count !== null ? String(d.page_count) : null],

@@ -1,3 +1,4 @@
+
 """Schemas Pydantic de requisição e resposta da API (contrato com o frontend).
 
 Os tipos TypeScript equivalentes ficam em `apps/mobile/types/api.ts` e o contrato
@@ -47,8 +48,15 @@ class SourceMetadata(BaseModel):
     url: str | None = None
     license: str | None = None
     subject: str | None = None
-    reliability_notes: str | None = None
+    reliability_notes: list[str] | None = None
     metadata_origin: str | None = Field(default=None, description="manifesto, pdf, upload ou inferido do nome do arquivo")
+
+    @field_validator("reliability_notes", mode="before")
+    @classmethod
+    def normalize_reliability_notes(cls, value):
+        if isinstance(value, str):
+            return [value] if value.strip() else []
+        return value
 
 
 class DocumentSummary(BaseModel):

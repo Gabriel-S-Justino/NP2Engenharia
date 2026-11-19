@@ -1,8 +1,10 @@
+
 """Configuração central da aplicação.
 
-Todas as opções vêm de variáveis de ambiente (ou de um arquivo `.env`). A validação
-acontece na inicialização: valores incoerentes interrompem o processo com uma
-mensagem clara, em vez de produzir comportamento silenciosamente incorreto.
+Todas as opções vêm de variáveis de ambiente (ou de um arquivo `.env`).
+A validação acontece na inicialização: valores incoerentes interrompem o
+processo com uma mensagem clara, em vez de produzir comportamento
+silenciosamente incorreto.
 """
 
 from __future__ import annotations
@@ -12,8 +14,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    SecretStr,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 # Raiz do repositório: backend/app/core/config.py -> parents[3]
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -22,15 +31,22 @@ EmbeddingProviderName = Literal["fastembed", "hashing"]
 LLMProviderName = Literal["demo", "anthropic", "gemini"]
 VectorStoreName = Literal["faiss", "numpy", "pgvector"]
 
+
 # Limiares iniciais por provedor de embeddings (similaridade de cosseno).
-# hashing: calibrado em docs/resultados/calibracao_hashing_fixtures.md (sugestão 0,141 → 0,15).
-# fastembed: valor inicial NÃO calibrado; recalibre com os documentos reais da equipe.
-DEFAULT_THRESHOLDS = {"hashing": 0.15, "fastembed": 0.35}
+# hashing: calibrado em docs/resultados/calibracao_hashing_fixtures.md
+# fastembed: valor inicial NÃO calibrado; recalibre com os documentos reais.
+DEFAULT_THRESHOLDS = {
+    "hashing": 0.15,
+    "fastembed": 0.35,
+}
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=(str(REPO_ROOT / ".env"), str(REPO_ROOT / "backend" / ".env")),
+        env_file=(
+            str(REPO_ROOT / ".env"),
+            str(REPO_ROOT / "backend" / ".env"),
+        ),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -40,81 +56,148 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     api_host: str = "127.0.0.1"
     api_port: int = Field(default=8000, ge=1, le=65535)
-    cors_origins: str = "http://localhost:8081,http://127.0.0.1:8081,http://localhost:19006"
+    cors_origins: str = (
+        "http://localhost:8081,"
+        "http://127.0.0.1:8081,"
+        "http://localhost:19006"
+    )
     log_level: str = "INFO"
 
-    # Ambiente serverless (Vercel define VERCEL=1). None = detectar automaticamente.
+    # Ambiente serverless (Vercel define VERCEL=1).
+    # None = detectar automaticamente.
     serverless: bool | None = None
-    # Postgres (Neon via Vercel Marketplace define DATABASE_URL). Sem ele, usa SQLite local.
-    database_url: SecretStr | None = Field(default=None, validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL"))
-    # Guarda o arquivo original no banco (necessário para reindexar onde não há disco persistente).
+
+    # Postgres (Neon via Vercel Marketplace define DATABASE_URL).
+    # Sem ele, usa SQLite local.
+    database_url: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL"),
+    )
+
+    # Guarda o arquivo original no banco.
     store_originals_in_db: bool | None = None
-    # Remove do índice documentos cujo arquivo sumiu da pasta (desligado em serverless, onde a pasta é a do deploy).
+
+    # Remove do índice documentos cujo arquivo sumiu da pasta.
     prune_missing_files: bool | None = None
-    # Tempo máximo de uma execução de ingestão; o restante fica pendente para a próxima chamada.
-    ingestion_time_budget_seconds: float = Field(default=240.0, ge=5, le=3600)
+
+    # Tempo máximo de uma execução de ingestão.
+    ingestion_time_budget_seconds: float = Field(
+        default=240.0, ge=5, le=3600
+    )
+
     allow_ephemeral_storage: bool = False
     cron_secret: SecretStr | None = None
 
     # Caminhos
     documents_dir: Path = REPO_ROOT / "Documentos"
     data_dir: Path = REPO_ROOT / "data"
-    fixtures_dir: Path = REPO_ROOT / "tests" / "fixtures" / "documentos_sinteticos"
+    fixtures_dir: Path = (
+        REPO_ROOT / "tests" / "fixtures" / "documentos_sinteticos"
+    )
     evaluation_dir: Path = REPO_ROOT / "tests" / "acceptance"
 
     # Pipeline
-    vector_store: VectorStoreName | None = None  # None = pgvector com Postgres, senão faiss
+    vector_store: VectorStoreName | None = None
+    # None = pgvector com Postgres, senão faiss
     embedding_provider: EmbeddingProviderName = "fastembed"
-    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_model: str = (
+        "sentence-transformers/"
+        "paraphrase-multilingual-MiniLM-L12-v2"
+    )
     embedding_cache_dir: Path | None = None
     embedding_batch_size: int = Field(default=8, ge=1, le=64)
     embedding_threads: int = Field(default=1, ge=1, le=8)
     hashing_dim: int = Field(default=2048, ge=128, le=16384)
 
+    # Provedor de linguagem
     llm_provider: LLMProviderName = "gemini"
     llm_model: str = ""
     llm_api_key: SecretStr | None = Field(
-        default=None, validation_alias=AliasChoices("LLM_API_KEY", "llm_api_key", "GEMINI_API_KEY", "GOOGLE_API_KEY")
+        default=None,
+        validation_alias=AliasChoices(
+            "LLM_API_KEY",
+            "llm_api_key",
+            "GEMINI_API_KEY",
+            "GOOGLE_API_KEY",
+        ),
     )
     llm_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
-    llm_max_output_tokens: int = Field(default=2048, ge=128, le=16000)
+    llm_max_output_tokens: int = Field(
+        default=2048, ge=128, le=16000
+    )
     llm_max_retries: int = Field(default=1, ge=0, le=2)
     llm_fallback_models: str = "gemini-3.5-flash-lite"
     llm_effort: Literal["low", "medium", "high"] = "low"
 
+    # Recuperação e divisão de documentos
     chunk_size: int = Field(default=800, ge=200, le=4000)
     chunk_overlap: int = Field(default=120, ge=0, le=1000)
     min_chunk_chars: int = Field(default=60, ge=10, le=500)
     top_k: int = Field(default=5, ge=1, le=20)
-    # None = valor padrão calibrado por provedor (ver DEFAULT_THRESHOLDS e scripts/calibrate_threshold.py)
-    similarity_threshold: float | None = Field(default=None, ge=-1.0, le=1.0)
-    weak_evidence_margin: float = Field(default=0.08, ge=0.0, le=1.0)
-    min_term_coverage: float = Field(default=0.5, ge=0.0, le=1.0)
 
-    neon_auth_base_url: str | None = Field(default=None, validation_alias=AliasChoices('NEON_AUTH_BASE_URL', 'DATABASE_NEON_AUTH_BASE_URL'))
+    # None = valor padrão calibrado por provedor.
+    similarity_threshold: float | None = Field(
+        default=None, ge=-1.0, le=1.0
+    )
+    weak_evidence_margin: float = Field(
+        default=0.08, ge=0.0, le=1.0
+    )
+    min_term_coverage: float = Field(
+        default=0.5, ge=0.0, le=1.0
+    )
+
+    # Autenticação e limites de uso
+    neon_auth_base_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "NEON_AUTH_BASE_URL",
+            "DATABASE_NEON_AUTH_BASE_URL",
+        ),
+    )
     chat_context_turns: int = Field(default=6, ge=0, le=20)
     chat_context_chars: int = Field(default=6000, ge=500, le=20000)
-    user_daily_questions: int = Field(default=100, ge=1, le=10000)
-    global_daily_questions: int = Field(default=1000, ge=1, le=100000)
+    user_daily_questions: int = Field(
+        default=100, ge=1, le=10000
+    )
+    global_daily_questions: int = Field(
+        default=1000, ge=1, le=100000
+    )
 
     # Limites e segurança
     max_upload_size_mb: int = Field(default=20, ge=1, le=200)
     max_question_chars: int = Field(default=1000, ge=10, le=10000)
     max_request_body_mb: int = Field(default=25, ge=1, le=250)
     admin_token: SecretStr | None = None
-    rate_limit_per_minute: int = Field(default=30, ge=0, le=10000)
+    rate_limit_per_minute: int = Field(
+        default=30, ge=0, le=10000
+    )
     auto_ingest_on_startup: bool = False
     ocr_enabled: bool = False
-    history_retention_days: int = Field(default=30, ge=0, le=3650)
+    history_retention_days: int = Field(
+        default=30, ge=0, le=3650
+    )
 
-    @field_validator("documents_dir", "data_dir", "fixtures_dir", "evaluation_dir", "embedding_cache_dir", mode="before")
+    @field_validator(
+        "documents_dir",
+        "data_dir",
+        "fixtures_dir",
+        "evaluation_dir",
+        "embedding_cache_dir",
+        mode="before",
+    )
     @classmethod
     def _resolve_path(cls, value: object) -> object:
         if isinstance(value, str) and value and not Path(value).is_absolute():
             return (REPO_ROOT / value).resolve()
         return value
 
-    @field_validator("llm_api_key", "admin_token", "database_url", "cron_secret", mode="before")
+    @field_validator(
+        "llm_api_key",
+        "admin_token",
+        "database_url",
+        "cron_secret",
+        mode="before",
+    )
     @classmethod
     def _empty_secret_is_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
@@ -126,67 +209,138 @@ class Settings(BaseSettings):
     def _normalize_llm_provider(cls, value: object) -> object:
         if isinstance(value, str):
             value = value.strip().lower()
-            return "gemini" if value in ("google", "google-gemini") else value
+            return (
+                "gemini"
+                if value in ("google", "google-gemini")
+                else value
+            )
         return value
 
     @model_validator(mode="after")
     def _resolve_environment(self) -> Settings:
-        """Valores padrão que dependem do ambiente (local x Vercel). Valores explícitos sempre prevalecem."""
+        """Valores padrão que dependem do ambiente."""
+
         explicit = self.model_fields_set
+
         if not self.llm_model.strip():
-            self.llm_model = "gemini-flash-latest" if self.llm_provider == "gemini" else "claude-opus-5-5"
+            self.llm_model = (
+                "gemini-flash-latest"
+                if self.llm_provider == "gemini"
+                else "claude-opus-5-5"
+            )
+
         if self.serverless is None:
             self.serverless = os.environ.get("VERCEL") == "1"
+
         if self.serverless:
             if "app_env" not in explicit:
                 self.app_env = "production"
+
             if "data_dir" not in explicit:
-                self.data_dir = Path("/tmp/acervo-data")  # único diretório gravável; usado só como rascunho
+                self.data_dir = Path("/tmp/acervo-data")
+
             if self.embedding_cache_dir is None:
                 self.embedding_cache_dir = Path("/tmp/fastembed-cache")
+
             if "max_upload_size_mb" not in explicit:
-                self.max_upload_size_mb = 4  # corpo de requisição da Vercel é limitado a 4,5 MB
+                self.max_upload_size_mb = 4
+
             self.auto_ingest_on_startup = False
             os.environ.setdefault("HF_HOME", "/tmp/hf-home")
+
         if self.vector_store is None:
-            self.vector_store = "pgvector" if self.database_url else "faiss"
+            self.vector_store = (
+                "pgvector" if self.database_url else "faiss"
+            )
+
         if self.store_originals_in_db is None:
             self.store_originals_in_db = self.database_url is not None
+
         if self.prune_missing_files is None:
             self.prune_missing_files = not self.serverless
+
         return self
 
     @model_validator(mode="after")
     def _check_coherence(self) -> Settings:
         if self.llm_provider == "demo" and self.app_env != "test":
-            raise ValueError("LLM_PROVIDER=demo é exclusivo dos testes automatizados (APP_ENV=test). Configure gemini ou anthropic e LLM_API_KEY.")
+            raise ValueError(
+                "LLM_PROVIDER=demo é exclusivo dos testes automatizados "
+                "(APP_ENV=test). Configure gemini ou anthropic e LLM_API_KEY."
+            )
+
         if self.similarity_threshold is None:
-            self.similarity_threshold = DEFAULT_THRESHOLDS[self.embedding_provider]
+            self.similarity_threshold = DEFAULT_THRESHOLDS[
+                self.embedding_provider
+            ]
+
         if self.chunk_overlap >= self.chunk_size:
             raise ValueError(
-                f"CHUNK_OVERLAP ({self.chunk_overlap}) deve ser menor que CHUNK_SIZE ({self.chunk_size})."
+                f"CHUNK_OVERLAP ({self.chunk_overlap}) deve ser menor "
+                f"que CHUNK_SIZE ({self.chunk_size})."
             )
+
         if self.min_chunk_chars >= self.chunk_size:
-            raise ValueError("MIN_CHUNK_CHARS deve ser menor que CHUNK_SIZE.")
-        if self.llm_provider in ("anthropic", "gemini") and self.llm_api_key is None:
             raise ValueError(
-                f"LLM_PROVIDER={self.llm_provider} exige LLM_API_KEY configurada no servidor. "
-                "Configure a chave do provedor antes de iniciar a aplicação."
+                "MIN_CHUNK_CHARS deve ser menor que CHUNK_SIZE."
             )
+
+        # Anthropic sempre exige chave.
+        if (
+            self.llm_provider == "anthropic"
+            and self.llm_api_key is None
+        ):
+            raise ValueError(
+                "LLM_PROVIDER=anthropic exige LLM_API_KEY configurada "
+                "no servidor. Configure a chave do provedor antes de "
+                "iniciar a aplicação."
+            )
+
+        # Gemini exige chave em produção.
+        if (
+            self.llm_provider == "gemini"
+            and self.llm_api_key is None
+            and self.app_env == "production"
+        ):
+            raise ValueError(
+                "LLM_PROVIDER=gemini exige LLM_API_KEY configurada "
+                "no servidor. Configure a chave do provedor antes de "
+                "iniciar a aplicação."
+            )
+
         if self.app_env == "production" and "*" in self.cors_list:
-            raise ValueError("CORS_ORIGINS não pode conter '*' em produção.")
-        if self.vector_store == "pgvector" and self.database_url is None:
-            raise ValueError("VECTOR_STORE=pgvector exige DATABASE_URL (Postgres com a extensão pgvector).")
-        if self.database_url is not None and self.vector_store != "pgvector":
             raise ValueError(
-                "Com DATABASE_URL (Postgres), use VECTOR_STORE=pgvector: o índice precisa ficar no mesmo banco persistente."
+                "CORS_ORIGINS não pode conter '*' em produção."
             )
+
+        if (
+            self.vector_store == "pgvector"
+            and self.database_url is None
+        ):
+            raise ValueError(
+                "VECTOR_STORE=pgvector exige DATABASE_URL "
+                "(Postgres com a extensão pgvector)."
+            )
+
+        if (
+            self.database_url is not None
+            and self.vector_store != "pgvector"
+        ):
+            raise ValueError(
+                "Com DATABASE_URL (Postgres), use VECTOR_STORE=pgvector: "
+                "o índice precisa ficar no mesmo banco persistente."
+            )
+
         return self
 
-    # Propriedades derivadas -------------------------------------------------
+    # Propriedades derivadas
     @property
     def cors_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [
+            origin.strip()
+            for origin in self.cors_origins.split(",")
+            if origin.strip()
+        ]
 
     @property
     def uses_postgres(self) -> bool:
@@ -194,7 +348,7 @@ class Settings(BaseSettings):
 
     @property
     def persistent_storage(self) -> bool:
-        """Dados sobrevivem a reinícios/novos deploys? Em serverless, só com Postgres."""
+        """Dados sobrevivem a reinícios/novos deploys?"""
         return self.uses_postgres or not self.serverless
 
     @property
